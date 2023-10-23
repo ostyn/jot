@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lit-labs/router": "^0.1.2",
+    "@picocss/pico": "^1.5.10",
     "lit": "^3.0.0"
   },
   "devDependencies": {

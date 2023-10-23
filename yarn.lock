@@ -173,6 +173,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lit-labs/router@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "@lit-labs/router@npm:0.1.2"
+  dependencies:
+    lit: "npm:^3.0.0"
+  checksum: 1c678a498f121b4f5d8655efea6904297ac5edb74e1c4f0e606898ec50e14ae3e85691f954456d58b50fca8b4f9a17b45262e8a50d91beb2437770071b1a2842
+  languageName: node
+  linkType: hard
+
 "@lit-labs/ssr-dom-shim@npm:^1.1.2-pre.0":
   version: 1.1.2
   resolution: "@lit-labs/ssr-dom-shim@npm:1.1.2"
@@ -195,6 +204,13 @@ __metadata:
   dependencies:
     semver: "npm:^7.3.5"
   checksum: 162b4a0b8705cd6f5c2470b851d1dc6cd228c86d2170e1769d738c1fbb69a87160901411c3c035331e9e99db72f1f1099a8b734bf1637cc32b9a5be1660e4e1e
+  languageName: node
+  linkType: hard
+
+"@picocss/pico@npm:^1.5.10":
+  version: 1.5.10
+  resolution: "@picocss/pico@npm:1.5.10"
+  checksum: 8d462f2426c93b4487c3b5e5f869c556656f54ca231e29eb8daf1838d74d25340d02126a80439d0671420625d3ed5fdf28afdd3ef8720c645f2757606ffdd1d6
   languageName: node
   linkType: hard
 
@@ -813,6 +829,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "lit-project@workspace:."
   dependencies:
+    "@lit-labs/router": "npm:^0.1.2"
+    "@picocss/pico": "npm:^1.5.10"
     lit: "npm:^3.0.0"
     typescript: "npm:^5.2.2"
     vite: "npm:^4.5.0"

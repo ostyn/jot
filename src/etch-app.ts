@@ -5,6 +5,7 @@ import { MoodsRoute } from "./routes/moods.route";
 import { Router } from "@lit-labs/router";
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
+import base from "./baseStyles";
 
 @customElement("etch-app")
 export class EtchApp extends LitElement {
@@ -26,7 +27,6 @@ export class EtchApp extends LitElement {
 
   render() {
     return html`
-      <link rel="stylesheet" href="/src/assets/pico.min.css" />
       <header>
         ${this._router.routes.map((route: any) => {
           return html`<a href="${route.path}">${route.name}</a>`;
@@ -36,4 +36,5 @@ export class EtchApp extends LitElement {
       <footer>2023</footer>
     `;
   }
+  static styles = [base];
 }

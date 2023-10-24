@@ -1,4 +1,4 @@
-import { LitElement, html, css } from "lit";
+import { LitElement, html, css, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import * as data from "../assets/data.json";
 import base from "../baseStyles";
@@ -12,16 +12,25 @@ export class NavBar extends LitElement {
   @consume({ context: routerContext })
   @property({ attribute: false })
   public router?: Router;
-
+  // @state()
+  private currentUrl = window.location.href;
+  isRouteSelected(path: string) {
+    return this.currentUrl.includes(path);
+  }
   render() {
     return html`
       <footer>
         ${(this.router?.routes || [])
           .filter((route) => (route as any).menuItem)
           .map((route: any) => {
-            return html` <a class="menu-bar-icon " href="${route.path}"
-              ><feather-icon name="${route.iconName}"></feather-icon
-              >${route.name}</a
+            return html` <a
+              class=${"menu-bar-icon " +
+              (this.isRouteSelected(route.path)
+                ? "menu-bar-icon-active"
+                : "menu-bar-icon-inactive")}
+              href="${route.path}"
+              ><feather-icon name=${route.iconName}></feather-icon
+              >${this.isRouteSelected(route.path) ? route.name : nothing}</a
             >`;
           })}
       </footer>

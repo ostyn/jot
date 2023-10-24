@@ -189,7 +189,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lit/reactive-element@npm:^2.0.0":
+"@lit/context@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@lit/context@npm:1.0.0"
+  dependencies:
+    "@lit/reactive-element": "npm:^1.6.2 || ^2.0.0"
+    lit: "npm:^2.7.5 || ^3.0.0"
+  checksum: 01efda7c0fa2e5f9c26c9377f11f03e54dc4c86003d287e61ce2b88f7a771a7027cbd387e5efdb77d7ddaa53058f79ebe1abd29b541be42a4c4ef558ef70abc9
+  languageName: node
+  linkType: hard
+
+"@lit/reactive-element@npm:^1.6.2 || ^2.0.0, @lit/reactive-element@npm:^2.0.0":
   version: 2.0.0
   resolution: "@lit/reactive-element@npm:2.0.0"
   dependencies:
@@ -225,6 +235,13 @@ __metadata:
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
   checksum: 073bfa548026b1ebaf1659eb8961e526be22fa77139b10d60e712f46d2f0f05f4e6c8bec62a087d41088ee9e29faa7f54838568e475ab2f776171003c3920858
+  languageName: node
+  linkType: hard
+
+"@types/feather-icons@npm:^4":
+  version: 4.29.3
+  resolution: "@types/feather-icons@npm:4.29.3"
+  checksum: 076f52ae8d03ba0611a4dc651d7f67b80492c019db8a67200a045fa37df72de4d33b6daff1920000428c2fdae664b39a7ddde6ef021c61c78bb40186b4871954
   languageName: node
   linkType: hard
 
@@ -370,6 +387,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"classnames@npm:^2.2.5":
+  version: 2.3.2
+  resolution: "classnames@npm:2.3.2"
+  checksum: cd50ead57b4f97436aaa9f9885c6926323efc7c2bea8e3d4eb10e4e972aa6a1cfca1c7a0e06f8a199ca7498d4339e30bb6002e589e61c9f21248cbf3e8b0b18d
+  languageName: node
+  linkType: hard
+
 "clean-stack@npm:^2.0.0":
   version: 2.2.0
   resolution: "clean-stack@npm:2.2.0"
@@ -413,6 +437,13 @@ __metadata:
   version: 1.1.0
   resolution: "console-control-strings@npm:1.1.0"
   checksum: 7ab51d30b52d461412cd467721bb82afe695da78fff8f29fe6f6b9cbaac9a2328e27a22a966014df9532100f6dd85370460be8130b9c677891ba36d96a343f50
+  languageName: node
+  linkType: hard
+
+"core-js@npm:^3.1.3":
+  version: 3.33.1
+  resolution: "core-js@npm:3.33.1"
+  checksum: cf84a4fc430778fcc0195a9b47c9121f46e710eb0b5110ad8884aac504c9480ccbbd33d0b0f9c1936d2a6c8325c510cf8b3ec68863c352e7de91d661f1e0860a
   languageName: node
   linkType: hard
 
@@ -571,6 +602,16 @@ __metadata:
   version: 3.1.1
   resolution: "exponential-backoff@npm:3.1.1"
   checksum: 160456d2d647e6019640bd07111634d8c353038d9fa40176afb7cd49b0548bdae83b56d05e907c2cce2300b81cae35d800ef92fefb9d0208e190fa3b7d6bb579
+  languageName: node
+  linkType: hard
+
+"feather-icons@npm:^4.29.1":
+  version: 4.29.1
+  resolution: "feather-icons@npm:4.29.1"
+  dependencies:
+    classnames: "npm:^2.2.5"
+    core-js: "npm:^3.1.3"
+  checksum: 16d58ca3461ca5d159a41b2ecaf7449a20e03fd000dec6c53d644af8b95667df4b2904b8fa4c8fbd1870979342be2fde7373a7e62a5f9bdf7b7f59bec186f56f
   languageName: node
   linkType: hard
 
@@ -830,14 +871,18 @@ __metadata:
   resolution: "lit-project@workspace:."
   dependencies:
     "@lit-labs/router": "npm:^0.1.2"
+    "@lit/context": "npm:^1.0.0"
     "@picocss/pico": "npm:^1.5.10"
+    "@types/feather-icons": "npm:^4"
+    feather-icons: "npm:^4.29.1"
     lit: "npm:^3.0.0"
     typescript: "npm:^5.2.2"
+    urlpattern-polyfill: "npm:^9.0.0"
     vite: "npm:^4.5.0"
   languageName: unknown
   linkType: soft
 
-"lit@npm:^3.0.0":
+"lit@npm:^2.7.5 || ^3.0.0, lit@npm:^3.0.0":
   version: 3.0.0
   resolution: "lit@npm:3.0.0"
   dependencies:
@@ -1396,6 +1441,13 @@ __metadata:
   dependencies:
     imurmurhash: "npm:^0.1.4"
   checksum: cb811d9d54eb5821b81b18205750be84cb015c20a4a44280794e915f5a0a70223ce39066781a354e872df3572e8155c228f43ff0cce94c7cbf4da2cc7cbdd635
+  languageName: node
+  linkType: hard
+
+"urlpattern-polyfill@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "urlpattern-polyfill@npm:9.0.0"
+  checksum: 1fecb4a7695ad7917b02193896ec7b5773bb730ee3fbbb583cfaf134cc99da054c18560a35e7e901ad4e2f7a6035b6754313a2bb84126a7f118201427d465185
   languageName: node
   linkType: hard
 

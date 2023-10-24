@@ -1,39 +1,66 @@
+import "./components/nav-bar";
+import "./components/feather-icon";
 import { EntryRoute } from "./routes/entry.route";
 import { ActivitiesRoute } from "./routes/activities.route";
 import { EntriesRoute } from "./routes/entries.route";
 import { MoodsRoute } from "./routes/moods.route";
-import { Router } from "@lit-labs/router";
+import { SettingsRoute } from "./routes/settings.route";
+import { RouteConfig, Router } from "@lit-labs/router";
 import { LitElement, html } from "lit";
+import { provide } from "@lit/context";
 import { customElement } from "lit/decorators.js";
 import base from "./baseStyles";
+import { routerContext } from "./router-context";
 
 @customElement("etch-app")
 export class EtchApp extends LitElement {
-  private _router = new Router(this, [
-    { path: "/", name: "Home", render: EntriesRoute.routeRender },
-    { path: "/entries", name: "Entries", render: EntriesRoute.routeRender },
+  @provide({ context: routerContext })
+  public router = new Router(this, [
+    {
+      path: "/",
+      name: "home",
+      render: EntriesRoute.routeRender,
+    },
+    {
+      path: "/entries",
+      name: "Entries",
+      menuItem: true,
+      iconName: "book-open",
+      render: EntriesRoute.routeRender,
+    },
     {
       path: "/moods",
-      name: "Moods",
+      name: "moods",
+      menuItem: true,
+      iconName: "smile",
       render: MoodsRoute.routeRender,
     },
     {
       path: "/activities",
-      name: "Activities",
+      name: "activities",
+      menuItem: true,
+      iconName: "activity",
       render: ActivitiesRoute.routeRender,
     },
-    { path: "/entry", name: "Entry", render: EntryRoute.routeRender },
-  ]);
+    {
+      path: "/entry",
+      name: "entry",
+      iconName: "edit-3",
+      render: EntryRoute.routeRender,
+    },
+    {
+      path: "/settings",
+      name: "settings",
+      menuItem: true,
+      iconName: "settings",
+      render: SettingsRoute.routeRender,
+    },
+  ] as RouteConfig[]);
 
   render() {
     return html`
-      <header>
-        ${this._router.routes.map((route: any) => {
-          return html`<a href="${route.path}">${route.name}</a>`;
-        })}
-      </header>
-      <main>${this._router.outlet()}</main>
-      <footer>2023</footer>
+      <main>${this.router.outlet()}</main>
+      <nav-bar></nav-bar>
     `;
   }
   static styles = [base];

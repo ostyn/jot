@@ -31,6 +31,7 @@ export class EtchApp extends LitElement {
                 display: block;
                 max-width: 36rem;
                 margin: auto;
+                padding-bottom: 4rem;
             }
         `,
     ];

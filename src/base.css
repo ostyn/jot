@@ -20,11 +20,6 @@ dialog {
     color: var(--color);
     border: none;
 }
-router-view {
-    display: block;
-    max-width: 36rem;
-    margin: auto;
-}
 
 :root {
     --spacing: 0.25rem;

@@ -1,4 +1,4 @@
-import { html, LitElement } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { provide } from '@lit/context';
 import { Router } from '@vaadin/router';
@@ -24,5 +24,14 @@ export class EtchApp extends LitElement {
             <nav-bar></nav-bar>
         `;
     }
-    static styles = [base];
+    static styles = [
+        base,
+        css`
+            #outlet {
+                display: block;
+                max-width: 36rem;
+                margin: auto;
+            }
+        `,
+    ];
 }

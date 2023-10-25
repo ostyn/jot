@@ -16,10 +16,6 @@ export class ActivitiesRoute extends LitElement {
             </section>
             <mood-edit mood.two-way="mood"></mood-edit>
         </article>`;
-        return;
-    }
-    static routeRender() {
-        return html`<activities-route></activities-route>`;
     }
     static styles = [base];
 }

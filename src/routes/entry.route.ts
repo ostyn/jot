@@ -7,8 +7,5 @@ export class EntryRoute extends LitElement {
     render() {
         return html`Entry`;
     }
-    static routeRender() {
-        return html`<entry-route></entry-route>`;
-    }
     static styles = [base];
 }

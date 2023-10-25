@@ -16,10 +16,6 @@ export class MoodsRoute extends LitElement {
             </section>
             <mood-edit mood.two-way="mood"></mood-edit>
         </article>`;
-        return;
-    }
-    static routeRender() {
-        return html`<moods-route></moods-route>`;
     }
     static styles = [base];
 }

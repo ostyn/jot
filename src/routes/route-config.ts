@@ -33,7 +33,7 @@ export const routes: Route[] = [
         name: 'entries',
     },
     {
-        path: '/entry/:id',
+        path: '/entry/:id?',
         component: 'entry-route',
         name: 'entry',
     },

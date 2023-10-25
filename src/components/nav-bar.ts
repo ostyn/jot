@@ -30,19 +30,25 @@ export class NavBar extends LitElement {
                     .filter((route: EtchRoute) => route.options?.menuItem)
                     .map((route: EtchRoute) => {
                         return html`<a
-                            class=${'menu-bar-icon ' +
+                            class=${'menu-bar-item ' +
                             (this.isRouteSelected(route.path)
-                                ? 'menu-bar-icon-active'
-                                : 'menu-bar-icon-inactive')}
+                                ? 'menu-bar-item-active'
+                                : 'menu-bar-item-inactive')}
                             href="${route.path}"
                         >
                             <feather-icon
                                 name=${route.options?.iconName || 'smile'}
+                                .options="${{
+                                    height: '1.5rem',
+                                    width: '1.5rem',
+                                }}"
                             >
                             </feather-icon>
-                            ${this.isRouteSelected(route.path)
-                                ? route.name
-                                : nothing}
+                            <span class="menu-bar-item-text">
+                                ${this.isRouteSelected(route.path)
+                                    ? route.name
+                                    : nothing}</span
+                            >
                         </a>`;
                     })}
             </footer>
@@ -68,7 +74,7 @@ export class NavBar extends LitElement {
                 z-index: 100;
             }
 
-            .menu-bar-icon {
+            .menu-bar-item {
                 transition: height 0.2s;
                 cursor: pointer;
                 width: 5rem;
@@ -76,11 +82,10 @@ export class NavBar extends LitElement {
                 display: inline-flex;
                 flex-flow: column;
                 align-items: center;
-                line-height: 1.25rem;
                 font-size: 12px;
                 font-weight: bold;
             }
-            .menu-bar-icon-inactive {
+            .menu-bar-item-inactive {
                 height: 1.5rem;
                 opacity: 0.6;
             }
@@ -89,12 +94,15 @@ export class NavBar extends LitElement {
                 height: 1.5rem;
                 width: 1.5rem;
             }
-            .menu-bar-icon-active feather-icon {
+            .menu-bar-item-active feather-icon {
                 transition: all 0.2s;
                 background: var(--secondary);
                 color: var(--primary-inverse);
                 border-radius: 20px;
                 padding: 4px 20px;
+            }
+            .menu-bar-item-text {
+                line-height: 1.25rem;
             }
             a:focus,
             a:active {

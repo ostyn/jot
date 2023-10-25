@@ -2,7 +2,7 @@ import { css, html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { provide } from '@lit/context';
 import { Router } from '@vaadin/router';
-import base from './baseStyles';
+import { base } from './baseStyles';
 import './components/feather-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';

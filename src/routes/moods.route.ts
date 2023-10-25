@@ -1,7 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import * as data from '../assets/data.json';
-import base from '../baseStyles';
+import { base } from '../baseStyles';
 import { Mood } from '../interfaces/mood.interface';
 
 @customElement('moods-route')

@@ -1,4 +1,4 @@
-import { html, LitElement } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import * as data from '../assets/data.json';
 import base from '../baseStyles';
@@ -12,11 +12,19 @@ export class MoodsRoute extends LitElement {
         return html`<article>
             <section>
                 ${this.moods.map((mood) => {
-                    return html`<button>${mood.emoji}</button>`;
+                    return html`<span class="moods-mood">${mood.emoji}</span>`;
                 })}
             </section>
             <mood-edit mood.two-way="mood"></mood-edit>
         </article>`;
     }
-    static styles = [base];
+    static styles = [
+        base,
+        css`
+            .moods-mood {
+                font-size: 2rem;
+                cursor: pointer;
+            }
+        `,
+    ];
 }

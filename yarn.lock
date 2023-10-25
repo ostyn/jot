@@ -466,6 +466,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vaadin/router@npm:^1.7.5":
+  version: 1.7.5
+  resolution: "@vaadin/router@npm:1.7.5"
+  dependencies:
+    "@vaadin/vaadin-usage-statistics": "npm:^2.1.0"
+    path-to-regexp: "npm:2.4.0"
+  checksum: 98931a8b31aed52afc7e1405936c7f329ee8c61d4994292d2cd765015161026bd45c1f1469d95ecfc7d93fa2a635257047eb106d115ee7ab239246277983a49d
+  languageName: node
+  linkType: hard
+
+"@vaadin/vaadin-development-mode-detector@npm:^2.0.0":
+  version: 2.0.6
+  resolution: "@vaadin/vaadin-development-mode-detector@npm:2.0.6"
+  checksum: 318c60d204f7b0d90ebcf1f530d18e1af59cb5125ce18c783bdf32482c628e2151587f1269dbdb8a349c433c2ff90daf3526fbb7d63ca23d29ed69102a7c8f33
+  languageName: node
+  linkType: hard
+
+"@vaadin/vaadin-usage-statistics@npm:^2.1.0":
+  version: 2.1.2
+  resolution: "@vaadin/vaadin-usage-statistics@npm:2.1.2"
+  dependencies:
+    "@vaadin/vaadin-development-mode-detector": "npm:^2.0.0"
+  checksum: 84973a47d4e03db51a5e059008811edb793adbc1aa4fac6e9ec83d7d0a40235224b8e21fcd17a1a3d6ad81fc79edf362fbf69b3c3a1417510a118135a0498101
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^1.0.0":
   version: 1.1.1
   resolution: "abbrev@npm:1.1.1"
@@ -1169,6 +1195,7 @@ __metadata:
     "@picocss/pico": "npm:^1.5.10"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.2.1"
     "@types/feather-icons": "npm:^4"
+    "@vaadin/router": "npm:^1.7.5"
     feather-icons: "npm:^4.29.1"
     lit: "npm:^3.0.0"
     prettier: "npm:^3.0.3"
@@ -1466,6 +1493,13 @@ __metadata:
     lru-cache: "npm:^9.1.1 || ^10.0.0"
     minipass: "npm:^5.0.0 || ^6.0.2 || ^7.0.0"
   checksum: e5dc78a7348d25eec61ab166317e9e9c7b46818aa2c2b9006c507a6ff48c672d011292d9662527213e558f5652ce0afcc788663a061d8b59ab495681840c0c1e
+  languageName: node
+  linkType: hard
+
+"path-to-regexp@npm:2.4.0":
+  version: 2.4.0
+  resolution: "path-to-regexp@npm:2.4.0"
+  checksum: 286e3f2ea633ae9447d9c6beb2974db67801ffd64927e70129604e1fb987d94c9b38fa70cc494cd088c78d521914edec87de7f11928848c9ac265632c8644fc8
   languageName: node
   linkType: hard
 

@@ -1,10 +1,10 @@
 import { css, html, LitElement, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { Router } from '@lit-labs/router';
+import { customElement, property, state } from 'lit/decorators.js';
 import { consume } from '@lit/context';
+import { Router } from '@vaadin/router';
 import * as data from '../assets/data.json';
 import base from '../baseStyles';
-import { routerContext } from '../router-context';
+import { EtchRoute, routerContext } from '../routes/route-config';
 
 @customElement('nav-bar')
 export class NavBar extends LitElement {
@@ -12,28 +12,38 @@ export class NavBar extends LitElement {
     @consume({ context: routerContext })
     @property({ attribute: false })
     public router?: Router;
-    // @state()
+    protected firstUpdated(): void {
+        window.addEventListener('vaadin-router-location-changed', () => {
+            this.currentUrl = window.location.href;
+        });
+    }
+    @state()
     private currentUrl = window.location.href;
     isRouteSelected(path: string) {
         return this.currentUrl.includes(path);
     }
+
     render() {
         return html`
             <footer>
-                ${(this.router?.routes || [])
-                    .filter((route) => (route as any).menuItem)
-                    .map((route: any) => {
-                        return html` <a
+                ${(this.router?.getRoutes() || [])
+                    .filter((route: EtchRoute) => route.options?.menuItem)
+                    .map((route: EtchRoute) => {
+                        return html`<a
                             class=${'menu-bar-icon ' +
                             (this.isRouteSelected(route.path)
                                 ? 'menu-bar-icon-active'
                                 : 'menu-bar-icon-inactive')}
                             href="${route.path}"
-                            ><feather-icon name=${route.iconName}></feather-icon
-                            >${this.isRouteSelected(route.path)
+                        >
+                            <feather-icon
+                                name=${route.options?.iconName || 'smile'}
+                            >
+                            </feather-icon>
+                            ${this.isRouteSelected(route.path)
                                 ? route.name
-                                : nothing}</a
-                        >`;
+                                : nothing}
+                        </a>`;
                     })}
             </footer>
         `;

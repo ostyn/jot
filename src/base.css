@@ -1,76 +1,76 @@
 .flatpickr-day {
-  height: 48px;
-  line-height: revert;
+    height: 48px;
+    line-height: revert;
 }
 .calendar-event {
-  position: absolute;
-  bottom: 0.125rem;
-  left: 0.75rem;
-  background-color: rgba(96, 165, 250, 1);
-  width: 0.75rem;
-  height: 0.25rem;
-  border-radius: 9999px;
+    position: absolute;
+    bottom: 0.125rem;
+    left: 0.75rem;
+    background-color: rgba(96, 165, 250, 1);
+    width: 0.75rem;
+    height: 0.25rem;
+    border-radius: 9999px;
 }
 ux-dialog-overlay.active {
-  background-color: black;
-  opacity: 0.5 !important;
+    background-color: black;
+    opacity: 0.5 !important;
 }
 dialog {
-  background-color: var(--background-color);
-  color: var(--color);
-  border: none;
+    background-color: var(--background-color);
+    color: var(--color);
+    border: none;
 }
 router-view {
-  display: block;
-  max-width: 36rem;
-  margin: auto;
+    display: block;
+    max-width: 36rem;
+    margin: auto;
 }
 
 :root {
-  --spacing: 0.25rem;
-  --line-height: 1.25;
-  --text-decoration: none;
+    --spacing: 0.25rem;
+    --line-height: 1.25;
+    --text-decoration: none;
 }
 .inline,
 input.inline {
-  display: inline-block;
-  width: auto;
-  margin: 0;
+    display: inline-block;
+    width: auto;
+    margin: 0;
 }
 button {
-  user-select: none;
+    user-select: none;
 }
 section {
-  margin-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
 }
 article:not(dialog article, footer article) {
-  padding: 1rem;
-  margin: 0.5rem;
+    padding: 1rem;
+    margin: 0.5rem;
 }
 ux-dialog-container ux-dialog {
-  left: 0px;
-  right: 0px;
-  top: 33%;
-  width: 100%;
-  position: absolute;
-  padding: 8px;
-  background-color: var(--background-color);
-  border-radius: 0px;
-  min-height: 10rem;
+    left: 0px;
+    right: 0px;
+    top: 33%;
+    width: 100%;
+    position: absolute;
+    padding: 8px;
+    background-color: var(--background-color);
+    border-radius: 0px;
+    min-height: 10rem;
 }
 footer article {
-  margin-top: 0px;
-  margin-bottom: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 header {
-  min-height: 34px;
+    min-height: 34px;
 }
 article {
-  margin-left: auto;
-  margin-right: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 form {
-  margin-bottom: 0;
+    margin-bottom: 0;
 }
 h1,
 h2,
@@ -78,43 +78,43 @@ h3,
 h4,
 h5,
 h6 {
-  margin-bottom: var(--spacing);
-  --font-weight: 600;
-  --font-size: 1rem;
-  --typography-spacing-vertical: 1rem;
+    margin-bottom: var(--spacing);
+    --font-weight: 600;
+    --font-size: 1rem;
+    --typography-spacing-vertical: 1rem;
 }
 section:last-child {
-  margin-bottom: 0px;
+    margin-bottom: 0px;
 }
 body {
-  margin-top: var(--spacing);
-  overscroll-behavior-y: contain;
+    margin-top: var(--spacing);
+    overscroll-behavior-y: contain;
 }
 .footer-nav-bar {
-  height: 3rem;
+    height: 3rem;
 }
 a,
 a:link,
 a:hover,
 a:visited,
 a:active {
-  color: inherit;
+    color: inherit;
 }
 
 .sticky-buttons {
-  position: sticky;
-  bottom: 4.2rem;
-  left: 100vw;
-  display: inline-flex;
-  gap: 8px;
-  margin-right: 8px;
-  flex-flow: column;
+    position: sticky;
+    bottom: 4.2rem;
+    left: 100vw;
+    display: inline-flex;
+    gap: 8px;
+    margin-right: 8px;
+    flex-flow: column;
 }
 .sticky-buttons > button {
-  border-radius: 9999px;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  place-content: center;
-  align-items: center;
+    border-radius: 9999px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    place-content: center;
+    align-items: center;
 }

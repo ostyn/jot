@@ -1,25 +1,27 @@
 {
-  "name": "lit-project",
-  "packageManager": "yarn@4.0.0",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@lit-labs/router": "^0.1.2",
-    "@lit/context": "^1.0.0",
-    "@picocss/pico": "^1.5.10",
-    "feather-icons": "^4.29.1",
-    "lit": "^3.0.0",
-    "urlpattern-polyfill": "^9.0.0"
-  },
-  "devDependencies": {
-    "@types/feather-icons": "^4",
-    "typescript": "^5.2.2",
-    "vite": "^4.5.0"
-  }
+    "name": "lit-project",
+    "packageManager": "yarn@4.0.0",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@lit-labs/router": "^0.1.2",
+        "@lit/context": "^1.0.0",
+        "@picocss/pico": "^1.5.10",
+        "feather-icons": "^4.29.1",
+        "lit": "^3.0.0",
+        "urlpattern-polyfill": "^9.0.0"
+    },
+    "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "^4.2.1",
+        "@types/feather-icons": "^4",
+        "prettier": "^3.0.3",
+        "typescript": "^5.2.2",
+        "vite": "^4.5.0"
+    }
 }

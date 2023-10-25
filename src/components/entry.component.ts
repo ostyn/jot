@@ -1,14 +1,15 @@
-import { LitElement } from 'lit';
+import { html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import feather, { FeatherIconNames } from 'feather-icons';
+import { base } from '../baseStyles';
+import { Entry } from '../interfaces/entry.interface';
 
-@customElement('feather-icon')
-export class FeatherIcon extends LitElement {
+@customElement('entry-component')
+export class EntryComponent extends LitElement {
     @property()
-    name?: FeatherIconNames;
+    public entry: Entry = {} as Entry;
     render() {
-        if (this.name) return unsafeHTML(feather.icons[this.name].toSvg());
-        return;
+        if (!this.entry) return nothing;
+        return html`<div>${this.entry.date} ${this.entry.note}</div>`;
     }
+    static styles = [base];
 }

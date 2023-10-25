@@ -5,8 +5,8 @@ export interface Entry {
     month?: number;
     year?: number;
     lastUpdatedBy?: EditTools;
-    updated?: Date;
-    created?: Date;
+    updated?: string;
+    created?: string;
     id?: string;
     date: string;
     mood: string;

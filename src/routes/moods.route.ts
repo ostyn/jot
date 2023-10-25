@@ -2,10 +2,11 @@ import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import * as data from '../assets/data.json';
 import base from '../baseStyles';
+import { Mood } from '../interfaces/mood.interface';
 
 @customElement('moods-route')
 export class MoodsRoute extends LitElement {
-    moods = data.moods;
+    moods: Mood[] = data.moods as Mood[];
 
     render() {
         return html`<article>

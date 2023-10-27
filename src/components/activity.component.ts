@@ -3,6 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
+import { Helpers } from '../utils/Helpers';
 import './activity-detail.component';
 
 @customElement('activity-component')
@@ -19,13 +20,15 @@ export class ActivityComponent extends LitElement {
             <span>
                 <span title.bind="activity.name" class="emoji">
                     ${this.activity.emoji}
-                    <span
-                        class="activity-detail-number"
-                        if.bind="(isNumeric(detail) && detail != 1) || (isArray(detail) && detail.length > 1)"
-                        >${Array.isArray(this.detail)
-                            ? this.detail.length
-                            : this.detail}</span
-                    >
+                    ${(Helpers.isNumeric(this.detail) && this.detail != 1) ||
+                    (Array.isArray(this.detail) && this.detail.length > 1)
+                        ? html`<span class="activity-detail-number"
+                              >${Array.isArray(this.detail)
+                                  ? this.detail.length
+                                  : this.detail}</span
+                          >`
+                        : nothing}
+
                     <slot></slot>
                 </span>
                 ${this.showName
@@ -39,7 +42,6 @@ export class ActivityComponent extends LitElement {
                       class="activity-detail-list ${!this.isWide()
                           ? 'activity-narrow'
                           : ''}"
-                      if.bind="isArray(detail) && detail.length>0"
                   >
                       ${(this.detail as string[]).map(
                           (textItem) =>

@@ -10,7 +10,7 @@ export interface Entry {
     id?: string;
     date: string;
     mood: string;
-    activities: Map<string, ActivityDetail>;
+    activities: { [key: string]: ActivityDetail };
     note: string;
     createdBy: EditTools;
 }

@@ -9,10 +9,12 @@ import { Entry } from '../interfaces/entry.interface';
 export class EntriesRoute extends LitElement {
     entries: Entry[] = data.entries as unknown as Entry[];
     render() {
-        return html`${this.entries.map(
-            (entry) =>
-                html`<entry-component .entry="${entry}"></entry-component>`
-        )} `;
+        return html`${this.entries
+            .slice(0, 50)
+            .map(
+                (entry) =>
+                    html`<entry-component .entry="${entry}"></entry-component>`
+            )} `;
     }
     static styles = [base];
 }

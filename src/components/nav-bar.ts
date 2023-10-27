@@ -14,13 +14,17 @@ export class NavBar extends LitElement {
     public router?: Router;
     protected firstUpdated(): void {
         window.addEventListener('vaadin-router-location-changed', () => {
-            this.currentUrl = window.location.href;
+            this.currentPath = this.router?.location.pathname;
         });
     }
     @state()
-    private currentUrl = window.location.href;
+    private currentPath = this.router?.location.pathname;
     isRouteSelected(path: string) {
-        return this.currentUrl.includes(path);
+        if (this.currentPath)
+            return (
+                this.currentPath === path ||
+                (this.currentPath === '/' && path === '/entries')
+            );
     }
 
     render() {

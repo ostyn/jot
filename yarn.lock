@@ -881,6 +881,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"etch@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "etch@workspace:."
+  dependencies:
+    "@lit-labs/router": "npm:^0.1.2"
+    "@lit/context": "npm:^1.0.0"
+    "@picocss/pico": "npm:^1.5.10"
+    "@trivago/prettier-plugin-sort-imports": "npm:^4.2.1"
+    "@types/feather-icons": "npm:^4"
+    "@vaadin/router": "npm:^1.7.5"
+    feather-icons: "npm:^4.29.1"
+    lit: "npm:^3.0.0"
+    prettier: "npm:^3.0.3"
+    typescript: "npm:^5.2.2"
+    urlpattern-polyfill: "npm:^9.0.0"
+    vite: "npm:^4.5.0"
+  languageName: unknown
+  linkType: soft
+
 "exponential-backoff@npm:^3.1.1":
   version: 3.1.1
   resolution: "exponential-backoff@npm:3.1.1"
@@ -1185,25 +1204,6 @@ __metadata:
   checksum: 0c23e937137e397f23f33586a323f0ca47b98d4cb8e2b0bc699a818968f10126caba44408f66a33edad84f7a4d8476c68eb9f87f7c84c6340ac1d9315170e08b
   languageName: node
   linkType: hard
-
-"lit-project@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "lit-project@workspace:."
-  dependencies:
-    "@lit-labs/router": "npm:^0.1.2"
-    "@lit/context": "npm:^1.0.0"
-    "@picocss/pico": "npm:^1.5.10"
-    "@trivago/prettier-plugin-sort-imports": "npm:^4.2.1"
-    "@types/feather-icons": "npm:^4"
-    "@vaadin/router": "npm:^1.7.5"
-    feather-icons: "npm:^4.29.1"
-    lit: "npm:^3.0.0"
-    prettier: "npm:^3.0.3"
-    typescript: "npm:^5.2.2"
-    urlpattern-polyfill: "npm:^9.0.0"
-    vite: "npm:^4.5.0"
-  languageName: unknown
-  linkType: soft
 
 "lit@npm:^2.7.5 || ^3.0.0, lit@npm:^3.0.0":
   version: 3.0.0

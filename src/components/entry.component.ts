@@ -11,11 +11,28 @@ import './activity.component';
 @customElement('entry-component')
 export class EntryComponent extends LitElement {
     activities: Activity[] = data.activities as Activity[];
-    moods: Mood[] = data.moods as Mood[];
+    moods: Mood[] = [
+        ...data.moods,
+        {
+            emoji: '🚧',
+            id: '0',
+            rating: 3,
+            name: 'TBD',
+        },
+    ] as Mood[];
     @property()
     public entry: Entry = {} as Entry;
-    connectedCallback() {
-        super.connectedCallback();
+
+    private getActivityById(activityId: string): Activity {
+        return this.activities.find(
+            (activity) => activity.id === activityId
+        ) as Activity;
+    }
+    private getMoodById(moodId: string): Mood {
+        return this.moods.find((mood) => mood.id === moodId) as Mood;
+    }
+    render() {
+        if (!this.entry) return nothing;
         this.entry.activitiesArray = Object.keys(this.entry.activities).sort(
             (a, b) => {
                 let aVal = this.entry.activities[a];
@@ -38,18 +55,6 @@ export class EntryComponent extends LitElement {
                 //TODO add tiebreaker using names
             }
         );
-    }
-
-    private getActivityById(activityId: string): Activity {
-        return this.activities.find(
-            (activity) => activity.id === activityId
-        ) as Activity;
-    }
-    private getMoodById(moodId: string): Mood {
-        return this.moods.find((mood) => mood.id === moodId) as Mood;
-    }
-    render() {
-        if (!this.entry) return nothing;
         return html`<article>
             <section class="entry-header">
                 <hgroup>

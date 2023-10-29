@@ -20,7 +20,7 @@ export class EntriesRoute extends LitElement {
         const currentDay = dayParam ? Number.parseInt(dayParam) : 1;
         const currentMonth = monthParam
             ? Number.parseInt(monthParam) - 1
-            : new Date().getMonth() + 1;
+            : new Date().getMonth();
         const currentYear = yearParam
             ? Number.parseInt(yearParam)
             : new Date().getFullYear();

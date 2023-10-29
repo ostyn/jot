@@ -11,7 +11,7 @@ import { Entry } from '../interfaces/entry.interface';
 export class EntriesRoute extends LitElement {
     @state() currentDate: Date = new Date();
     public router?: Router;
-    entries: Entry[] = data.entries.slice(0, 31) as unknown as Entry[];
+    entries: Entry[] = data.entries as unknown as Entry[];
     onAfterEnter() {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
@@ -26,7 +26,6 @@ export class EntriesRoute extends LitElement {
             : new Date().getFullYear();
 
         this.currentDate = new Date(currentYear, currentMonth, currentDay);
-        console.log(this.currentDate);
     }
     shouldScrollToSelf(entry: Entry) {
         return entry.day === this.currentDate?.getDay();
@@ -43,6 +42,13 @@ export class EntriesRoute extends LitElement {
         Router.go(`entries?${queryParams}`);
     }
     render() {
+        this.entries = data.entries.filter((entry) => {
+            const parts = entry.date.split('-');
+            return (
+                parseInt(parts[0]) == this.currentDate.getFullYear() &&
+                parseInt(parts[1]) == this.currentDate.getMonth() + 1
+            );
+        });
         return html` <section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}

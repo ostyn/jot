@@ -78,6 +78,7 @@ export class MonthControlComponent extends LitElement {
         css`
             :host {
                 display: flex;
+                user-select: none;
             }
             .next-prev-button {
                 cursor: pointer;

@@ -99,8 +99,8 @@ export class ActivityGridComponent extends LitElement {
                           @blur=${() => {
                               this.search = false;
                           }}
-                          @input=${(a) => {
-                              this.searchTerm = a.target.value;
+                          @input=${(e: any) => {
+                              this.searchTerm = e.target.value;
                           }}
                           placeholder="search"
                           type="search"

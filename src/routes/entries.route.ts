@@ -34,6 +34,7 @@ export class EntriesRoute extends LitElement {
         window.scrollTo({ top: 0 });
     }
     onMonthChange(date: Date) {
+        window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
             year: date.getFullYear(),

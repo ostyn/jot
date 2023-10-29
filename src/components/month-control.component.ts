@@ -51,15 +51,12 @@ export class MonthControlComponent extends LitElement {
             <span class="month-header-container">
                 <div class="month-header">
                     <span
-                        class="cursor-pointer select-none"
                         @click=${this.triggerMonthClick}
+                        class="month-header-date"
                         >${this.monthName} ${this.date.getFullYear()}</span
                     >
                     ${this.showStreakMessage && this.stats?.todayInStreak
-                        ? html`<span
-                              class="streak-stats"
-                              if.bind="showStreakMessage && stats.todayInStreak"
-                          >
+                        ? html`<span class="streak-stats">
                               <feather-icon name="trending-up"></feather-icon>
                               ${this.stats?.currentStreak}
                           </span>`
@@ -91,6 +88,9 @@ export class MonthControlComponent extends LitElement {
             .month-header {
                 display: inline-block;
                 position: relative;
+            }
+            .month-header-date {
+                cursor: pointer;
             }
             .streak-stats {
                 position: absolute;

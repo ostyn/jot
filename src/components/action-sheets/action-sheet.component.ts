@@ -9,7 +9,7 @@ export class ActionSheetComponent extends LitElement {
     @state()
     public hideSheet = false;
     @state()
-    public currentSheet: 'mood' | 'other' = 'mood';
+    public currentSheet: 'mood' | 'other' | 'activity' = 'mood';
     @state()
     data?: any;
     @state()
@@ -45,9 +45,13 @@ export class ActionSheetComponent extends LitElement {
         switch (this.currentSheet) {
             case 'mood':
                 return html` <mood-sheet .data=${this.data}></mood-sheet>`;
+            case 'activity':
+                return html`<activity-grid></activity-grid>`;
             case 'other':
                 return html`EWOKS
-                    <button @click=${() => ActionSheetController.close()}>
+                    <button
+                        @click=${() => ActionSheetController.open('activity')}
+                    >
                         close me!
                     </button>`;
         }

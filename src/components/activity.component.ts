@@ -38,7 +38,7 @@ export class ActivityComponent extends LitElement {
                     : nothing}
             </span>
             ${Array.isArray(this.detail) && this.detail.length > 0
-                ? html` <span
+                ? html`<span
                       class="activity-detail-list ${!this.isWide()
                           ? 'activity-narrow'
                           : ''}"

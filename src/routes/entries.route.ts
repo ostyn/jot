@@ -50,7 +50,7 @@ export class EntriesRoute extends LitElement {
                 parseInt(parts[1]) == this.currentDate.getMonth() + 1
             );
         });
-        return html` <section class="month-control-bar">
+        return html`<section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}
                     .onMonthChange=${this.onMonthChange.bind(this)}

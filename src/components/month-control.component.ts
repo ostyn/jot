@@ -43,7 +43,7 @@ export class MonthControlComponent extends LitElement {
     render() {
         this.syncDisplayWithDate();
         this.getStats();
-        return html` <feather-icon
+        return html`<feather-icon
                 class="next-prev-button"
                 @click=${this.prev}
                 name="chevron-left"

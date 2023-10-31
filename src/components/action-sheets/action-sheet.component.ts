@@ -4,16 +4,21 @@ import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
 import './mood.sheet';
 
+export enum SheetTypes {
+    'mood',
+    'activity',
+}
+
 @customElement('action-sheet')
 export class ActionSheetComponent extends LitElement {
     @state()
-    public hideSheet = false;
+    public hideSheet = true;
     @state()
-    public currentSheet: 'mood' | 'other' | 'activity' = 'mood';
+    public currentSheet!: SheetTypes;
     @state()
     data?: any;
     @state()
-    onClose?: any;
+    onClose?: (data: any) => void;
     actionSheetController: ActionSheetController;
     constructor() {
         super();
@@ -26,13 +31,13 @@ export class ActionSheetComponent extends LitElement {
         );
     }
 
-    setSheet(newSheet) {
+    setSheet(newSheet: SheetTypes) {
         this.currentSheet = newSheet;
     }
-    setData(data) {
+    setData(data: any) {
         this.data = data;
     }
-    setOnClose(onClose) {
+    setOnClose(onClose?: (data: any) => void) {
         this.onClose = onClose;
     }
     hide() {
@@ -43,22 +48,21 @@ export class ActionSheetComponent extends LitElement {
     }
     getActionSheet() {
         switch (this.currentSheet) {
-            case 'mood':
-                return html` <mood-sheet .data=${this.data}></mood-sheet>`;
-            case 'activity':
-                return html`<activity-grid></activity-grid>`;
-            case 'other':
-                return html`EWOKS
-                    <button
-                        @click=${() => ActionSheetController.open('activity')}
-                    >
-                        close me!
-                    </button>`;
+            case SheetTypes.mood:
+                return html` <mood-sheet
+                    .onChange=${(moodId: any) =>
+                        setTimeout(() => this.close(moodId), 50)}
+                    currentMoodId=${this.data}
+                ></mood-sheet>`;
+            case SheetTypes.activity:
+                return html`<activity-grid
+                    .onActivityClick=${(activity: any) => this.close(activity)}
+                ></activity-grid>`;
         }
     }
-    close() {
+    close(data: any = undefined) {
         this.hideSheet = true;
-        if (this.onClose) this.onClose();
+        if (this.onClose) this.onClose(data);
     }
     render() {
         if (this.hideSheet) return;

@@ -1,8 +1,10 @@
+import { SheetTypes } from './action-sheet.component';
+
 export class ActionSheetController {
     private static instance: ActionSheetController;
     private setSheet: (newSheet: any) => void;
     private setData: (data: any) => void;
-    private setOnClose: (onClose: any) => void;
+    private setOnClose: (onClose?: (data: any) => void) => void;
     private hide: () => void;
     private show: () => void;
     private constructor(
@@ -21,7 +23,7 @@ export class ActionSheetController {
     public static init(
         setSheet: (newSheet: any) => void,
         setData: (data: any) => void,
-        setOnClose: (onClose: any) => void,
+        setOnClose: (onClose: (data: any) => void) => void,
         hide: () => void,
         show: () => void
     ) {
@@ -35,10 +37,14 @@ export class ActionSheetController {
             );
         return ActionSheetController.instance;
     }
-    public static open(type, data = null, onClose = null) {
-        this.instance.setData(data);
-        this.instance.setOnClose(onClose);
-        this.instance.setSheet(type);
+    public static open(options: {
+        type: SheetTypes;
+        data?: any;
+        onClose?: (data: any) => void;
+    }) {
+        this.instance.setData(options?.data);
+        this.instance.setOnClose(options?.onClose);
+        this.instance.setSheet(options.type);
         this.instance.show();
     }
     public static close() {

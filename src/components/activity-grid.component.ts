@@ -9,7 +9,7 @@ import './activity.component';
 export class ActivityGridComponent extends LitElement {
     @property() activityDetailSet = () => {};
     @property() activityDetailClear = () => {};
-    @property() onActivityClick = () => {};
+    @property() onActivityClick?: (activity: Activity) => void;
     @property() onActivityLongClick = () => {};
     @property()
     activities = data.activities as Activity[];
@@ -160,7 +160,10 @@ export class ActivityGridComponent extends LitElement {
                                 return html`<activity-component
                                     .activity=${activity}
                                     .showName=${true}
-                                    click.trigger="activityClick($event,activity)"
+                                    @click=${() => {
+                                        if (this.onActivityClick)
+                                            this.onActivityClick(activity);
+                                    }}
                                     long-click.trigger="activityLongClick($event, activity)"
                                     detail.bind="modCount?selectedActivityInfo.get(activity.id):undefined"
                                     class="clickable ${activity.isArchived

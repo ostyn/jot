@@ -117,11 +117,12 @@ export class ActionSheetComponent extends LitElement {
                 display: none;
             }
             .centered-container {
-                max-width: 700px;
+                max-width: 36rem;
                 margin-left: auto;
                 margin-right: auto;
             }
             .content {
+                filter: drop-shadow(0 -0.25rem 0.5rem rgba(0, 0, 0, 0.5));
                 min-height: 50vh;
                 margin-top: 0px;
                 margin-bottom: 0px;

@@ -98,7 +98,7 @@ a:active {
 .sticky-buttons {
     position: sticky;
     bottom: 4.2rem;
-    left: 100vw;
+    left: 73vw;
     display: inline-flex;
     gap: 8px;
     margin-right: 8px;

@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { animate } from '@lit-labs/motion';
 import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
 import './mood.sheet';
@@ -66,9 +67,31 @@ export class ActionSheetComponent extends LitElement {
     }
     render() {
         if (this.hideSheet) return;
-        return html`<div class="popup">
-            <div class="spacer" @click=${this.close}></div>
-            <div class="centered-container">
+        return html`<div
+            class="popup"
+            @click=${this.hide}
+            ${animate({
+                in: [
+                    {
+                        transform: 'translateY(100%)',
+                        opacity: 0,
+                    },
+                ],
+                out: [
+                    {
+                        transform: 'translateY(100%)',
+                        opacity: 0,
+                    },
+                ],
+            })}
+        >
+            <div class="spacer"></div>
+            <div
+                class="centered-container"
+                @click=${(e: Event) => {
+                    e.stopImmediatePropagation();
+                }}
+            >
                 <article class="content">${this.getActionSheet()}</article>
             </div>
         </div>`;
@@ -102,9 +125,9 @@ export class ActionSheetComponent extends LitElement {
             .content {
                 min-height: 50vh;
                 margin-top: 0px;
+                margin-bottom: 0px;
             }
             .spacer {
-                background-color: rgba(0, 0, 0, 0.4);
                 min-height: 50vh;
             }
         `,

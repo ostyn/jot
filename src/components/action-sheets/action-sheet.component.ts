@@ -51,8 +51,7 @@ export class ActionSheetComponent extends LitElement {
         switch (this.currentSheet) {
             case SheetTypes.mood:
                 return html` <mood-sheet
-                    .onChange=${(moodId: any) =>
-                        setTimeout(() => this.close(moodId), 50)}
+                    .onChange=${(moodId: any) => this.close(moodId)}
                     currentMoodId=${this.data}
                 ></mood-sheet>`;
             case SheetTypes.activity:

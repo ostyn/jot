@@ -8,10 +8,10 @@
         />
         <script>
             if (!globalThis.URLPattern) {
-                import('/node_modules/urlpattern-polyfill');
+                import('/node_modules/urlpattern-polyfill/index.js');
             }
-            import('/src/etch-app.ts');
         </script>
+        <script type="module" src="/src/etch-app.ts"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Etch</title>
     </head>

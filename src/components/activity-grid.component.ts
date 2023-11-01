@@ -68,7 +68,7 @@ export class ActivityGridComponent extends LitElement {
                 this.categoryToActivityList.set(category, currentCategoryList);
             }
         });
-        this.categoryToActivityList.forEach((val: Activity[], key) => {
+        this.categoryToActivityList.forEach((val: Activity[]) => {
             val.sort(
                 (a, b) =>
                     this.getActivityCount(b.id) - this.getActivityCount(a.id)
@@ -77,7 +77,7 @@ export class ActivityGridComponent extends LitElement {
     }
     //TODO StatsService
     getActivityCount(activityId: string) {
-        return 5;
+        return activityId ? 5 : 4;
     }
     toggleShowArchived() {
         this.filterArchived = !this.filterArchived;

@@ -18,7 +18,7 @@ export class MoodSheet extends LitElement {
     @property()
     currentMoodId?: string = undefined;
     @property()
-    onChange = (a: any) => {};
+    onChange!: (a: any) => {};
     render() {
         return html` <div class="mood-container">
             ${this.moods.map((mood) => {
@@ -35,7 +35,7 @@ export class MoodSheet extends LitElement {
                         value=${mood.id}
                         ?checked=${this.currentMoodId === mood.id}
                         @change=${(e: Event) => {
-                            this.currentMoodId = e.target.value;
+                            this.currentMoodId = (e.target as any).value;
                             this.onChange(this.currentMoodId);
                         }}
                     />

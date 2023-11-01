@@ -55,6 +55,7 @@ export class MoodsSheet extends LitElement {
             }
             .mood-container {
                 display: flex;
+                flex-wrap: wrap;
                 place-content: center;
                 height: 100%;
                 align-items: center;

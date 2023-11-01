@@ -1,3 +1,4 @@
+import { LitElement } from 'lit';
 import { SettingState } from '../stores/settings.store';
 
 export class Helpers {
@@ -15,4 +16,18 @@ export class Helpers {
             state.isDark ? 'dark' : 'light'
         );
     };
+}
+export const dispatchEvent = function (
+    element: LitElement,
+    event: Events,
+    data: any
+) {
+    element.dispatchEvent(
+        new CustomEvent(event.toString(), {
+            detail: data,
+        })
+    );
+};
+export enum Events {
+    monthChange = 'monthChange',
 }

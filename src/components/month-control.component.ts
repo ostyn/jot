@@ -2,6 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { addMonths, format } from 'date-fns';
 import { base } from '../baseStyles';
+import { dispatchEvent, Events } from '../utils/Helpers';
 
 @customElement('month-control')
 export class MonthControlComponent extends LitElement {
@@ -37,11 +38,7 @@ export class MonthControlComponent extends LitElement {
         this.stats = undefined; //this.statsService.getStreakSummary(); TODO Fix Stats
     };
     private dispatchMonthChangedEvent(newDate: Date) {
-        this.dispatchEvent(
-            new CustomEvent('month-changed', {
-                detail: newDate,
-            })
-        );
+        dispatchEvent(this, Events.monthChange, newDate);
     }
     render() {
         this.syncDisplayWithDate();

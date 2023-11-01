@@ -1,8 +1,9 @@
 import { createStore } from 'zustand/vanilla';
-import * as data from '../assets/data.json';
 import { Mood } from '../interfaces/mood.interface';
 
-const moodsData: Mood[] = data.moods as Mood[];
+const data = await (await fetch('./data.json')).json();
+
+const moodsData: Mood[] = data.moods;
 
 export interface MoodsState {
     all: () => Mood[];

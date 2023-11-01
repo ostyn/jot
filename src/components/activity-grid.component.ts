@@ -1,8 +1,8 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import * as data from '../assets/data.json';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
+import { activities } from '../stores/activities.store';
 import './activity.component';
 
 @customElement('activity-grid')
@@ -11,8 +11,6 @@ export class ActivityGridComponent extends LitElement {
     @property() activityDetailClear = () => {};
     @property() onActivityClick?: (activity: Activity) => void;
     @property() onActivityLongClick = () => {};
-    @property()
-    activities = data.activities as Activity[];
     @state()
     private searchTerm = '';
     @property()
@@ -34,7 +32,7 @@ export class ActivityGridComponent extends LitElement {
     }
     activitiesChanged() {
         this.categoryToActivityList = new Map();
-        this.activities.forEach((activity: Activity) => {
+        activities.getState().all.forEach((activity: Activity) => {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&

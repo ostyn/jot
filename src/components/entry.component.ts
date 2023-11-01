@@ -1,35 +1,29 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import * as data from '../assets/data.json';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
+import { activities } from '../stores/activities.store';
+import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
 import './activity.component';
 
 @customElement('entry-component')
 export class EntryComponent extends LitElement {
-    activities: Activity[] = data.activities as Activity[];
-    moods: Mood[] = [
-        ...data.moods,
-        {
-            emoji: '🚧',
-            id: '0',
-            rating: 3,
-            name: 'TBD',
-        },
-    ] as Mood[];
     @property()
     public entry: Entry = {} as Entry;
 
     private getActivityById(activityId: string): Activity {
-        return this.activities.find(
-            (activity) => activity.id === activityId
-        ) as Activity;
+        return activities
+            .getState()
+            .all.find((activity) => activity.id === activityId) as Activity;
     }
     private getMoodById(moodId: string): Mood {
-        return this.moods.find((mood) => mood.id === moodId) as Mood;
+        return moods
+            .getState()
+            .all()
+            .find((mood) => mood.id === moodId) as Mood;
     }
     render() {
         if (!this.entry) return nothing;

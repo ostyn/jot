@@ -2,13 +2,11 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { consume } from '@lit/context';
 import { Router } from '@vaadin/router';
-import * as data from '../assets/data.json';
 import { base } from '../baseStyles';
 import { EtchRoute, routerContext } from '../routes/route-config';
 
 @customElement('nav-bar')
 export class NavBar extends LitElement {
-    moods = data.moods;
     @consume({ context: routerContext })
     @property({ attribute: false })
     public router?: Router;

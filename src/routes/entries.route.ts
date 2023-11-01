@@ -1,17 +1,16 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
-import * as data from '../assets/data.json';
 import { base } from '../baseStyles';
 import '../components/entry.component';
 import '../components/month-control.component';
 import { Entry } from '../interfaces/entry.interface';
+import { entries } from '../stores/entries.store';
 
 @customElement('entries-route')
 export class EntriesRoute extends LitElement {
     @state() currentDate: Date = new Date();
     public router?: Router;
-    entries: Entry[] = data.entries as unknown as Entry[];
     onAfterEnter() {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
@@ -44,7 +43,7 @@ export class EntriesRoute extends LitElement {
         Router.go(`entries?${queryParams}`);
     }
     render() {
-        this.entries = (data.entries as unknown as Entry[]).filter((entry) => {
+        const filteredEntries = entries.getState().all.filter((entry) => {
             const parts = entry.date.split('-');
             return (
                 parseInt(parts[0]) == this.currentDate.getFullYear() &&
@@ -59,7 +58,7 @@ export class EntriesRoute extends LitElement {
                 ></month-control>
             </section>
             <section>
-                ${this.entries.map(
+                ${filteredEntries.map(
                     (entry) =>
                         html`<entry-component
                             .entry="${entry}"

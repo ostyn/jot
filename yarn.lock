@@ -921,11 +921,12 @@ __metadata:
     "@vaadin/router": "npm:^1.7.5"
     date-fns: "npm:^2.30.0"
     feather-icons: "npm:^4.29.1"
-    lit: "npm:^3.0.0"
+    lit: "npm:^3.0.1"
     prettier: "npm:^3.0.3"
     typescript: "npm:^5.2.2"
     urlpattern-polyfill: "npm:^9.0.0"
     vite: "npm:^4.5.0"
+    zustand: "npm:^4.4.5"
   languageName: unknown
   linkType: soft
 
@@ -1234,7 +1235,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lit@npm:^2.0.0 || ^3.0.0":
+"lit@npm:^2.0.0 || ^3.0.0, lit@npm:^3.0.1":
   version: 3.0.1
   resolution: "lit@npm:3.0.1"
   dependencies:
@@ -1867,6 +1868,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"use-sync-external-store@npm:1.2.0":
+  version: 1.2.0
+  resolution: "use-sync-external-store@npm:1.2.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: ac4814e5592524f242921157e791b022efe36e451fe0d4fd4d204322d5433a4fc300d63b0ade5185f8e0735ded044c70bcf6d2352db0f74d097a238cebd2da02
+  languageName: node
+  linkType: hard
+
 "util-deprecate@npm:^1.0.1":
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
@@ -1967,5 +1977,25 @@ __metadata:
   version: 4.0.0
   resolution: "yallist@npm:4.0.0"
   checksum: 2286b5e8dbfe22204ab66e2ef5cc9bbb1e55dfc873bbe0d568aa943eb255d131890dfd5bf243637273d31119b870f49c18fcde2c6ffbb7a7a092b870dc90625a
+  languageName: node
+  linkType: hard
+
+"zustand@npm:^4.4.5":
+  version: 4.4.5
+  resolution: "zustand@npm:4.4.5"
+  dependencies:
+    use-sync-external-store: "npm:1.2.0"
+  peerDependencies:
+    "@types/react": ">=16.8"
+    immer: ">=9.0"
+    react: ">=16.8"
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    immer:
+      optional: true
+    react:
+      optional: true
+  checksum: be814901cfce7893479336c9731fad98ec8b307f18f969ffc26f9803481e10e0d856ab7e1be0e5a5df211c79667dd04e8ecaef5e59d1f98dc3327dc08242e64b
   languageName: node
   linkType: hard

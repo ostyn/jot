@@ -9,10 +9,7 @@ import { SheetTypes } from './components/action-sheets/action-sheet.component';
 import './components/feather-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
-import {
-    localSettingsService,
-    LocalSettingsService,
-} from './services/localSettingsService';
+import { Stores, storesContext } from './stores/settings.store';
 
 @customElement('etch-app')
 export class EtchApp extends LitElement {
@@ -22,9 +19,8 @@ export class EtchApp extends LitElement {
     hide: boolean = false;
     @provide({ context: routerContext })
     private router: Router = new Router();
-    @provide({ context: localSettingsService })
-    public localSettingsService: LocalSettingsService =
-        new LocalSettingsService();
+    @provide({ context: storesContext })
+    public stores: Stores = new Stores();
     protected firstUpdated(): void {
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);

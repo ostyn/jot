@@ -17,8 +17,9 @@
         "@vaadin/router": "^1.7.5",
         "date-fns": "^2.30.0",
         "feather-icons": "^4.29.1",
-        "lit": "^3.0.0",
-        "urlpattern-polyfill": "^9.0.0"
+        "lit": "^3.0.1",
+        "urlpattern-polyfill": "^9.0.0",
+        "zustand": "^4.4.5"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^4.2.1",

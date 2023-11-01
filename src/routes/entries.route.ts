@@ -33,7 +33,8 @@ export class EntriesRoute extends LitElement {
     onMonthClick() {
         window.scrollTo({ top: 0 });
     }
-    onMonthChange(date: Date) {
+    onMonthChange(e: CustomEvent) {
+        const date: Date = e.detail;
         window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
@@ -53,7 +54,7 @@ export class EntriesRoute extends LitElement {
         return html`<section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}
-                    .onMonthChange=${this.onMonthChange.bind(this)}
+                    @month-changed=${this.onMonthChange}
                     .onMonthClick=${this.onMonthClick.bind(this)}
                 ></month-control>
             </section>

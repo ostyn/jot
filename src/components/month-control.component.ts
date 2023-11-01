@@ -5,7 +5,6 @@ import { base } from '../baseStyles';
 
 @customElement('month-control')
 export class MonthControlComponent extends LitElement {
-    @property() onMonthChange?: (a: Date) => void;
     @property() onMonthClick = () => {};
     @property({ attribute: false }) date: Date = new Date();
     public monthName?: string;
@@ -25,11 +24,11 @@ export class MonthControlComponent extends LitElement {
     }
     prev() {
         this.date = addMonths(this.date, -1);
-        this.fireMonthChangeCallback(this.date);
+        this.dispatchMonthChangedEvent(this.date);
     }
     next() {
         this.date = addMonths(this.date, 1);
-        this.fireMonthChangeCallback(this.date);
+        this.dispatchMonthChangedEvent(this.date);
     }
     triggerMonthClick() {
         if (this.onMonthClick) this.onMonthClick();
@@ -37,8 +36,12 @@ export class MonthControlComponent extends LitElement {
     getStats = () => {
         this.stats = undefined; //this.statsService.getStreakSummary(); TODO Fix Stats
     };
-    private fireMonthChangeCallback(newDate: Date) {
-        if (this.onMonthChange) this.onMonthChange(newDate);
+    private dispatchMonthChangedEvent(newDate: Date) {
+        this.dispatchEvent(
+            new CustomEvent('month-changed', {
+                detail: newDate,
+            })
+        );
     }
     render() {
         this.syncDisplayWithDate();

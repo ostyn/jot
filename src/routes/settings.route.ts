@@ -1,35 +1,28 @@
 import { html, LitElement } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
-import { consume } from '@lit/context';
+import { customElement, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
-import { Stores, storesContext } from '../stores/settings.store';
+import { settings } from '../stores/settings.store';
 
 @customElement('settings-route')
 export class SettingsRoute extends LitElement {
-    @consume({ context: storesContext })
-    @property({ attribute: false })
-    stores!: Stores;
     @state()
-    settings?: any;
+    settings: any = settings.getState();
     sub: any;
 
     firstUpdated() {
-        this.settings = this.stores.settings.getState();
-        this.sub = this.stores.settings.subscribe(
-            (state) => (this.settings = state)
-        );
+        settings.subscribe((state) => (this.settings = state));
     }
 
     render() {
         return html`<article>
             <label class="inline"
                 ><input
-                    .checked=${this.settings?.isDark}
+                    .checked=${this.settings.isDark}
                     type="checkbox"
                     role="switch"
                     @change=${() => this.settings.toggleDarkMode()}
                 />
-                ${this.settings?.isDark ? 'Dark' : 'Light'} Mode
+                ${this.settings.isDark ? 'Dark' : 'Light'} Mode
             </label>
         </article>`;
     }

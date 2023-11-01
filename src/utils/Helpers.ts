@@ -1,3 +1,5 @@
+import { SettingState } from '../stores/settings.store';
+
 export class Helpers {
     public static isNumeric(str: any) {
         if (typeof str == 'number') return true;
@@ -7,4 +9,10 @@ export class Helpers {
             !isNaN(parseFloat(str))
         ); // ...and ensure strings of whitespace fail
     }
+    public static setDarkModeFromState = (state: SettingState) => {
+        document.documentElement.setAttribute(
+            'data-theme',
+            state.isDark ? 'dark' : 'light'
+        );
+    };
 }

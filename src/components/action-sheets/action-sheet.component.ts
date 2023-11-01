@@ -3,7 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
-import './mood.sheet';
+import './moods.sheet';
 
 export enum SheetTypes {
     'mood',
@@ -50,10 +50,10 @@ export class ActionSheetComponent extends LitElement {
     getActionSheet() {
         switch (this.currentSheet) {
             case SheetTypes.mood:
-                return html` <mood-sheet
+                return html` <moods-sheet
                     .onChange=${(moodId: any) => this.close(moodId)}
                     currentMoodId=${this.data}
-                ></mood-sheet>`;
+                ></moods-sheet>`;
             case SheetTypes.activity:
                 return html`<activity-grid
                     .onActivityClick=${(activity: any) => this.close(activity)}

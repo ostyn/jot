@@ -6,7 +6,6 @@ import { dispatchEvent, Events } from '../utils/Helpers';
 
 @customElement('month-control')
 export class MonthControlComponent extends LitElement {
-    @property() onMonthClick = () => {};
     @property({ attribute: false }) date: Date = new Date();
     public monthName?: string;
     showStreakMessage: boolean = false;
@@ -32,7 +31,7 @@ export class MonthControlComponent extends LitElement {
         this.dispatchMonthChangedEvent(this.date);
     }
     triggerMonthClick() {
-        if (this.onMonthClick) this.onMonthClick();
+        dispatchEvent(this, Events.monthClick);
     }
     getStats = () => {
         this.stats = undefined; //this.statsService.getStreakSummary(); TODO Fix Stats

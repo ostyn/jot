@@ -20,7 +20,7 @@ export class Helpers {
 export const dispatchEvent = function (
     element: LitElement,
     event: Events,
-    data: any
+    data: any = undefined
 ) {
     element.dispatchEvent(
         new CustomEvent(event.toString(), {
@@ -30,4 +30,5 @@ export const dispatchEvent = function (
 };
 export enum Events {
     monthChange = 'monthChange',
+    monthClick = 'monthClick',
 }

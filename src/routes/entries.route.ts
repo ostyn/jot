@@ -55,7 +55,7 @@ export class EntriesRoute extends LitElement {
                 <month-control
                     .date=${this.currentDate}
                     @monthChange=${this.onMonthChange}
-                    .onMonthClick=${this.onMonthClick.bind(this)}
+                    @monthClick=${this.onMonthClick}
                 ></month-control>
             </section>
             <section>

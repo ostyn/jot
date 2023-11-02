@@ -4,7 +4,9 @@ import { FeatherIconNames } from 'feather-icons';
 import './activities.route';
 import './entries.route';
 import './entry.route';
+import './import.route';
 import './moods.route';
+import './search.route';
 import './settings.route';
 
 export const routerContext = createContext<Router>('router');
@@ -43,6 +45,16 @@ export const routes: Route[] = [
         component: 'settings-route',
         name: 'settings',
         options: { menuItem: true, iconName: 'settings' },
+    },
+    {
+        path: '/import',
+        component: 'import-route',
+        name: 'import',
+    },
+    {
+        path: '/search',
+        component: 'search-route',
+        name: 'search',
     },
 ] as EtchRoute[];
 export type EtchRoute = Route & {

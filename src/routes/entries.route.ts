@@ -71,14 +71,11 @@ export class EntriesRoute extends LitElement {
             <div class="sticky-buttons">
                 <button
                     class="inline contrast"
-                    click.trigger="router.navigateToRoute('search')"
+                    @click=${() => Router.go('search')}
                 >
                     <feather-icon name="search"></feather-icon>
                 </button>
-                <button
-                    class="inline"
-                    click.trigger="router.navigateToRoute('entry')"
-                >
+                <button class="inline" @click=${() => Router.go('entry')}>
                     <feather-icon name="edit-3"></feather-icon>
                 </button>
             </div>`;

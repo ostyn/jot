@@ -2,7 +2,8 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
-import { activities } from '../stores/activities.store';
+import { activities, ActivitiesState } from '../stores/activities.store';
+import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('activity-grid')
@@ -26,13 +27,20 @@ export class ActivityGridComponent extends LitElement {
     @state()
     groupActivities: boolean = true;
     categoryToActivityList: Map<string, Activity[]> = new Map();
-
+    @state()
+    activities: Activity[] = activities.getState().all;
+    firstUpdated() {
+        activities.subscribe((state) => {
+            this.activities = state.all;
+            this.render();
+        });
+    }
     getSortedHeaders() {
         return Array.from(this.categoryToActivityList.keys()).sort();
     }
     activitiesChanged() {
         this.categoryToActivityList = new Map();
-        activities.getState().all.forEach((activity: Activity) => {
+        this.activities.forEach((activity: Activity) => {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&
@@ -174,13 +182,22 @@ export class ActivityGridComponent extends LitElement {
                                 ></activity-component>`;
                             }
                         )}
-                        <span click.trigger="createNewActivity(header)">
+                        <span
+                            class="newButton"
+                            @click=${() => this.createNewActivity(header)}
+                        >
                             <feather-icon name="plus-circle"></feather-icon>
                         </span>
                     </article>
                 `
             )}
         `;
+    }
+    public createNewActivity(category: string) {
+        ActionSheetController.open({
+            type: 'activityEdit',
+            data: { category },
+        });
     }
     static styles = [
         base,
@@ -216,6 +233,11 @@ export class ActivityGridComponent extends LitElement {
             activity.selected-item {
                 border: var(--primary) 1px solid;
                 border-radius: 12px;
+            }
+            .newButton {
+                vertical-align: middle;
+                vertical-align: -webkit-baseline-middle;
+                cursor: pointer;
             }
         `,
     ];

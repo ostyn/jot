@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
+import { ActivityEditSheet } from './activity-edit.sheet';
 import { ActivitySheet } from './activity.sheet';
 import './mood-edit-sheet';
 import { MoodEditSheet } from './mood-edit-sheet';
@@ -13,6 +14,7 @@ const SheetMapping = {
     ['mood']: MoodsSheet,
     ['activity']: ActivitySheet,
     ['moodEdit']: MoodEditSheet,
+    ['activityEdit']: ActivityEditSheet,
 };
 export type SheetType = keyof typeof SheetMapping;
 

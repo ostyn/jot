@@ -1,4 +1,4 @@
-import { html, LitElement, nothing } from 'lit';
+import { html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
 import { Mood } from '../../interfaces/mood.interface';
@@ -26,6 +26,20 @@ export class MoodEditSheet extends LitElement {
         if (this.localMood.id) moods.getState().updateMood(this.localMood);
         else moods.getState().addMood(this.localMood);
         dispatchEvent(this, Events.moodSubmitted);
+    }
+    static getActionSheet(
+        data: any,
+        submit: (data: any) => void,
+        dismiss: () => void
+    ): TemplateResult {
+        return html`${data.id
+                ? html`<header>Edit Mood</header>`
+                : html`<header>New Mood</header>`}
+            <mood-edit-sheet
+                @moodDeleted=${dismiss}
+                @moodSubmitted=${submit}
+                .mood=${data}
+            ></mood-edit-sheet>`;
     }
     render() {
         return html`<form action="#">

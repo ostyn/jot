@@ -2,7 +2,6 @@ import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
-import { SheetTypes } from '../components/action-sheets/action-sheet.component';
 import { Mood } from '../interfaces/mood.interface';
 import { moods } from '../stores/moods.store';
 
@@ -18,7 +17,7 @@ export class MoodsRoute extends LitElement {
     }
     moodSelected(mood?: Mood) {
         ActionSheetController.open({
-            type: SheetTypes.moodEdit,
+            type: 'moodEdit',
             data: mood || {},
         });
     }

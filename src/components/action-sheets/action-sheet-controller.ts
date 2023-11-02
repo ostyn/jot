@@ -1,4 +1,4 @@
-import { SheetTypes } from './action-sheet.component';
+import { SheetType } from './action-sheet.component';
 
 export class ActionSheetController {
     private static instance: ActionSheetController;
@@ -43,7 +43,7 @@ export class ActionSheetController {
         return ActionSheetController.instance;
     }
     public static open(options: {
-        type: SheetTypes;
+        type: SheetType;
         data?: any;
         onSubmit?: (data: any) => void;
         onDismiss?: () => void;

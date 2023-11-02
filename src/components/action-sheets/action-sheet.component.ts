@@ -3,21 +3,25 @@ import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
+import { ActivitySheet } from './activity.sheet';
 import './mood-edit-sheet';
+import { MoodEditSheet } from './mood-edit-sheet';
 import './moods.sheet';
+import { MoodsSheet } from './moods.sheet';
 
-export enum SheetTypes {
-    'mood',
-    'activity',
-    'moodEdit',
-}
+const SheetMapping = {
+    ['mood']: MoodsSheet,
+    ['activity']: ActivitySheet,
+    ['moodEdit']: MoodEditSheet,
+};
+export type SheetType = keyof typeof SheetMapping;
 
 @customElement('action-sheet')
 export class ActionSheetComponent extends LitElement {
     @state()
     public hideSheet = true;
     @state()
-    public currentSheet!: SheetTypes;
+    public currentSheet!: SheetType;
     @state()
     data?: any;
     @state()
@@ -37,7 +41,7 @@ export class ActionSheetComponent extends LitElement {
         );
     }
 
-    setSheet(newSheet: SheetTypes) {
+    setSheet(newSheet: SheetType) {
         this.currentSheet = newSheet;
     }
     setData(data: any) {
@@ -56,27 +60,11 @@ export class ActionSheetComponent extends LitElement {
         this.hideSheet = false;
     }
     getActionSheet() {
-        switch (this.currentSheet) {
-            case SheetTypes.mood:
-                return html` <moods-sheet
-                    .onChange=${(moodId: any) => this.submit(moodId)}
-                    currentMoodId=${this.data}
-                ></moods-sheet>`;
-            case SheetTypes.activity:
-                return html`<activity-grid
-                    .onActivityClick=${(activity: any) => this.submit(activity)}
-                ></activity-grid>`;
-            case SheetTypes.moodEdit:
-                return html`${this.data.id
-                        ? html`<header>Edit Mood</header>`
-                        : html`<header>New Mood</header>`}
-
-                    <mood-edit-sheet
-                        @moodDeleted=${this.hide}
-                        @moodSubmitted=${this.hide}
-                        .mood=${this.data}
-                    ></mood-edit-sheet>`;
-        }
+        return SheetMapping[this.currentSheet].getActionSheet(
+            this.data,
+            this.submit.bind(this),
+            this.dismiss.bind(this)
+        );
     }
     submit(data: any = undefined) {
         this.hideSheet = true;

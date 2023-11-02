@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
 import { moods } from '../../stores/moods.store';
@@ -9,6 +9,18 @@ export class MoodsSheet extends LitElement {
     currentMoodId?: string = undefined;
     @property()
     onChange!: (a: any) => {};
+
+    static getActionSheet(
+        data: any,
+        submit: (data: any) => void,
+        dismiss: () => void
+    ): TemplateResult {
+        return html`<header>Select a Mood</header>
+            <moods-sheet
+                .onChange=${(moodId: any) => submit(moodId)}
+                currentMoodId=${data}
+            ></moods-sheet>`;
+    }
     render() {
         return html`<div class="mood-container">
             ${moods

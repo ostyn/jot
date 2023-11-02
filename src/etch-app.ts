@@ -3,9 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { provide } from '@lit/context';
 import { Router } from '@vaadin/router';
 import { base } from './baseStyles';
-import { ActionSheetController } from './components/action-sheets/action-sheet-controller';
 import './components/action-sheets/action-sheet.component';
-import { SheetTypes } from './components/action-sheets/action-sheet.component';
 import './components/feather-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
@@ -29,25 +27,6 @@ export class EtchApp extends LitElement {
 
     render() {
         return html`
-            <button
-                @click=${() =>
-                    ActionSheetController.open({
-                        type: SheetTypes.activity,
-                        onClose: console.log,
-                    })}
-            >
-                EWOKS
-            </button>
-            <button
-                @click=${() =>
-                    ActionSheetController.open({
-                        type: SheetTypes.mood,
-                        data: '0',
-                        onClose: console.log,
-                    })}
-            >
-                mood
-            </button>
             <main>
                 <div id="outlet"></div>
             </main>

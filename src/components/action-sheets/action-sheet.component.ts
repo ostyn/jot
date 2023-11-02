@@ -1,13 +1,15 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { base } from '../../baseStyles';
 import { ActionSheetController } from './action-sheet-controller';
+import './mood-edit-sheet';
 import './moods.sheet';
 
 export enum SheetTypes {
     'mood',
     'activity',
+    'moodEdit',
 }
 
 @customElement('action-sheet')
@@ -19,14 +21,17 @@ export class ActionSheetComponent extends LitElement {
     @state()
     data?: any;
     @state()
-    onClose?: (data: any) => void;
+    onSubmit?: (data: any) => void;
+    @state()
+    onDismiss?: () => void;
     actionSheetController: ActionSheetController;
     constructor() {
         super();
         this.actionSheetController = ActionSheetController.init(
             this.setSheet.bind(this),
             this.setData.bind(this),
-            this.setOnClose.bind(this),
+            this.setOnSubmit.bind(this),
+            this.setOnDismiss.bind(this),
             this.hide.bind(this),
             this.show.bind(this)
         );
@@ -38,11 +43,14 @@ export class ActionSheetComponent extends LitElement {
     setData(data: any) {
         this.data = data;
     }
-    setOnClose(onClose?: (data: any) => void) {
-        this.onClose = onClose;
+    setOnSubmit(onSubmit?: (data: any) => void) {
+        this.onSubmit = onSubmit;
+    }
+    setOnDismiss(onDismiss?: () => void) {
+        this.onDismiss = onDismiss;
     }
     hide() {
-        this.close();
+        this.hideSheet = true;
     }
     show() {
         this.hideSheet = false;
@@ -51,24 +59,34 @@ export class ActionSheetComponent extends LitElement {
         switch (this.currentSheet) {
             case SheetTypes.mood:
                 return html` <moods-sheet
-                    .onChange=${(moodId: any) => this.close(moodId)}
+                    .onChange=${(moodId: any) => this.submit(moodId)}
                     currentMoodId=${this.data}
                 ></moods-sheet>`;
             case SheetTypes.activity:
                 return html`<activity-grid
-                    .onActivityClick=${(activity: any) => this.close(activity)}
+                    .onActivityClick=${(activity: any) => this.submit(activity)}
                 ></activity-grid>`;
+            case SheetTypes.moodEdit:
+                return html`<mood-edit-sheet
+                    @moodDeleted=${this.hide}
+                    @moodSubmitted=${this.hide}
+                    .mood=${this.data}
+                ></mood-edit-sheet>`;
         }
     }
-    close(data: any = undefined) {
+    submit(data: any = undefined) {
         this.hideSheet = true;
-        if (this.onClose) this.onClose(data);
+        if (this.onSubmit) this.onSubmit(data);
+    }
+    dismiss() {
+        this.hideSheet = true;
+        if (this.onDismiss) this.onDismiss();
     }
     render() {
-        if (this.hideSheet) return;
+        if (this.hideSheet) return nothing;
         return html`<div
             class="popup"
-            @click=${this.hide}
+            @click=${this.dismiss}
             ${animate({
                 in: [
                     {

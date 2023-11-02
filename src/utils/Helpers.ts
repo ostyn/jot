@@ -31,4 +31,6 @@ export const dispatchEvent = function (
 export enum Events {
     monthChange = 'monthChange',
     monthClick = 'monthClick',
+    moodDeleted = 'moodDeleted',
+    moodSubmitted = 'moodSubmitted',
 }

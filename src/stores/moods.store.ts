@@ -9,7 +9,9 @@ export interface MoodsState {
     all: () => Mood[];
     userCreated: Mood[];
     default: Mood[];
-    addMood: (mood?: Mood) => void;
+    addMood: (mood: Mood) => void;
+    updateMood: (mood: Mood) => void;
+    removeMood: (id: string) => void;
 }
 let x = 1;
 export const moods = createStore<MoodsState>((set, get) => ({
@@ -23,15 +25,26 @@ export const moods = createStore<MoodsState>((set, get) => ({
         },
     ],
     all: () => [...get().userCreated, ...get().default],
-    addMood: (
-        mood: Mood = {
-            emoji: '💾',
-            id: x++ + '',
-            rating: '3',
-            name: 'TBD',
-        }
-    ) =>
+    addMood: (mood: Mood) =>
         set((state) => ({
-            userCreated: [...state.userCreated, mood],
+            userCreated: [
+                ...state.userCreated,
+                { ...mood, id: Math.random().toString() },
+            ].sort((a, b) => b.rating - a.rating),
+        })),
+    updateMood: (updatedMood: Mood) =>
+        set((state) => ({
+            userCreated: [
+                ...state.userCreated.filter(
+                    (mood) => mood.id !== updatedMood.id
+                ),
+                updatedMood,
+            ].sort((a, b) => b.rating - a.rating),
+        })),
+    removeMood: (id: string) =>
+        set((state) => ({
+            userCreated: [
+                ...state.userCreated.filter((mood) => mood.id !== id),
+            ],
         })),
 }));

@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
@@ -7,17 +7,25 @@ import { Mood } from '../interfaces/mood.interface';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
+import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('entry-component')
 export class EntryComponent extends LitElement {
     @property()
     public entry: Entry = {} as Entry;
-
+    @state()
+    activities: Activity[] = activities.getState().all;
+    firstUpdated() {
+        activities.subscribe((state) => {
+            this.activities = state.all;
+            this.render();
+        });
+    }
     private getActivityById(activityId: string): Activity {
-        return activities
-            .getState()
-            .all.find((activity) => activity.id === activityId) as Activity;
+        return this.activities.find(
+            (activity) => activity.id === activityId
+        ) as Activity;
     }
     private getMoodById(moodId: string): Mood {
         return moods
@@ -72,6 +80,11 @@ export class EntryComponent extends LitElement {
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
                         detail.bind="entry.activities.get(activity.id)"
+                        @click=${() =>
+                            ActionSheetController.open({
+                                type: 'activityEdit',
+                                data: this.getActivityById(activityId),
+                            })}
                         click.trigger="activityClicked(activity.id)"
                         enable-detail-click.bind="onDetailClick"
                         on-detail-click.call="detailClicked(detail, id)"

@@ -10,7 +10,7 @@ export class MoodsSheet extends LitElement {
     @property()
     onChange!: (a: any) => {};
     render() {
-        return html` <div class="mood-container">
+        return html`<div class="mood-container">
             ${moods
                 .getState()
                 .all()

@@ -67,11 +67,15 @@ export class ActionSheetComponent extends LitElement {
                     .onActivityClick=${(activity: any) => this.submit(activity)}
                 ></activity-grid>`;
             case SheetTypes.moodEdit:
-                return html`<mood-edit-sheet
-                    @moodDeleted=${this.hide}
-                    @moodSubmitted=${this.hide}
-                    .mood=${this.data}
-                ></mood-edit-sheet>`;
+                return html`${this.data.id
+                        ? html`<header>Edit Mood</header>`
+                        : html`<header>New Mood</header>`}
+
+                    <mood-edit-sheet
+                        @moodDeleted=${this.hide}
+                        @moodSubmitted=${this.hide}
+                        .mood=${this.data}
+                    ></mood-edit-sheet>`;
         }
     }
     submit(data: any = undefined) {

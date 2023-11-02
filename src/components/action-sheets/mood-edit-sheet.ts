@@ -22,7 +22,7 @@ export class MoodEditSheet extends LitElement {
             dispatchEvent(this, Events.moodDeleted);
         }
     }
-    saveMood() {
+    submitMood() {
         if (this.localMood.id) moods.getState().updateMood(this.localMood);
         else moods.getState().addMood(this.localMood);
         dispatchEvent(this, Events.moodSubmitted);
@@ -72,8 +72,8 @@ export class MoodEditSheet extends LitElement {
                 />
             </section>
             <section>
-                <button class="inline" type="button" @click=${this.saveMood}>
-                    save
+                <button class="inline" type="button" @click=${this.submitMood}>
+                    submit
                 </button>
                 ${this.localMood?.id
                     ? html`<button

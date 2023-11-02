@@ -96,9 +96,9 @@ a:active {
 }
 
 .sticky-buttons {
-    position: sticky;
-    bottom: 4.2rem;
-    left: 100vw;
+    position: fixed;
+    bottom: 5rem;
+    right: 8px;
     display: inline-flex;
     gap: 8px;
     margin-right: 8px;

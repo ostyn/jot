@@ -16,14 +16,15 @@ export class MoodsRoute extends LitElement {
             this.moods = state.userCreated;
         });
     }
-    moodSelected(mood: Mood) {
+    moodSelected(mood?: Mood) {
         ActionSheetController.open({
             type: SheetTypes.moodEdit,
-            data: mood,
+            data: mood || {},
         });
     }
     render() {
-        return html`<article>
+        return html` <article>
+            <header>Moods</header>
             <section>
                 ${this.moods.map((mood) => {
                     return html`<span
@@ -32,16 +33,10 @@ export class MoodsRoute extends LitElement {
                         >${mood.emoji}</span
                     >`;
                 })}
+                <span class="moods-mood" @click=${() => this.moodSelected()}>
+                    <feather-icon name="plus-circle"></feather-icon>
+                </span>
             </section>
-            <button
-                @click=${() =>
-                    ActionSheetController.open({
-                        type: SheetTypes.moodEdit,
-                        data: {},
-                    })}
-            >
-                new
-            </button>
         </article>`;
     }
     static styles = [

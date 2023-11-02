@@ -16,11 +16,17 @@ export class EntryComponent extends LitElement {
     public entry: Entry = {} as Entry;
     @state()
     activities: Activity[] = activities.getState().all;
+    @state()
+    currentMood?: Mood;
     firstUpdated() {
+        this.currentMood = moods.getState().getMood(this.entry.mood);
         activities.subscribe((state) => {
             this.activities = state.all;
             this.render();
         });
+        moods.subscribe(
+            (state) => (this.currentMood = state.getMood(this.entry.mood))
+        );
     }
     private getActivityById(activityId: string): Activity {
         return this.activities.find(
@@ -67,10 +73,14 @@ export class EntryComponent extends LitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    alt-text.bind="currentMood.name"
-                    title.bind="currentMood.name"
+                    .title=${this.currentMood?.name || ''}
+                    @click=${() =>
+                        ActionSheetController.open({
+                            type: 'moodEdit',
+                            data: this.currentMood,
+                        })}
                 >
-                    ${this.getMoodById(this.entry.mood).emoji}
+                    ${this.currentMood?.emoji}
                 </span>
             </section>
             <section class="entry-activities">

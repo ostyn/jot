@@ -6,6 +6,7 @@ const data = await (await fetch('./data.json')).json();
 const moodsData: Mood[] = data.moods;
 
 export interface MoodsState {
+    getMood(id: string): Mood | undefined;
     all: () => Mood[];
     userCreated: Mood[];
     default: Mood[];
@@ -46,4 +47,7 @@ export const moods = createStore<MoodsState>((set, get) => ({
                 ...state.userCreated.filter((mood) => mood.id !== id),
             ],
         })),
+    getMood: (id: string) => {
+        return get().userCreated.find((mood) => mood.id === id);
+    },
 }));

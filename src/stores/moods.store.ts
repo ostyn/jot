@@ -13,7 +13,6 @@ export interface MoodsState {
     updateMood: (mood: Mood) => void;
     removeMood: (id: string) => void;
 }
-let x = 1;
 export const moods = createStore<MoodsState>((set, get) => ({
     userCreated: moodsData,
     default: [
@@ -30,7 +29,7 @@ export const moods = createStore<MoodsState>((set, get) => ({
             userCreated: [
                 ...state.userCreated,
                 { ...mood, id: Math.random().toString() },
-            ].sort((a, b) => b.rating - a.rating),
+            ].sort((a: Mood, b: Mood) => b.rating.localeCompare(a.rating)),
         })),
     updateMood: (updatedMood: Mood) =>
         set((state) => ({
@@ -39,7 +38,7 @@ export const moods = createStore<MoodsState>((set, get) => ({
                     (mood) => mood.id !== updatedMood.id
                 ),
                 updatedMood,
-            ].sort((a, b) => b.rating - a.rating),
+            ].sort((a: Mood, b: Mood) => b.rating.localeCompare(a.rating)),
         })),
     removeMood: (id: string) =>
         set((state) => ({

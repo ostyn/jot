@@ -33,4 +33,6 @@ export enum Events {
     monthClick = 'monthClick',
     moodDeleted = 'moodDeleted',
     moodSubmitted = 'moodSubmitted',
+    activityDeleted = 'activityDeleted',
+    activitySubmitted = 'activitySubmitted',
 }

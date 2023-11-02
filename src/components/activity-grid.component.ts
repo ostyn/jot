@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
-import { activities, ActivitiesState } from '../stores/activities.store';
+import { activities } from '../stores/activities.store';
 import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 

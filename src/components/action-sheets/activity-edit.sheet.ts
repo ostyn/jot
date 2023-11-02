@@ -13,11 +13,11 @@ interface ActivityState {
     setActivity: (activity: Activity) => void;
 }
 //TODO - This is bad but it's working for now. A store is overkill
-const store = createStore<ActivityState>((set, get) => ({
+const store = createStore<ActivityState>((set) => ({
     localActivity: {} as Activity,
     getCategories: () => activities.getState().getCategories(),
     setActivity: (activity: Activity) =>
-        set((state) => ({
+        set(() => ({
             localActivity: {
                 category: activity.category || '',
                 created: activity.created || '',
@@ -50,14 +50,14 @@ export class ActivityEditSheet extends LitElement {
     deleteActivity() {
         if (confirm('Sure you want to delete?')) {
             activities.getState().removeActivity(this.state.localActivity.id);
-            dispatchEvent(this, Events.moodDeleted);
+            dispatchEvent(this, Events.activityDeleted);
         }
     }
     submitActivity() {
         if (this.state.localActivity.id)
             activities.getState().updateActivity(this.state.localActivity);
         else activities.getState().addActivity(this.state.localActivity);
-        dispatchEvent(this, Events.moodSubmitted);
+        dispatchEvent(this, Events.activitySubmitted);
     }
     selectCategory(value: string, existingActivity: Activity) {
         this.changeCategory(value, existingActivity);
@@ -87,8 +87,8 @@ export class ActivityEditSheet extends LitElement {
                 ? html`<header>Edit Activity</header>`
                 : html`<header>New Activity</header>`}
             <activity-edit-sheet
-                @moodDeleted=${dismiss}
-                @moodSubmitted=${submit}
+                @activityDeleted=${dismiss}
+                @activitySubmitted=${submit}
                 .activity=${data}
             ></activity-edit-sheet>`;
     }
@@ -195,7 +195,7 @@ export class ActivityEditSheet extends LitElement {
                                     ? html`<input
                                           class="custom-category"
                                           type="text"
-                                          @change=${(e) =>
+                                          @change=${(e: any) =>
                                               this.changeCategory(
                                                   e.target.value,
                                                   localActivity

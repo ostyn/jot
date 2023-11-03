@@ -167,7 +167,11 @@ export class SearchRoute extends LitElement {
     openDetailPrompt() {
         ActionSheetController.open({
             type: 'activityDetailSelect',
-            onSubmit: (id: string) => this.state.setSelectedActivity(id),
+            onSubmit: (detail: any) =>
+                this.state.setSelectedActivity(
+                    this.state.selectedActivityId,
+                    detail
+                ),
             data: this.state.selectedActivityId,
         });
     }

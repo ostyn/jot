@@ -10,6 +10,7 @@ export interface ActivitiesState {
     updateActivity(activity: Activity): void;
     removeActivity(id: string): void;
     getCategories(): string[];
+    getActivity(id: string): Activity | undefined;
     all: Activity[];
 }
 export const activities = createStore<ActivitiesState>((set, get) => ({
@@ -34,4 +35,7 @@ export const activities = createStore<ActivitiesState>((set, get) => ({
         set((state) => ({
             all: [...state.all.filter((activity) => activity.id !== id)],
         })),
+    getActivity: (id: string) => {
+        return get().all.find((activity) => activity.id === id);
+    },
 }));

@@ -127,11 +127,13 @@ const store = createStore<SearchState>((set, get) => ({
             }),
         })),
     getResultsText: () => {
-        return !!get().numberOfResults
-            ? `Results ${get().firstEntryIndex + 1}-${
-                  get().lastEntryIndex
-              } of ${get().numberOfResults}`
-            : 'No results';
+        if (get().searchTerm || get().selectedActivityId)
+            return !!get().numberOfResults
+                ? `Results ${get().firstEntryIndex + 1}-${
+                      get().lastEntryIndex
+                  } of ${get().numberOfResults}`
+                : 'No results';
+        else return '';
     },
     nextPage: () =>
         set((state) => ({

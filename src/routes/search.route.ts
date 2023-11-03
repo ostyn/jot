@@ -44,13 +44,13 @@ const filter = (state: SearchState) => {
                         regex.test(detail)
                     )
                 ) ||
-            (entry.activitiesArray || []).some((activityId) =>
+            (Object.keys(entry.activities) || []).some((activityId) =>
                 regex.test(activities.getState().getActivity(activityId)?.name)
             ) ||
             regex.test(entry.date);
         if (currentState?.selectedActivityId) {
             containsSearchQuery =
-                (entry.activitiesArray || []).includes(
+                (Object.keys(entry.activities) || []).includes(
                     currentState.selectedActivityId
                 ) && containsSearchQuery;
             if (currentState.selectedActivityDetail) {
@@ -175,8 +175,9 @@ export class SearchRoute extends LitElement {
     }
     openDetailPrompt() {
         ActionSheetController.open({
-            type: 'mood',
-            onSubmit: (a: string) => {},
+            type: 'activityDetailSelect',
+            onSubmit: (a: string) => this.state.setSelectedActivityDetail(a),
+            data: this.state.selectedActivityId,
         });
     }
     clearSelection() {
@@ -206,7 +207,9 @@ export class SearchRoute extends LitElement {
                                   .getState()
                                   .getActivity(this.state.selectedActivityId)}
                               @click=${this.openActivitySelect}
-                              detail.bind="(selectedDetail)?[selectedDetail]:undefined"
+                              .detail=${this.state.selectedActivityDetail
+                                  ? [this.state.selectedActivityDetail]
+                                  : undefined}
                               enable-detail-click="true"
                               on-detail-click.call="openDetailSelect()"
                           ></activity-component>

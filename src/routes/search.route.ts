@@ -194,6 +194,7 @@ export class SearchRoute extends LitElement {
                 ${this.state.selectedActivityId
                     ? html`<span>
                           <activity-component
+                              .showName=${true}
                               .activity=${activities
                                   .getState()
                                   .getActivity(this.state.selectedActivityId)}
@@ -256,6 +257,8 @@ export class SearchRoute extends LitElement {
                                     data.id,
                                     data.detail
                                 )}
+                            .onActivityClick=${(id: any) =>
+                                this.state.setSelectedActivity(id)}
                         ></entry-component>
                     `
                 )}

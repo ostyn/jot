@@ -21,7 +21,7 @@ export class ActivityComponent extends LitElement {
     render() {
         if (!this.activity) return nothing;
         return html`
-            <span>
+            <span title=${this.activity.name}>
                 <span title.bind="activity.name" class="emoji">
                     ${this.activity.emoji}
                     ${(Helpers.isNumeric(this.detail) && this.detail != 1) ||
@@ -50,7 +50,7 @@ export class ActivityComponent extends LitElement {
                       ${(this.detail as string[]).map(
                           (textItem) =>
                               html`<activity-detail-component
-                                  @click=${(e) =>
+                                  @click=${(e: Event) =>
                                       this.detailClicked(
                                           e,
                                           textItem,

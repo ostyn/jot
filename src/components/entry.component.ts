@@ -15,6 +15,8 @@ export class EntryComponent extends LitElement {
     @property()
     public onDetailClick!: (data: any) => void;
     @property()
+    public onActivityClick!: (data: any) => void;
+    @property()
     public entry: Entry = {} as Entry;
     @state()
     activities: Activity[] = activities.getState().all;
@@ -91,11 +93,7 @@ export class EntryComponent extends LitElement {
                         .activity=${this.getActivityById(activityId)}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
-                        @click=${() =>
-                            ActionSheetController.open({
-                                type: 'activityEdit',
-                                data: this.getActivityById(activityId),
-                            })}
+                        @click=${() => this.onActivityClick(activityId)}
                         click.trigger="activityClicked(activity.id)"
                         .onDetailClick=${(data: any) =>
                             this.onDetailClick(data)}

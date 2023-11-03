@@ -26,13 +26,10 @@ interface SearchState {
     getResultsText: () => string;
 }
 
-const filter = (state: SearchState) => {
-    const currentState = state;
+const filter = (state: SearchState): Entry[] => {
+    if (!state.searchTerm && !state.selectedActivityId) return [];
     const filteredEntries = entries.getState().all.filter((entry) => {
-        let regex = new RegExp(
-            escapeRegExp(currentState?.searchTerm || ''),
-            'i'
-        );
+        let regex = new RegExp(escapeRegExp(state?.searchTerm || ''), 'i');
         let containsSearchQuery =
             regex.test(entry.note) ||
             regex.test(entry.createdBy) ||
@@ -48,12 +45,12 @@ const filter = (state: SearchState) => {
                 regex.test(activities.getState().getActivity(activityId)?.name)
             ) ||
             regex.test(entry.date);
-        if (currentState?.selectedActivityId) {
+        if (state?.selectedActivityId) {
             containsSearchQuery =
                 (Object.keys(entry.activities) || []).includes(
-                    currentState.selectedActivityId
+                    state.selectedActivityId
                 ) && containsSearchQuery;
-            if (currentState.selectedActivityDetail) {
+            if (state.selectedActivityDetail) {
                 containsSearchQuery =
                     Array.from(Object.values(entry.activities))
                         .filter((activity) => Array.isArray(activity))
@@ -62,7 +59,7 @@ const filter = (state: SearchState) => {
                                 (detail) =>
                                     detail.toLocaleLowerCase() ===
                                     (
-                                        currentState.selectedActivityDetail as any
+                                        state.selectedActivityDetail as any
                                     ).toLocaleLowerCase()
                             )
                         ) && containsSearchQuery;

@@ -21,8 +21,7 @@ interface SearchState {
     nextPage: () => void;
     prevPage: () => void;
     setSearchTerm: (s?: string) => void;
-    setSelectedActivityId: (s?: string) => void;
-    setSelectedActivityDetail: (s?: string) => void;
+    setSelectedActivity: (id?: string, detail?: any) => void;
     getResultsText: () => string;
 }
 
@@ -108,21 +107,14 @@ const store = createStore<SearchState>((set, get) => ({
             searchTerm: s,
             ...generatePageData({ ...state, searchTerm: s, currentPage: 0 }),
         })),
-    setSelectedActivityId: (s?: string) =>
+    setSelectedActivity: (id?: string, detail?: any) =>
         set((state) => ({
-            selectedActivityId: s,
+            selectedActivityId: id,
+            selectedActivityDetail: detail,
             ...generatePageData({
                 ...state,
-                selectedActivityId: s,
-                currentPage: 0,
-            }),
-        })),
-    setSelectedActivityDetail: (s?: string) =>
-        set((state) => ({
-            selectedActivityDetail: s,
-            ...generatePageData({
-                ...state,
-                selectedActivityDetail: s,
+                selectedActivityId: id,
+                selectedActivityDetail: detail,
                 currentPage: 0,
             }),
         })),
@@ -167,23 +159,23 @@ export class SearchRoute extends LitElement {
     openActivitySelect() {
         ActionSheetController.open({
             type: 'activity',
-            onSubmit: (a: string) => {
-                this.state.setSelectedActivityId(a);
+            onSubmit: (id: string) => {
+                this.state.setSelectedActivity(id);
             },
         });
     }
     openDetailPrompt() {
         ActionSheetController.open({
             type: 'activityDetailSelect',
-            onSubmit: (a: string) => this.state.setSelectedActivityDetail(a),
+            onSubmit: (id: string) => this.state.setSelectedActivity(id),
             data: this.state.selectedActivityId,
         });
     }
     clearSelection() {
         if (this.state.selectedActivityDetail) {
-            this.state.setSelectedActivityDetail();
+            this.state.setSelectedActivity(this.state.selectedActivityId);
         } else if (this.state.selectedActivityId) {
-            this.state.setSelectedActivityId();
+            this.state.setSelectedActivity();
         } else {
             this.state.setSearchTerm();
         }
@@ -209,8 +201,8 @@ export class SearchRoute extends LitElement {
                               .detail=${this.state.selectedActivityDetail
                                   ? [this.state.selectedActivityDetail]
                                   : undefined}
-                              enable-detail-click="true"
-                              on-detail-click.call="openDetailSelect()"
+                              .enableDetailClick=${true}
+                              .onDetailClick=${this.openDetailPrompt.bind(this)}
                           ></activity-component>
                       </span>`
                     : nothing}
@@ -259,7 +251,11 @@ export class SearchRoute extends LitElement {
                         <entry-component
                             class="search-entries"
                             .entry=${entry}
-                            on-detail-click.call="detailClicked(detail,id)"
+                            .onDetailClick=${(data: any) =>
+                                this.state.setSelectedActivity(
+                                    data.id,
+                                    data.detail
+                                )}
                         ></entry-component>
                     `
                 )}

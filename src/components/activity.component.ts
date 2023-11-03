@@ -9,6 +9,10 @@ import './activity-detail.component';
 @customElement('activity-component')
 export class ActivityComponent extends LitElement {
     @property()
+    public enableDetailClick = false;
+    @property()
+    public onDetailClick!: (a: any) => void;
+    @property()
     public detail?: ActivityDetail;
     @property()
     public showName: boolean = false;
@@ -46,13 +50,24 @@ export class ActivityComponent extends LitElement {
                       ${(this.detail as string[]).map(
                           (textItem) =>
                               html`<activity-detail-component
-                                  click.trigger="detailClicked($event, textItem, id)"
+                                  @click=${(e) =>
+                                      this.detailClicked(
+                                          e,
+                                          textItem,
+                                          this.activity?.id || ''
+                                      )}
                                   >${textItem}</activity-detail-component
                               >`
                       )}
                   </span>`
                 : nothing}
         `;
+    }
+    detailClicked(event: Event, detail: string, id: string) {
+        if (this.enableDetailClick) {
+            event.stopPropagation();
+            this.onDetailClick({ detail, id });
+        }
     }
     isWide(): boolean {
         return (

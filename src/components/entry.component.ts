@@ -1,5 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { Router } from '@vaadin/router';
+import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
@@ -37,11 +39,15 @@ export class EntryComponent extends LitElement {
             (activity) => activity.id === activityId
         ) as Activity;
     }
-    private getMoodById(moodId: string): Mood {
-        return moods
-            .getState()
-            .all()
-            .find((mood) => mood.id === moodId) as Mood;
+    private goToSelf() {
+        const date: Date = parseISO(this.entry.date);
+        window.scrollTo({ top: 0 });
+        const queryParams = new URLSearchParams({
+            month: date.getMonth() + 1,
+            year: date.getFullYear(),
+            day: date.getDate(),
+        } as any).toString();
+        Router.go(`entries?${queryParams}`);
     }
     render() {
         if (!this.entry) return nothing;
@@ -70,7 +76,7 @@ export class EntryComponent extends LitElement {
         return html`<article>
             <section class="entry-header">
                 <hgroup>
-                    <h2 class="entry-header-text" click.trigger="goToSelf()">
+                    <h2 class="entry-header-text" @click=${this.goToSelf}>
                         ${DateHelpers.stringDateToDate(this.entry.date)}
                     </h2>
                     <h3>${DateHelpers.stringDateToWeekDay(this.entry.date)}</h3>

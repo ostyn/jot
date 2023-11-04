@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
+import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import '../components/entry.component';
 import '../components/month-control.component';
@@ -27,7 +28,7 @@ export class EntriesRoute extends LitElement {
         this.currentDate = new Date(currentYear, currentMonth, currentDay);
     }
     shouldScrollToSelf(entry: Entry) {
-        return entry.day === this.currentDate?.getDay();
+        return parseISO(entry.date).getDate() === this.currentDate.getDate();
     }
     onMonthClick() {
         window.scrollTo({ top: 0 });
@@ -61,9 +62,8 @@ export class EntriesRoute extends LitElement {
                 ${filteredEntries.map(
                     (entry) =>
                         html`<entry-component
+                            .scrollToSelf=${this.shouldScrollToSelf(entry)}
                             .entry="${entry}"
-                            scroll-to-self.bind="shouldScrollToSelf(entry)"
-                            if.bind="isLoaded"
                         ></entry-component>`
                 )}
                 <entry-loading if.bind="!isLoaded"></entry-loading>

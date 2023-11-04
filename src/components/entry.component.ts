@@ -20,6 +20,8 @@ export class EntryComponent extends LitElement {
     public onActivityClick!: (data: any) => void;
     @property()
     public entry: Entry = {} as Entry;
+    @property()
+    public scrollToSelf = false;
     @state()
     activities: Activity[] = activities.getState().all;
     @state()
@@ -33,6 +35,14 @@ export class EntryComponent extends LitElement {
         moods.subscribe(
             (state) => (this.currentMood = state.getMood(this.entry.mood))
         );
+        if (this.scrollToSelf)
+            setTimeout(
+                () =>
+                    this.scrollIntoView({
+                        block: 'center',
+                    }),
+                1
+            );
     }
     private getActivityById(activityId: string): Activity {
         return this.activities.find(
@@ -41,7 +51,6 @@ export class EntryComponent extends LitElement {
     }
     private goToSelf() {
         const date: Date = parseISO(this.entry.date);
-        window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
             year: date.getFullYear(),

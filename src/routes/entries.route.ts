@@ -12,12 +12,19 @@ import { entries } from '../stores/entries.store';
 export class EntriesRoute extends LitElement {
     @state() currentDate: Date = new Date();
     public router?: Router;
+    @state() scrollToDate?: number;
     onAfterEnter() {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');
         const yearParam = urlParams.get('year');
-        const currentDay = dayParam ? Number.parseInt(dayParam) : 1;
+        let currentDay;
+        if (dayParam) {
+            currentDay = Number.parseInt(dayParam);
+            this.scrollToDate = currentDay;
+        } else {
+            currentDay = 1;
+        }
         const currentMonth = monthParam
             ? Number.parseInt(monthParam) - 1
             : new Date().getMonth();
@@ -28,7 +35,7 @@ export class EntriesRoute extends LitElement {
         this.currentDate = new Date(currentYear, currentMonth, currentDay);
     }
     shouldScrollToSelf(entry: Entry) {
-        return parseISO(entry.date).getDate() === this.currentDate.getDate();
+        return parseISO(entry.date).getDate() === this.scrollToDate;
     }
     onMonthClick() {
         window.scrollTo({ top: 0 });

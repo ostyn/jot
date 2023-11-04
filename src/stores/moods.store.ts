@@ -42,7 +42,6 @@ class MoodStore {
         this.userCreated = this.userCreated.filter((mood) => mood.id !== id);
     }
     public getMood(id: string): Mood | undefined {
-        console.log('ewok');
         return this.userCreated.find((mood) => mood.id === id);
     }
     constructor() {

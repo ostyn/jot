@@ -1,10 +1,9 @@
 import { css, html, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
-import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
@@ -22,13 +21,7 @@ export class EntryComponent extends MobxLitElement {
     public entry: Entry = {} as Entry;
     @property()
     public scrollToSelf = false;
-    @state()
-    activities: Activity[] = activities.getState().all;
     firstUpdated() {
-        activities.subscribe((state) => {
-            this.activities = state.all;
-            this.render();
-        });
         if (this.scrollToSelf)
             setTimeout(
                 () =>
@@ -37,11 +30,6 @@ export class EntryComponent extends MobxLitElement {
                     }),
                 1
             );
-    }
-    private getActivityById(activityId: string): Activity {
-        return this.activities.find(
-            (activity) => activity.id === activityId
-        ) as Activity;
     }
     private goToSelf() {
         const date: Date = parseISO(this.entry.date);
@@ -99,7 +87,7 @@ export class EntryComponent extends MobxLitElement {
             <section class="entry-activities">
                 ${(this.entry.activitiesArray || []).map((activityId) => {
                     return html`<activity-component
-                        .activity=${this.getActivityById(activityId)}
+                        .activity=${activities.getActivity(activityId)}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
                         @click=${() =>

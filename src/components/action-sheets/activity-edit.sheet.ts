@@ -1,5 +1,6 @@
-import { css, html, LitElement, nothing, TemplateResult } from 'lit';
+import { css, html, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { createStore } from 'zustand/vanilla';
 import { base } from '../../baseStyles';
 import { Activity } from '../../interfaces/activity.interface';
@@ -15,7 +16,7 @@ interface ActivityState {
 //TODO - This is bad but it's working for now. A store is overkill
 const store = createStore<ActivityState>((set) => ({
     localActivity: {} as Activity,
-    getCategories: () => activities.getState().getCategories(),
+    getCategories: () => activities.getCategories(),
     setActivity: (activity: Activity) =>
         set(() => ({
             localActivity: {
@@ -29,7 +30,7 @@ const store = createStore<ActivityState>((set) => ({
         })),
 }));
 @customElement('activity-edit-sheet')
-export class ActivityEditSheet extends LitElement {
+export class ActivityEditSheet extends MobxLitElement {
     @state()
     state = store.getState();
     @property({ attribute: false })
@@ -49,14 +50,14 @@ export class ActivityEditSheet extends LitElement {
 
     deleteActivity() {
         if (confirm('Sure you want to delete?')) {
-            activities.getState().removeActivity(this.state.localActivity.id);
+            activities.removeActivity(this.state.localActivity.id);
             dispatchEvent(this, Events.activityDeleted);
         }
     }
     submitActivity() {
         if (this.state.localActivity.id)
-            activities.getState().updateActivity(this.state.localActivity);
-        else activities.getState().addActivity(this.state.localActivity);
+            activities.updateActivity(this.state.localActivity);
+        else activities.addActivity(this.state.localActivity);
         dispatchEvent(this, Events.activitySubmitted);
     }
     selectCategory(value: string, existingActivity: Activity) {

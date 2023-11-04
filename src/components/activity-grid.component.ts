@@ -1,5 +1,6 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { activities } from '../stores/activities.store';
@@ -7,7 +8,7 @@ import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('activity-grid')
-export class ActivityGridComponent extends LitElement {
+export class ActivityGridComponent extends MobxLitElement {
     @property() activityDetailSet = () => {};
     @property() activityDetailClear = () => {};
     @property() onActivityClick?: (activity: Activity) => void;
@@ -27,20 +28,12 @@ export class ActivityGridComponent extends LitElement {
     @state()
     groupActivities: boolean = true;
     categoryToActivityList: Map<string, Activity[]> = new Map();
-    @state()
-    activities: Activity[] = activities.getState().all;
-    firstUpdated() {
-        activities.subscribe((state) => {
-            this.activities = state.all;
-            this.render();
-        });
-    }
     getSortedHeaders() {
         return Array.from(this.categoryToActivityList.keys()).sort();
     }
     activitiesChanged() {
         this.categoryToActivityList = new Map();
-        this.activities.forEach((activity: Activity) => {
+        activities.all.forEach((activity: Activity) => {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&

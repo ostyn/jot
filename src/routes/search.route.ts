@@ -41,7 +41,7 @@ const filter = (state: SearchState): Entry[] => {
                     )
                 ) ||
             (Object.keys(entry.activities) || []).some((activityId) =>
-                regex.test(activities.getState().getActivity(activityId)?.name)
+                regex.test(activities.getActivity(activityId)?.name)
             ) ||
             regex.test(entry.date);
         if (state?.selectedActivityId) {
@@ -199,9 +199,9 @@ export class SearchRoute extends LitElement {
                     ? html`<span>
                           <activity-component
                               .showName=${true}
-                              .activity=${activities
-                                  .getState()
-                                  .getActivity(this.state.selectedActivityId)}
+                              .activity=${activities.getActivity(
+                                  this.state.selectedActivityId
+                              )}
                               @click=${this.openActivitySelect}
                               .detail=${this.state.selectedActivityDetail
                                   ? [this.state.selectedActivityDetail]

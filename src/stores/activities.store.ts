@@ -1,41 +1,47 @@
-import { createStore } from 'zustand/vanilla';
+import { action, makeObservable, observable } from 'mobx';
 import { Activity } from '../interfaces/activity.interface';
 
 const data = await (await fetch('./data.json')).json();
 
 const activitiesData: Activity[] = data.activities;
+class ActivityStore {
+    @observable
+    public all: Activity[] = activitiesData;
 
-export interface ActivitiesState {
-    addActivity(activity: Activity): void;
-    updateActivity(activity: Activity): void;
-    removeActivity(id: string): void;
-    getCategories(): string[];
-    getActivity(id: string): Activity | undefined;
-    all: Activity[];
+    @action.bound
+    public addActivity(activity: Activity) {
+        this.all.push({ ...activity, id: Math.random().toString() });
+        this.sort();
+    }
+    @action.bound
+    public updateActivity(updatedActivity: Activity) {
+        this.all = [
+            ...this.all.filter(
+                (activity) => activity.id !== updatedActivity.id
+            ),
+            updatedActivity,
+        ];
+        this.sort();
+    }
+    @action.bound
+    public removeActivity(id: string) {
+        this.all = this.all.filter((activity) => activity.id !== id);
+    }
+    public getActivity(id: string): Activity | undefined {
+        return this.all.find((activity) => activity.id === id);
+    }
+    public getCategories() {
+        return [...new Set(this.all.map((a) => a.category || ''))];
+    }
+    private sort() {
+        this.all.sort((a, b) => {
+            if (Number(a.isArchived) - Number(b.isArchived) !== 0)
+                return Number(a.isArchived) - Number(b.isArchived);
+            return a.created.localeCompare(b.created);
+        });
+    }
+    constructor() {
+        makeObservable(this);
+    }
 }
-export const activities = createStore<ActivitiesState>((set, get) => ({
-    all: activitiesData,
-    getCategories: () => {
-        return [...new Set(get().all.map((a) => a.category || ''))];
-    },
-    addActivity: (activity: Activity) =>
-        set((state) => ({
-            all: [...state.all, { ...activity, id: Math.random().toString() }],
-        })),
-    updateActivity: (updatedActivity: Activity) =>
-        set((state) => ({
-            all: [
-                ...state.all.filter(
-                    (activity) => activity.id !== updatedActivity.id
-                ),
-                updatedActivity,
-            ],
-        })),
-    removeActivity: (id: string) =>
-        set((state) => ({
-            all: [...state.all.filter((activity) => activity.id !== id)],
-        })),
-    getActivity: (id: string) => {
-        return get().all.find((activity) => activity.id === id);
-    },
-}));
+export const activities = new ActivityStore();

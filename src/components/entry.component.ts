@@ -108,7 +108,9 @@ export class EntryComponent extends LitElement {
                         .activity=${this.getActivityById(activityId)}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
-                        @click=${() => this.onActivityClick(activityId)}
+                        @click=${() =>
+                            this.onActivityClick &&
+                            this.onActivityClick(activityId)}
                         click.trigger="activityClicked(activity.id)"
                         .onDetailClick=${(data: any) =>
                             this.onDetailClick(data)}

@@ -19,7 +19,7 @@ export class ActivityDetailSelectSheet extends LitElement {
         return html`<header>Select a Detail</header>
             <activity-detail-select-sheet
                 .activityId=${data}
-                @activityDetailSelected=${(e) => submit(e.detail)}
+                @activityDetailSelected=${(e: any) => submit(e.detail)}
             ></activity-detail-select-sheet>`;
     }
     clickDetail(detail: string) {

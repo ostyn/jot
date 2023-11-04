@@ -1,20 +1,13 @@
-import { css, html, LitElement } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import { Mood } from '../interfaces/mood.interface';
 import { moods } from '../stores/moods.store';
 
 @customElement('moods-route')
-export class MoodsRoute extends LitElement {
-    @state()
-    moods: Mood[] = moods.getState().userCreated;
-    constructor() {
-        super();
-        moods.subscribe((state) => {
-            this.moods = state.userCreated;
-        });
-    }
+export class MoodsRoute extends MobxLitElement {
     moodSelected(mood?: Mood) {
         ActionSheetController.open({
             type: 'moodEdit',
@@ -25,7 +18,7 @@ export class MoodsRoute extends LitElement {
         return html` <article>
             <header>Moods</header>
             <section>
-                ${this.moods.map((mood) => {
+                ${moods.userCreated.map((mood) => {
                     return html`<span
                         @click=${() => this.moodSelected(mood)}
                         class="moods-mood"

@@ -23,29 +23,26 @@ export class MoodsSheet extends LitElement {
     }
     render() {
         return html`<div class="mood-container">
-            ${moods
-                .getState()
-                .all()
-                .map((mood) => {
-                    return html` <label
-                        class=${mood.id === this.currentMoodId
-                            ? 'selected-mood inline'
-                            : 'unselected-mood inline'}
-                    >
-                        ${mood.emoji}
-                        <input
-                            class="input"
-                            type="radio"
-                            name="moodSelector"
-                            value=${mood.id}
-                            ?checked=${this.currentMoodId === mood.id}
-                            @change=${(e: Event) => {
-                                this.currentMoodId = (e.target as any).value;
-                                this.onChange(this.currentMoodId);
-                            }}
-                        />
-                    </label>`;
-                })}
+            ${moods.all.map((mood) => {
+                return html` <label
+                    class=${mood.id === this.currentMoodId
+                        ? 'selected-mood inline'
+                        : 'unselected-mood inline'}
+                >
+                    ${mood.emoji}
+                    <input
+                        class="input"
+                        type="radio"
+                        name="moodSelector"
+                        value=${mood.id}
+                        ?checked=${this.currentMoodId === mood.id}
+                        @change=${(e: Event) => {
+                            this.currentMoodId = (e.target as any).value;
+                            this.onChange(this.currentMoodId);
+                        }}
+                    />
+                </label>`;
+            })}
         </div>`;
     }
     static styles = [

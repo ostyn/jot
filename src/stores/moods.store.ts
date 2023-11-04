@@ -1,53 +1,52 @@
-import { createStore } from 'zustand/vanilla';
+import { action, makeObservable, observable } from 'mobx';
 import { Mood } from '../interfaces/mood.interface';
 
 const data = await (await fetch('./data.json')).json();
 
 const moodsData: Mood[] = data.moods;
 
-export interface MoodsState {
-    getMood(id: string): Mood | undefined;
-    all: () => Mood[];
-    userCreated: Mood[];
-    default: Mood[];
-    addMood: (mood: Mood) => void;
-    updateMood: (mood: Mood) => void;
-    removeMood: (id: string) => void;
-}
-export const moods = createStore<MoodsState>((set, get) => ({
-    userCreated: moodsData,
-    default: [
+class MoodStore {
+    @observable
+    public userCreated: Mood[] = moodsData;
+    public default: Mood[] = [
         {
             emoji: '🚧',
             id: '0',
             rating: '3',
             name: 'TBD',
         },
-    ],
-    all: () => [...get().userCreated, ...get().default],
-    addMood: (mood: Mood) =>
-        set((state) => ({
-            userCreated: [
-                ...state.userCreated,
-                { ...mood, id: Math.random().toString() },
-            ].sort((a: Mood, b: Mood) => b.rating.localeCompare(a.rating)),
-        })),
-    updateMood: (updatedMood: Mood) =>
-        set((state) => ({
-            userCreated: [
-                ...state.userCreated.filter(
-                    (mood) => mood.id !== updatedMood.id
-                ),
-                updatedMood,
-            ].sort((a: Mood, b: Mood) => b.rating.localeCompare(a.rating)),
-        })),
-    removeMood: (id: string) =>
-        set((state) => ({
-            userCreated: [
-                ...state.userCreated.filter((mood) => mood.id !== id),
-            ],
-        })),
-    getMood: (id: string) => {
-        return get().userCreated.find((mood) => mood.id === id);
-    },
-}));
+    ];
+    public get all() {
+        return [...this.userCreated, ...this.default];
+    }
+
+    @action.bound
+    public addMood(mood: Mood) {
+        this.userCreated.push({ ...mood, id: Math.random().toString() });
+        this.userCreated.sort((a: Mood, b: Mood) =>
+            b.rating.localeCompare(a.rating)
+        );
+    }
+    @action.bound
+    public updateMood(updatedMood: Mood) {
+        const existingIndex = this.userCreated.findIndex(
+            (mood) => mood.id === updatedMood.id
+        );
+        this.userCreated[existingIndex] = updatedMood;
+        this.userCreated.sort((a: Mood, b: Mood) =>
+            b.rating.localeCompare(a.rating)
+        );
+    }
+    @action.bound
+    public removeMood(id: string) {
+        this.userCreated = this.userCreated.filter((mood) => mood.id !== id);
+    }
+    public getMood(id: string): Mood | undefined {
+        console.log('ewok');
+        return this.userCreated.find((mood) => mood.id === id);
+    }
+    constructor() {
+        makeObservable(this);
+    }
+}
+export const moods = new MoodStore();

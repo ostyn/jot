@@ -18,13 +18,13 @@ export class MoodEditSheet extends LitElement {
     localMood!: Mood;
     deleteMood() {
         if (confirm('Sure you want to delete?')) {
-            moods.getState().removeMood(this.localMood.id);
+            moods.removeMood(this.localMood.id);
             dispatchEvent(this, Events.moodDeleted);
         }
     }
     submitMood() {
-        if (this.localMood.id) moods.getState().updateMood(this.localMood);
-        else moods.getState().addMood(this.localMood);
+        if (this.localMood.id) moods.updateMood(this.localMood);
+        else moods.addMood(this.localMood);
         dispatchEvent(this, Events.moodSubmitted);
     }
     static getActionSheet(

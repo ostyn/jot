@@ -1,11 +1,11 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
-import { Mood } from '../interfaces/mood.interface';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
@@ -13,7 +13,7 @@ import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('entry-component')
-export class EntryComponent extends LitElement {
+export class EntryComponent extends MobxLitElement {
     @property()
     public onDetailClick!: (data: any) => void;
     @property()
@@ -24,17 +24,11 @@ export class EntryComponent extends LitElement {
     public scrollToSelf = false;
     @state()
     activities: Activity[] = activities.getState().all;
-    @state()
-    currentMood?: Mood;
     firstUpdated() {
-        this.currentMood = moods.getState().getMood(this.entry.mood);
         activities.subscribe((state) => {
             this.activities = state.all;
             this.render();
         });
-        moods.subscribe(
-            (state) => (this.currentMood = state.getMood(this.entry.mood))
-        );
         if (this.scrollToSelf)
             setTimeout(
                 () =>
@@ -92,14 +86,14 @@ export class EntryComponent extends LitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    .title=${this.currentMood?.name || ''}
+                    .title=${moods.getMood(this.entry.mood)?.name || ''}
                     @click=${() =>
                         ActionSheetController.open({
                             type: 'moodEdit',
-                            data: this.currentMood,
+                            data: moods.getMood(this.entry.mood),
                         })}
                 >
-                    ${this.currentMood?.emoji}
+                    ${moods.getMood(this.entry.mood)?.emoji}
                 </span>
             </section>
             <section class="entry-activities">

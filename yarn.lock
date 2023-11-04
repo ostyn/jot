@@ -385,15 +385,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lit-labs/router@npm:^0.1.2":
-  version: 0.1.2
-  resolution: "@lit-labs/router@npm:0.1.2"
-  dependencies:
-    lit: "npm:^3.0.0"
-  checksum: 1c678a498f121b4f5d8655efea6904297ac5edb74e1c4f0e606898ec50e14ae3e85691f954456d58b50fca8b4f9a17b45262e8a50d91beb2437770071b1a2842
-  languageName: node
-  linkType: hard
-
 "@lit-labs/ssr-dom-shim@npm:^1.1.2-pre.0":
   version: 1.1.2
   resolution: "@lit-labs/ssr-dom-shim@npm:1.1.2"
@@ -1022,7 +1013,6 @@ __metadata:
   resolution: "etch@workspace:."
   dependencies:
     "@lit-labs/motion": "npm:^1.0.6"
-    "@lit-labs/router": "npm:^0.1.2"
     "@lit/context": "npm:^1.0.0"
     "@picocss/pico": "npm:^1.5.10"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.2.1"
@@ -1383,7 +1373,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lit@npm:^2.7.5 || ^3.0.0, lit@npm:^3.0.0":
+"lit@npm:^2.7.5 || ^3.0.0":
   version: 3.0.0
   resolution: "lit@npm:3.0.0"
   dependencies:

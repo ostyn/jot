@@ -7,6 +7,14 @@
             href="/node_modules/@picocss/pico/css/pico.min.css"
         />
         <script>
+            document.documentElement.setAttribute(
+                'data-theme',
+                JSON.parse(window.localStorage.getItem('SettingsStore')).isDark
+                    ? 'dark'
+                    : 'light'
+            );
+        </script>
+        <script>
             if (!globalThis.URLPattern) {
                 import('/node_modules/urlpattern-polyfill/index.js');
             }

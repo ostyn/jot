@@ -1,28 +1,22 @@
-import { html, LitElement } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { settings } from '../stores/settings.store';
 
 @customElement('settings-route')
-export class SettingsRoute extends LitElement {
-    @state()
-    settings: any = settings.getState();
+export class SettingsRoute extends MobxLitElement {
     sub: any;
-
-    firstUpdated() {
-        settings.subscribe((state) => (this.settings = state));
-    }
-
     render() {
         return html`<article>
             <label class="inline"
                 ><input
-                    .checked=${this.settings.isDark}
+                    .checked=${settings.isDark}
                     type="checkbox"
                     role="switch"
-                    @change=${() => this.settings.toggleDarkMode()}
+                    @change=${() => settings.setIsDark(!settings.isDark)}
                 />
-                ${this.settings.isDark ? 'Dark' : 'Light'} Mode
+                ${settings.isDark ? 'Dark' : 'Light'} Mode
             </label>
         </article>`;
     }

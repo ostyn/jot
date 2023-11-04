@@ -7,8 +7,6 @@ import './components/action-sheets/action-sheet.component';
 import './components/feather-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
-import { settings } from './stores/settings.store';
-import { Helpers } from './utils/Helpers';
 
 @customElement('etch-app')
 export class EtchApp extends LitElement {
@@ -21,8 +19,6 @@ export class EtchApp extends LitElement {
     protected firstUpdated(): void {
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
-        Helpers.setDarkModeFromState(settings.getState());
-        settings.subscribe(Helpers.setDarkModeFromState);
     }
 
     render() {

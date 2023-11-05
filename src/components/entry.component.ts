@@ -42,7 +42,7 @@ export class EntryComponent extends MobxLitElement {
     }
     render() {
         if (!this.entry) return nothing;
-        this.entry.activitiesArray = Object.keys(this.entry.activities).sort(
+        const activityOrder = Object.keys(this.entry.activities).sort(
             (a, b) => {
                 let aVal = this.entry.activities[a];
                 let bVal = this.entry.activities[b];
@@ -85,7 +85,7 @@ export class EntryComponent extends MobxLitElement {
                 </span>
             </section>
             <section class="entry-activities">
-                ${(this.entry.activitiesArray || []).map((activityId) => {
+                ${activityOrder.map((activityId) => {
                     return html`<activity-component
                         .activity=${activities.getActivity(activityId)}
                         .detail=${this.entry.activities[activityId]}

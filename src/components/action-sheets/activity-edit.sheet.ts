@@ -1,74 +1,42 @@
 import { css, html, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { createStore } from 'zustand/vanilla';
 import { base } from '../../baseStyles';
 import { Activity } from '../../interfaces/activity.interface';
 import { activities } from '../../stores/activities.store';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 import { ActionSheetController } from './action-sheet-controller';
 
-interface ActivityState {
-    localActivity: Activity;
-    getCategories: () => string[];
-    setActivity: (activity: Activity) => void;
-}
-//TODO - This is bad but it's working for now. A store is overkill
-const store = createStore<ActivityState>((set) => ({
-    localActivity: {} as Activity,
-    getCategories: () => activities.getCategories(),
-    setActivity: (activity: Activity) =>
-        set(() => ({
-            localActivity: {
-                category: activity.category || '',
-                created: activity.created || '',
-                emoji: activity.emoji || '',
-                id: activity.id || (undefined as any),
-                isArchived: activity.isArchived || false,
-                name: activity.name || '',
-            },
-        })),
-}));
 @customElement('activity-edit-sheet')
 export class ActivityEditSheet extends MobxLitElement {
-    @state()
-    state = store.getState();
     @property({ attribute: false })
     activity!: Activity;
+    @state()
+    localActivity!: Activity;
     firstUpdated() {
-        store.subscribe(() => {
-            this.state = store.getState();
-            this.render.bind(this);
-        });
-
-        store.getState().setActivity(this.activity);
+        this.localActivity = { ...this.activity };
     }
-    @property({ attribute: false })
-    categories?: string[];
     @property({ attribute: false })
     isCustom = false;
 
     deleteActivity() {
         if (confirm('Sure you want to delete?')) {
-            activities.removeActivity(this.state.localActivity.id);
+            activities.removeActivity(this.localActivity.id);
             dispatchEvent(this, Events.activityDeleted);
         }
     }
     submitActivity() {
-        if (this.state.localActivity.id)
-            activities.updateActivity(this.state.localActivity);
-        else activities.addActivity(this.state.localActivity);
+        if (this.localActivity.id)
+            activities.updateActivity(this.localActivity);
+        else activities.addActivity(this.localActivity);
         dispatchEvent(this, Events.activitySubmitted);
     }
-    selectCategory(value: string, existingActivity: Activity) {
-        this.changeCategory(value, existingActivity);
+    selectCategory(value: string) {
+        this.changeCategory(value);
         this.isCustom = false;
     }
-    changeCategory(category: string, existingActivity: Activity) {
-        store.getState().setActivity({
-            ...existingActivity,
-            category,
-        });
+    changeCategory(category: string) {
+        this.localActivity = { ...this.localActivity, category };
     }
     selectCustom() {
         this.isCustom = true;
@@ -76,7 +44,7 @@ export class ActivityEditSheet extends MobxLitElement {
     openInfo() {
         ActionSheetController.open({
             type: 'activity',
-            data: this.state.localActivity,
+            data: this.localActivity,
         });
     }
     static getActionSheet(
@@ -94,30 +62,31 @@ export class ActivityEditSheet extends MobxLitElement {
             ></activity-edit-sheet>`;
     }
     render() {
-        let localActivity = store.getState().localActivity;
         return html` <form>
             <section class="activity-edit-buttons"></section>
             <section class="activity-inputs">
                 <input
                     class="inline"
                     type="text"
-                    .value=${localActivity?.name}
-                    @change=${(e: any) =>
-                        store.getState().setActivity({
-                            ...localActivity,
+                    .value=${this.localActivity?.name}
+                    @change=${(e: any) => {
+                        this.localActivity = {
+                            ...this.localActivity,
                             name: e.target.value,
-                        })}
+                        };
+                    }}
                     placeholder="name"
                 />
                 <input
                     class="inline"
                     type="text"
-                    .value=${localActivity?.emoji}
-                    @change=${(e: any) =>
-                        store.getState().setActivity({
-                            ...localActivity,
+                    .value=${this.localActivity?.emoji}
+                    @change=${(e: any) => {
+                        this.localActivity = {
+                            ...this.localActivity,
                             emoji: e.target.value,
-                        })}
+                        };
+                    }}
                     placeholder="emoji"
                 />
                 <button
@@ -127,7 +96,7 @@ export class ActivityEditSheet extends MobxLitElement {
                 >
                     save
                 </button>
-                ${localActivity?.id
+                ${this.localActivity?.id
                     ? html`<button
                           class="inline contrast"
                           type="button"
@@ -142,25 +111,25 @@ export class ActivityEditSheet extends MobxLitElement {
                     ><input
                         type="checkbox"
                         role="switch"
-                        .checked=${localActivity?.isArchived}
+                        .checked=${this.localActivity?.isArchived}
                         @change=${(e: any) => {
-                            console.log(e);
-                            store.getState().setActivity({
-                                ...localActivity,
-                                isArchived: !localActivity.isArchived,
-                            });
+                            this.localActivity = {
+                                ...this.localActivity,
+                                isArchived: !this.localActivity.isArchived,
+                            };
                         }}
                     />Archived</label
                 >
                 <details class="inline category-control" role="list">
                     <summary aria-haspopup="listbox">
-                        ${localActivity.category || 'category'}
+                        ${this.localActivity?.category || 'category'}
                     </summary>
                     <ul role="listbox" class="option-list">
-                        ${this.state.getCategories()?.map(
+                        ${activities.getCategories().map(
                             (category) => html`
                                 <li
-                                    .class=${localActivity?.category == category
+                                    .class=${this.localActivity?.category ===
+                                    category
                                         ? 'selected-category'
                                         : ''}
                                 >
@@ -170,12 +139,11 @@ export class ActivityEditSheet extends MobxLitElement {
                                             name="category"
                                             @click=${(e: any) =>
                                                 this.selectCategory(
-                                                    e.target.value,
-                                                    localActivity
+                                                    e.target.value
                                                 )}
                                             .value=${category}
                                             .checked=${category ===
-                                            localActivity.category}
+                                            this.localActivity?.category}
                                             class="radio-button"
                                         />
                                         ${category}
@@ -198,10 +166,10 @@ export class ActivityEditSheet extends MobxLitElement {
                                           type="text"
                                           @change=${(e: any) =>
                                               this.changeCategory(
-                                                  e.target.value,
-                                                  localActivity
+                                                  e.target.value
                                               )}
-                                          .value=${localActivity.category || ''}
+                                          .value=${this.localActivity
+                                              .category || ''}
                                           placeholder="category"
                                           focus="true"
                                       />`

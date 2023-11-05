@@ -27,7 +27,7 @@ interface SearchState {
 
 const filter = (state: SearchState): Entry[] => {
     if (!state.searchTerm && !state.selectedActivityId) return [];
-    const filteredEntries = entries.getState().all.filter((entry) => {
+    const filteredEntries = entries.all.filter((entry) => {
         let regex = new RegExp(escapeRegExp(state?.searchTerm || ''), 'i');
         let containsSearchQuery =
             regex.test(entry.note) ||

@@ -51,7 +51,7 @@ export class EntriesRoute extends LitElement {
         Router.go(`entries?${queryParams}`);
     }
     render() {
-        const filteredEntries = entries.getState().all.filter((entry) => {
+        const filteredEntries = entries.all.filter((entry) => {
             const parts = entry.date.split('-');
             return (
                 parseInt(parts[0]) == this.currentDate.getFullYear() &&

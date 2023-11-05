@@ -36,4 +36,5 @@ export enum Events {
     activityDeleted = 'activityDeleted',
     activitySubmitted = 'activitySubmitted',
     activityDetailSelected = 'activityDetailSelected',
+    textSheetDismissed = 'textSheetDismissed',
 }

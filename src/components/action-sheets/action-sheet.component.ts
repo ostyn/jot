@@ -10,8 +10,10 @@ import './mood-edit.sheet';
 import { MoodEditSheet } from './mood-edit.sheet';
 import './moods.sheet';
 import { MoodsSheet } from './moods.sheet';
+import { TextSheet } from './text.sheet';
 
 const SheetMapping = {
+    ['text']: TextSheet,
     ['mood']: MoodsSheet,
     ['activity']: ActivitySheet,
     ['moodEdit']: MoodEditSheet,

@@ -25,7 +25,16 @@ export class EntryRoute extends LitElement {
             >
                 <article
                     class="note-preview"
-                    @click=${() => ActionSheetController.open({ type: 'mood' })}
+                    @click=${() =>
+                        ActionSheetController.open({
+                            type: 'text',
+                            data: this.workingCopy?.note,
+                            onSubmit: (data) =>
+                                (this.workingCopy = {
+                                    ...this.workingCopy,
+                                    note: data,
+                                }),
+                        })}
                 >
                     <span
                         >${this.workingCopy?.note || 'enter note here...'}</span

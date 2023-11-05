@@ -32,7 +32,7 @@ class SearchStore {
     }
     @action.bound
     public setCurrentPage(page: number) {
-        this.currentPage = page;
+        this.currentPage = Math.min(page, this.pageData.lastPageIndex);
     }
     @action.bound
     public setSearchTerm(newTerm?: string) {
@@ -137,47 +137,59 @@ export class SearchRoute
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
-            this.getParamsAndUpdate.bind(this)
+            this.getParamsAndUpdate
         );
         this.getParamsAndUpdate();
+        // Updating URL based on state updates
         this.reactionDisposer = reaction(
             () => ({
-                pageData: this.store.pageData,
                 currentPage: this.store.currentPage,
+                selectedActivityId: this.store.selectedActivityId,
+                selectedActivityDetail: this.store.selectedActivityDetail,
+                searchTerm: this.store.searchTerm,
             }),
             (data) => {
-                window.scrollTo({ top: 0 });
-                const queryParams = new URLSearchParams({
-                    a: this.store.selectedActivityId,
-                    detail: this.store.selectedActivityDetail,
-                    p: data.currentPage,
-                    q: this.store.searchTerm,
-                } as any).toString();
-                Router.go(`search?${queryParams}`);
+                // Avoids redirecting from `/search` to /search?a=&detail=&p=&q=
+                if (data.selectedActivityId || data.searchTerm) {
+                    window.scrollTo({ top: 0 });
+                    const queryParams = new URLSearchParams({
+                        a: data.selectedActivityId,
+                        detail: data.selectedActivityDetail,
+                        p: data.currentPage,
+                        q: data.searchTerm,
+                    } as any).toString();
+                    Router.go(`search?${queryParams}`);
+                } else {
+                    Router.go(`search`);
+                }
             }
         );
     }
-    private getParamsAndUpdate() {
-        if (window.location.search) {
+    // Updating state based on initial URL and back/forward browser buttons
+    private getParamsAndUpdate = () => {
+        if (window.location.pathname.includes('search')) {
             const urlParams = new URLSearchParams(window.location.search);
-            const searchTerm = urlParams.get('q');
-            const activityId = urlParams.get('a');
+            const searchTerm = urlParams.get('q') || '';
+            const activityId = urlParams.get('a') || '';
             const activityDetail = urlParams.get('detail');
-            const currentPage = urlParams.get('p');
-            this.store.setSearchTerm(searchTerm || '');
-            this.store.setSelectedActivity(activityId || '', activityDetail);
-            this.store.setCurrentPage(
-                currentPage ? Number.parseInt(currentPage) : 0
-            );
-        } else {
-            this.store.setSearchTerm('');
-            this.store.setSelectedActivity('', '');
-            this.store.setCurrentPage(0);
-        }
-    }
+            const currentPage = Number.parseInt(urlParams.get('p') || '0');
 
+            if (searchTerm !== this.store.searchTerm)
+                this.store.setSearchTerm(searchTerm);
+            if (
+                activityId !== this.store.selectedActivityId ||
+                activityDetail !== this.store.selectedActivityDetail
+            )
+                this.store.setSelectedActivity(activityId, activityDetail);
+            this.store.setCurrentPage(currentPage);
+        }
+    };
     onAfterLeave() {
         this.reactionDisposer();
+        window.removeEventListener(
+            'vaadin-router-location-changed',
+            this.getParamsAndUpdate
+        );
     }
     addFilter() {
         if (!this.store.selectedActivityId) this.openActivitySelect();

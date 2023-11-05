@@ -16,11 +16,18 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
-            this.getParamsAndUpdate.bind(this)
+            this.getParamsAndUpdate
         );
         this.getParamsAndUpdate();
     }
-    getParamsAndUpdate() {
+    onAfterLeave() {
+        window.removeEventListener(
+            'vaadin-router-location-changed',
+            this.getParamsAndUpdate
+        );
+        this.getParamsAndUpdate();
+    }
+    private getParamsAndUpdate = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');
@@ -40,7 +47,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             : new Date().getFullYear();
 
         this.currentDate = new Date(currentYear, currentMonth, currentDay);
-    }
+    };
     shouldScrollToSelf(entry: Entry) {
         return parseISO(entry.date).getDate() === this.scrollToDate;
     }

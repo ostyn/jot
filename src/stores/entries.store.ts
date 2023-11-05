@@ -2,7 +2,7 @@ import { computed, makeObservable, observable } from 'mobx';
 import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
-const data = await (await fetch('./data.json')).json();
+const data = await (await fetch('/data.json')).json();
 
 const entriesData: Entry[] = data.entries;
 
@@ -45,6 +45,9 @@ class EntriesStore {
             }
         });
         return activityStats;
+    }
+    public getEntry(id: string): Entry {
+        return this.all.find((entry) => entry.id === id);
     }
     constructor() {
         makeObservable(this);

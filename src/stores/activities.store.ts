@@ -1,7 +1,7 @@
 import { action, makeObservable, observable } from 'mobx';
 import { Activity } from '../interfaces/activity.interface';
 
-const data = await (await fetch('./data.json')).json();
+const data = await (await fetch('/data.json')).json();
 
 const activitiesData: Activity[] = data.activities;
 class ActivityStore {

@@ -40,6 +40,9 @@ export class EntryComponent extends MobxLitElement {
         } as any).toString();
         Router.go(`entries?${queryParams}`);
     }
+    editEntry() {
+        Router.go(`entry/${this.entry.id}`);
+    }
     render() {
         if (!this.entry) return nothing;
         const activityOrder = Object.keys(this.entry.activities).sort(
@@ -109,7 +112,7 @@ export class EntryComponent extends MobxLitElement {
             <section class="entry-footer">
                 <button
                     class="inline outline contrast"
-                    click.trigger="editEntry(entry.id)"
+                    @click=${this.editEntry}
                 >
                     edit
                 </button>

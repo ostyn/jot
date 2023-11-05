@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable } from 'mobx';
 import { Mood } from '../interfaces/mood.interface';
 
-const data = await (await fetch('./data.json')).json();
+const data = await (await fetch('/data.json')).json();
 
 const moodsData: Mood[] = data.moods;
 
@@ -43,7 +43,7 @@ class MoodStore {
         this.userCreated = this.userCreated.filter((mood) => mood.id !== id);
     }
     public getMood(id: string): Mood | undefined {
-        return this.userCreated.find((mood) => mood.id === id);
+        return this.all.find((mood) => mood.id === id);
     }
     constructor() {
         makeObservable(this);

@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
+import { ActivityDetail } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
@@ -18,7 +19,7 @@ export class ActivityGridComponent extends MobxLitElement {
     @property()
     filterArchived: boolean = true;
     @property()
-    selectedActivityInfo: Map<string, Activity> = new Map();
+    selectedActivityInfo?: { [key: string]: ActivityDetail };
     @property()
     showFilterUnused = false;
     @state()
@@ -37,7 +38,8 @@ export class ActivityGridComponent extends MobxLitElement {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&
-                    !this.selectedActivityInfo.has(activity.id))
+                    this.selectedActivityInfo &&
+                    !this.selectedActivityInfo.hasOwnProperty(activity.id))
             ) {
                 return;
             }
@@ -89,7 +91,6 @@ export class ActivityGridComponent extends MobxLitElement {
     }
     render() {
         this.activitiesChanged();
-
         return html`
             <div class="grid-controls">
                 ${this.search
@@ -164,10 +165,13 @@ export class ActivityGridComponent extends MobxLitElement {
                                             this.onActivityClick(activity);
                                     }}
                                     long-click.trigger="activityLongClick($event, activity)"
-                                    detail.bind="modCount?selectedActivityInfo.get(activity.id):undefined"
+                                    .detail=${this.selectedActivityInfo?.[
+                                        activity.id
+                                    ]}
                                     class="clickable ${activity.isArchived
                                         ? 'disabled'
-                                        : ''} ${this.selectedActivityInfo.has(
+                                        : ''} ${this.selectedActivityInfo &&
+                                    this.selectedActivityInfo.hasOwnProperty(
                                         activity.id
                                     )
                                         ? 'selected-item'

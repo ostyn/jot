@@ -1,4 +1,4 @@
-import { action, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { Mood } from '../interfaces/mood.interface';
 
 const data = await (await fetch('./data.json')).json();
@@ -16,6 +16,7 @@ class MoodStore {
             name: 'TBD',
         },
     ];
+    @computed
     public get all() {
         return [...this.userCreated, ...this.default];
     }

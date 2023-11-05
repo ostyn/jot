@@ -1,4 +1,4 @@
-import { makeObservable, observable } from 'mobx';
+import { computed, makeObservable, observable } from 'mobx';
 import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
@@ -9,6 +9,7 @@ const entriesData: Entry[] = data.entries;
 class EntriesStore {
     @observable
     public all: Entry[] = entriesData;
+    @computed
     public get stats() {
         const activityStats = new Map<string, StatsActivityEntry>();
         let dates: { date: string; entry: Entry }[] = [];

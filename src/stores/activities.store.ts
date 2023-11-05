@@ -10,7 +10,13 @@ class ActivityStore {
 
     @action.bound
     public addActivity(activity: Activity) {
-        this.all.push({ ...activity, id: Math.random().toString() });
+        const dateString = new Date().toUTCString();
+        this.all.push({
+            ...activity,
+            id: Math.random().toString(),
+            updated: dateString,
+            created: dateString,
+        });
         this.sort();
     }
     @action.bound
@@ -19,7 +25,7 @@ class ActivityStore {
             ...this.all.filter(
                 (activity) => activity.id !== updatedActivity.id
             ),
-            updatedActivity,
+            { ...updatedActivity, updated: new Date().toUTCString() },
         ];
         this.sort();
     }

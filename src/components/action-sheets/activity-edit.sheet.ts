@@ -68,7 +68,7 @@ export class ActivityEditSheet extends MobxLitElement {
                 <input
                     class="inline"
                     type="text"
-                    .value=${this.localActivity?.name}
+                    .value=${this.localActivity?.name || ''}
                     @change=${(e: any) => {
                         this.localActivity = {
                             ...this.localActivity,
@@ -80,7 +80,7 @@ export class ActivityEditSheet extends MobxLitElement {
                 <input
                     class="inline"
                     type="text"
-                    .value=${this.localActivity?.emoji}
+                    .value=${this.localActivity?.emoji || ''}
                     @change=${(e: any) => {
                         this.localActivity = {
                             ...this.localActivity,

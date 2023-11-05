@@ -30,7 +30,7 @@ button {
 section {
     margin-bottom: 0.75rem;
 }
-article:not(article, footer article) {
+article:not(dialog article, footer article) {
     margin: 0.5rem;
 }
 footer article {

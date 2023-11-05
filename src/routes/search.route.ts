@@ -135,16 +135,11 @@ export class SearchRoute
     store = new SearchStore();
     reactionDisposer: any;
     onAfterEnter() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const searchTerm = urlParams.get('q');
-        const activityId = urlParams.get('a');
-        const activityDetail = urlParams.get('detail');
-        const currentPage = urlParams.get('p');
-        this.store.setSearchTerm(searchTerm || '');
-        this.store.setSelectedActivity(activityId || '', activityDetail);
-        this.store.setCurrentPage(
-            currentPage ? Number.parseInt(currentPage) : 0
+        window.addEventListener(
+            'vaadin-router-location-changed',
+            this.getParamsAndUpdate.bind(this)
         );
+        this.getParamsAndUpdate();
         this.reactionDisposer = reaction(
             () => ({
                 pageData: this.store.pageData,
@@ -162,6 +157,25 @@ export class SearchRoute
             }
         );
     }
+    private getParamsAndUpdate() {
+        if (window.location.search) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchTerm = urlParams.get('q');
+            const activityId = urlParams.get('a');
+            const activityDetail = urlParams.get('detail');
+            const currentPage = urlParams.get('p');
+            this.store.setSearchTerm(searchTerm || '');
+            this.store.setSelectedActivity(activityId || '', activityDetail);
+            this.store.setCurrentPage(
+                currentPage ? Number.parseInt(currentPage) : 0
+            );
+        } else {
+            this.store.setSearchTerm('');
+            this.store.setSelectedActivity('', '');
+            this.store.setCurrentPage(0);
+        }
+    }
+
     onAfterLeave() {
         this.reactionDisposer();
     }

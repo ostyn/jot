@@ -14,6 +14,13 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     public router?: Router;
     @state() scrollToDate?: number;
     onAfterEnter() {
+        window.addEventListener(
+            'vaadin-router-location-changed',
+            this.getParamsAndUpdate.bind(this)
+        );
+        this.getParamsAndUpdate();
+    }
+    getParamsAndUpdate() {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');

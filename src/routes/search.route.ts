@@ -1,8 +1,9 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { AfterEnterObserver, AfterLeaveObserver, Router } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
-import { action, computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import { Entry } from '../interfaces/entry.interface';
@@ -30,9 +31,13 @@ class SearchStore {
         this.currentPage--;
     }
     @action.bound
+    public setCurrentPage(page: number) {
+        this.currentPage = page;
+    }
+    @action.bound
     public setSearchTerm(newTerm?: string) {
         this.currentPage = 0;
-        this.searchTerm = newTerm;
+        this.searchTerm = newTerm || '';
     }
     @action.bound
     public setSelectedActivity(id?: string, detail?: any) {
@@ -123,8 +128,43 @@ class SearchStore {
 }
 
 @customElement('search-route')
-export class SearchRoute extends MobxLitElement {
+export class SearchRoute
+    extends MobxLitElement
+    implements AfterEnterObserver, AfterLeaveObserver
+{
     store = new SearchStore();
+    reactionDisposer: any;
+    onAfterEnter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchTerm = urlParams.get('q');
+        const activityId = urlParams.get('a');
+        const activityDetail = urlParams.get('detail');
+        const currentPage = urlParams.get('p');
+        this.store.setSearchTerm(searchTerm || '');
+        this.store.setSelectedActivity(activityId || '', activityDetail);
+        this.store.setCurrentPage(
+            currentPage ? Number.parseInt(currentPage) : 0
+        );
+        this.reactionDisposer = reaction(
+            () => ({
+                pageData: this.store.pageData,
+                currentPage: this.store.currentPage,
+            }),
+            (data) => {
+                window.scrollTo({ top: 0 });
+                const queryParams = new URLSearchParams({
+                    a: this.store.selectedActivityId,
+                    detail: this.store.selectedActivityDetail,
+                    p: data.currentPage,
+                    q: this.store.searchTerm,
+                } as any).toString();
+                Router.go(`search?${queryParams}`);
+            }
+        );
+    }
+    onAfterLeave() {
+        this.reactionDisposer();
+    }
     addFilter() {
         if (!this.store.selectedActivityId) this.openActivitySelect();
         else this.openDetailPrompt();

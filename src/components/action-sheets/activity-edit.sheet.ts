@@ -112,7 +112,7 @@ export class ActivityEditSheet extends MobxLitElement {
                         type="checkbox"
                         role="switch"
                         .checked=${this.localActivity?.isArchived}
-                        @change=${(e: any) => {
+                        @change=${() => {
                             this.localActivity = {
                                 ...this.localActivity,
                                 isArchived: !this.localActivity.isArchived,

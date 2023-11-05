@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { Router } from '@vaadin/router';
+import { AfterEnterObserver, Router } from '@vaadin/router';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import '../components/entry.component';
@@ -9,7 +9,7 @@ import { Entry } from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 
 @customElement('entries-route')
-export class EntriesRoute extends LitElement {
+export class EntriesRoute extends LitElement implements AfterEnterObserver {
     @state() currentDate: Date = new Date();
     public router?: Router;
     @state() scrollToDate?: number;

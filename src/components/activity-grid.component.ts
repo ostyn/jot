@@ -5,6 +5,7 @@ import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
+import { dispatchEvent as de, Events } from '../utils/Helpers';
 import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
@@ -160,9 +161,12 @@ export class ActivityGridComponent extends MobxLitElement {
                                 return html`<activity-component
                                     .activity=${activity}
                                     .showName=${true}
-                                    @click=${() => {
-                                        if (this.onActivityClick)
-                                            this.onActivityClick(activity);
+                                    @click=${(e) => {
+                                        de(
+                                            this,
+                                            Events.activityClick,
+                                            activity
+                                        );
                                     }}
                                     long-click.trigger="activityLongClick($event, activity)"
                                     .detail=${this.selectedActivityInfo?.[

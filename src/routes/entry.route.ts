@@ -70,14 +70,10 @@ export class EntryRoute extends LitElement {
                 </div>
             </section>
             <activity-grid
-                if.bind="activityService.isLoaded"
-                activities.bind="activities"
                 on-activity-click.call="addActivity(activity.id)"
                 on-activity-long-click.call="longPress(activity.id)"
-                activity-detail-set.call="activityDetailSet(activity, newValue)"
-                activity-detail-clear.call="activityDetailClear(activity)"
                 .selectedActivityInfo=${this.workingCopy?.activities}
-                show-filter-unused="true"
+                .showFilterUnused=${true}
             ></activity-grid>
             <div class="sticky-buttons">
                 <button

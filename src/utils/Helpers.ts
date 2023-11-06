@@ -28,6 +28,7 @@ export const dispatchEvent = function (
         })
     );
 };
+
 export enum Events {
     monthChange = 'monthChange',
     monthClick = 'monthClick',
@@ -37,4 +38,6 @@ export enum Events {
     activitySubmitted = 'activitySubmitted',
     activityDetailSelected = 'activityDetailSelected',
     textSheetDismissed = 'textSheetDismissed',
+    activityClick = 'activityClick',
+    activityLongClick = 'activityLongClick',
 }

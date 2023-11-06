@@ -138,7 +138,6 @@ export class ActivityGridComponent extends MobxLitElement {
                 </span>
                 ${this.showFilterUnused
                     ? html`<span
-                          if.bind="showFilterUnused"
                           class="grid-button"
                           @click=${this.toggleFilterUnused}
                       >
@@ -231,7 +230,7 @@ export class ActivityGridComponent extends MobxLitElement {
                 line-height: 0;
                 cursor: pointer;
             }
-            activity.selected-item {
+            activity-component.selected-item {
                 border: var(--primary) 1px solid;
                 border-radius: 12px;
             }

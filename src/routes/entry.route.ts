@@ -3,19 +3,60 @@ import { customElement, state } from 'lit/decorators.js';
 import { RouterLocation } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
-import { Entry } from '../interfaces/entry.interface';
+import { ActivityDetail, Entry } from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { Helpers } from '../utils/Helpers';
 
 @customElement('entry-route')
 export class EntryRoute extends LitElement {
     @state()
-    workingCopy?: Entry;
+    workingCopy!: Entry;
     onAfterEnter(location: RouterLocation) {
+        const originalEntry = entries.getEntry(location.params.id as string);
         this.workingCopy = {
             ...entries.getEntry(location.params.id as string),
+            activities: { ...originalEntry.activities },
         };
         window.scrollTo({ top: 0 });
+    }
+    longPress(id: string) {
+        navigator.vibrate(100);
+        this.editActivityDetail(id, this.workingCopy?.activities[id]);
+    }
+    editActivityDetail(
+        id: string,
+        detail: ActivityDetail | undefined = undefined
+    ) {
+        ActionSheetController.open({
+            type: 'activityDetailEdit',
+            data: { id, detail },
+            onSubmit: (detail: ActivityDetail) => {
+                if (Array.isArray(detail)) {
+                    if (detail.length > 0) {
+                        this.workingCopy.activities[id] = detail;
+                    } else if (detail.length === 0) {
+                        delete this.workingCopy.activities[id];
+                    }
+                } else if (Helpers.isNumeric(detail)) {
+                    this.workingCopy = {
+                        ...this.workingCopy,
+                        activities: {
+                            ...this.workingCopy.activities,
+                            [id]: detail,
+                        },
+                    };
+                } else {
+                    this.workingCopy = {
+                        ...this.workingCopy,
+                        activities: {
+                            ...this.workingCopy.activities,
+                        },
+                    };
+                    delete this.workingCopy.activities[id];
+                }
+            },
+        });
     }
     render() {
         return html`
@@ -44,10 +85,10 @@ export class EntryRoute extends LitElement {
                         name="file-text"
                     ></feather-icon>
                 </article>
-                <div>
+                <div class="right-column">
                     <input
                         type="date"
-                        class="inline"
+                        class="inline date-control"
                         .value=${this.workingCopy?.date || ''}
                         max.bind="date"
                         name=""
@@ -70,6 +111,7 @@ export class EntryRoute extends LitElement {
                 </div>
             </section>
             <activity-grid
+                @activityClick=${(e) => this.longPress(e.detail.id)}
                 on-activity-click.call="addActivity(activity.id)"
                 on-activity-long-click.call="longPress(activity.id)"
                 .selectedActivityInfo=${this.workingCopy?.activities}
@@ -96,17 +138,31 @@ export class EntryRoute extends LitElement {
                 display: flex;
                 overflow: auto;
                 position: relative;
-                padding: 0.75rem;
                 vertical-align: middle;
                 white-space: pre-line;
                 place-content: center;
                 max-height: 6rem;
+                margin: 0;
+                width: 100%;
+                padding: 0.5rem;
+                min-height: 100px;
+            }
+            .note-preview span {
+                width: 100%;
             }
             .note-icon {
                 position: sticky;
                 top: 0;
                 right: 0;
-                height: fit-content;
+            }
+            .right-column {
+                display: flex;
+                flex-flow: column;
+                align-items: center;
+                gap: 8px;
+            }
+            .date-control {
+                width: 170px;
             }
             .mood-icon {
                 font-size: 1.875rem;
@@ -115,9 +171,10 @@ export class EntryRoute extends LitElement {
             }
             .entry-editor-buttons {
                 display: flex;
-                justify-content: center;
                 align-items: center;
                 gap: 8px;
+                margin: 0.5rem;
+                min-height: 100px;
             }
         `,
     ];

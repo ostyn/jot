@@ -7,7 +7,7 @@ import { dispatchEvent, Events } from '../../utils/Helpers';
 export class TextSheet extends LitElement {
     @property()
     public text?: string;
-    public newText?: string;
+    public newText!: string;
     public hasDisconnected = false;
     static getActionSheet(
         data: any,
@@ -17,11 +17,11 @@ export class TextSheet extends LitElement {
         return html`<header>Notes about your day?</header>
             <text-sheet
                 .text=${data}
-                @textSheetDismissed=${(e) => submit(e.detail)}
+                @textSheetDismissed=${(e: any) => submit(e.detail)}
             ></text-sheet>`;
     }
     protected firstUpdated() {
-        this.newText = this.text;
+        this.newText = this.text || '';
     }
     disconnectedCallback() {
         // Was getting multiple of these
@@ -37,7 +37,7 @@ export class TextSheet extends LitElement {
                 attach-focus
                 class="text-prompt-input"
                 .value=${this.text as string}
-                @input=${(e) => (this.newText = e.target.value)}
+                @input=${(e: any) => (this.newText = e.target.value)}
             ></textarea>
         </span>`;
     }

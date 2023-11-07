@@ -1,7 +1,7 @@
 import { LitElement } from 'lit';
 
 export class Helpers {
-    public static isNumeric(str: any) {
+    public static isNumeric(str: any): boolean {
         if (typeof str == 'number') return true;
         if (typeof str !== 'string') return false; // we only process strings!
         return (

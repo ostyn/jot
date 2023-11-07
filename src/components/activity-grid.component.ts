@@ -208,7 +208,8 @@ export class ActivityGridComponent extends MobxLitElement {
                 top: 0;
                 background-color: var(--card-background-color);
                 z-index: 90;
-                margin: 0.5rem;
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
             }
             .group-header {
                 text-transform: uppercase;

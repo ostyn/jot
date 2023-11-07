@@ -9,15 +9,18 @@ export class SettingsRoute extends MobxLitElement {
     sub: any;
     render() {
         return html`<article>
-            <label class="inline"
-                ><input
-                    .checked=${settings.isDark}
-                    type="checkbox"
-                    role="switch"
-                    @change=${() => settings.setIsDark(!settings.isDark)}
-                />
-                ${settings.isDark ? 'Dark' : 'Light'} Mode
-            </label>
+            <header>Settings</header>
+            <section>
+                <label class="inline"
+                    ><input
+                        .checked=${settings.isDark}
+                        type="checkbox"
+                        role="switch"
+                        @change=${() => settings.setIsDark(!settings.isDark)}
+                    />
+                    ${settings.isDark ? 'Dark' : 'Light'} Mode
+                </label>
+            </section>
         </article>`;
     }
     static styles = [base];

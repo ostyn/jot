@@ -119,7 +119,7 @@ export class EntryRoute extends LitElement {
             ></activity-grid>
             <div class="sticky-buttons">
                 <button
-                    class="inline contrast"
+                    class="inline secondary"
                     click.trigger="deleteEntry()"
                     if.bind="entry.id"
                 >

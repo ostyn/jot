@@ -40,6 +40,9 @@ footer article {
 header {
     min-height: 34px;
 }
+article > header {
+    margin-bottom: 8px;
+}
 article {
     margin-left: auto;
     margin-right: auto;
@@ -89,4 +92,12 @@ a:active {
     place-content: center;
     align-items: center;
     filter: drop-shadow(0 -0.25rem 0.5rem rgba(0, 0, 0, 0.5));
+    border-color: transparent;
+}
+.secondary {
+    background-color: #e35e6c;
+    color: white;
+}
+.secondary:hover {
+    background-color: #ff7f89;
 }

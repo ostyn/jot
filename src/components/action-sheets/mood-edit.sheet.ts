@@ -92,7 +92,7 @@ export class MoodEditSheet extends LitElement {
                 ${this.localMood?.id
                     ? html`<button
                           type="button"
-                          class="inline contrast"
+                          class="inline secondary"
                           @click=${this.deleteMood}
                       >
                           delete

@@ -98,7 +98,7 @@ export class ActivityEditSheet extends MobxLitElement {
                 </button>
                 ${this.localActivity?.id
                     ? html`<button
-                          class="inline contrast"
+                          class="inline secondary"
                           type="button"
                           @click=${this.deleteActivity}
                       >

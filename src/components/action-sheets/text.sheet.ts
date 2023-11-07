@@ -1,5 +1,5 @@
 import { css, html, LitElement, TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 
@@ -7,6 +7,7 @@ import { dispatchEvent, Events } from '../../utils/Helpers';
 export class TextSheet extends LitElement {
     @property()
     public text?: string;
+    @state()
     public newText!: string;
     public hasDisconnected = false;
     static getActionSheet(

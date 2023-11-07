@@ -150,6 +150,12 @@ export class ActivityGridComponent extends MobxLitElement {
                                 ></feather-icon>`}
                       </span>`
                     : nothing}
+                <span
+                    class="grid-button"
+                    @click=${() => this.createNewActivity()}
+                >
+                    <feather-icon name="plus-circle"></feather-icon>
+                </span>
             </div>
             ${this.getSortedHeaders().map(
                 (header) => html`
@@ -193,7 +199,7 @@ export class ActivityGridComponent extends MobxLitElement {
             )}
         `;
     }
-    public createNewActivity(category: string) {
+    public createNewActivity(category?: string) {
         ActionSheetController.open({
             type: 'activityEdit',
             data: { category },

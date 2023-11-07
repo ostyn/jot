@@ -94,7 +94,7 @@ export class ActivityEditSheet extends MobxLitElement {
                     type="button"
                     @click=${this.submitActivity}
                 >
-                    save
+                    submit
                 </button>
                 ${this.localActivity?.id
                     ? html`<button
@@ -128,6 +128,8 @@ export class ActivityEditSheet extends MobxLitElement {
                         ${activities.getCategories().map(
                             (category) => html`
                                 <li
+                                    @click=${(e: any) =>
+                                        this.selectCategory(e.target.value)}
                                     .class=${this.localActivity?.category ===
                                     category
                                         ? 'selected-category'
@@ -137,10 +139,6 @@ export class ActivityEditSheet extends MobxLitElement {
                                         <input
                                             type="radio"
                                             name="category"
-                                            @click=${(e: any) =>
-                                                this.selectCategory(
-                                                    e.target.value
-                                                )}
                                             .value=${category}
                                             .checked=${category ===
                                             this.localActivity?.category}
@@ -152,13 +150,12 @@ export class ActivityEditSheet extends MobxLitElement {
                             `
                         )}
 
-                        <li>
+                        <li @click=${this.selectCustom}>
                             <label>
                                 <input
                                     class="radio-button"
                                     type="radio"
                                     name="category"
-                                    @click=${this.selectCustom}
                                 />
                                 ${this.isCustom
                                     ? html`<input
@@ -212,6 +209,9 @@ export class ActivityEditSheet extends MobxLitElement {
             }
             .category-control ul.option-list {
                 position: unset;
+            }
+            .option-list * {
+                cursor: pointer;
             }
             .lastRow {
                 display: flex;

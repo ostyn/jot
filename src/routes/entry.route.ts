@@ -16,9 +16,8 @@ export class EntryRoute extends LitElement {
         const originalEntry = entries.getEntry(location.params.id as string);
         this.workingCopy = {
             ...entries.getEntry(location.params.id as string),
-            activities: { ...originalEntry.activities },
+            activities: { ...originalEntry?.activities },
         };
-        window.scrollTo({ top: 0 });
     }
     longPress(id: string) {
         navigator.vibrate(100);
@@ -98,7 +97,7 @@ export class EntryRoute extends LitElement {
                         @click=${() =>
                             ActionSheetController.open({
                                 type: 'mood',
-                                data: this.workingCopy?.mood,
+                                data: this.workingCopy?.mood || 0,
                                 onSubmit: (data) =>
                                     (this.workingCopy = {
                                         ...this.workingCopy,

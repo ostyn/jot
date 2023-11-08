@@ -1,0 +1,21 @@
+.day:has(.day-price),
+.day:has(.day-price):hover {
+    background: green;
+    margin: 2px;
+    color: white;
+}
+.day:has(.day-price):hover {
+    background: rgb(0, 183, 0);
+    color: lightblue !important;
+}
+.day-price {
+    font-size: 0.9em;
+}
+.today:has(.day-price) {
+    background: teal;
+    color: white !important;
+}
+.today:has(.day-price):hover {
+    background: rgb(0, 183, 183);
+    color: lightblue !important;
+}

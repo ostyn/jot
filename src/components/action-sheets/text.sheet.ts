@@ -37,7 +37,7 @@ export class TextSheet extends LitElement {
                 name="text"
                 attach-focus
                 class="text-prompt-input"
-                .value=${this.text as string}
+                .value=${this.newText as string}
                 @input=${(e: any) => (this.newText = e.target.value)}
             ></textarea>
         </span>`;

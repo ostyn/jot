@@ -17,7 +17,7 @@ export class EntryRoute extends LitElement {
         this.workingCopy = {
             ...entries.getEntry(location.params.id as string),
             activities: { ...originalEntry?.activities },
-        };
+        } as Entry;
     }
     longPress(id: string) {
         navigator.vibrate(100);
@@ -110,7 +110,7 @@ export class EntryRoute extends LitElement {
                 </div>
             </section>
             <activity-grid
-                @activityClick=${(e) => this.longPress(e.detail.id)}
+                @activityClick=${(e: any) => this.longPress(e.detail.id)}
                 on-activity-click.call="addActivity(activity.id)"
                 on-activity-long-click.call="longPress(activity.id)"
                 .selectedActivityInfo=${this.workingCopy?.activities}

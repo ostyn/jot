@@ -46,7 +46,7 @@ class EntriesStore {
         });
         return activityStats;
     }
-    public getEntry(id: string): Entry {
+    public getEntry(id: string): Entry | undefined {
         return this.all.find((entry) => entry.id === id);
     }
     constructor() {

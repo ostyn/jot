@@ -1,67 +1,49 @@
-import { css, html, LitElement, nothing, TemplateResult } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { css, html, nothing, TemplateResult } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
-import { ActivityDetail } from '../../interfaces/entry.interface';
+import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
-import { dispatchEvent, Events, Helpers } from '../../utils/Helpers';
+import { ActionSheetController } from './action-sheet-controller';
 
 @customElement('activity-detail-edit-sheet')
-export class ActivityDetailEditSheet extends LitElement {
-    @state()
-    public newDetail?: ActivityDetail;
+export class ActivityDetailEditSheet extends MobxLitElement {
     @property()
-    public detail?: ActivityDetail;
+    public store?: EntryEditStore;
     @property()
     public activityId!: string;
-    public hasDisconnected = false;
-    @state()
-    editingNumber: boolean = true;
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
+        _submit: (data: any) => void,
         _dismiss: () => void
     ): TemplateResult {
         return html`<header>Add some detail?</header>
             <activity-detail-edit-sheet
                 .activityId=${data.id}
-                .detail=${data.detail}
-                @textSheetDismissed=${(e: any) => submit(e.detail)}
+                .store=${data.store}
             ></activity-detail-edit-sheet>`;
     }
-    protected firstUpdated() {
-        this.newDetail = this.detail;
-        this.editingNumber =
-            Helpers.isNumeric(this.newDetail) || this.newDetail === undefined;
-    }
-    disconnectedCallback() {
-        // Was getting multiple of these
-        if (!this.hasDisconnected) {
-            this.hasDisconnected = true;
-            dispatchEvent(this, Events.textSheetDismissed, this.newDetail);
-        }
-    }
     add(amount: number) {
-        if (this.newDetail === undefined) this.newDetail = 0;
-        if (Helpers.isNumeric(this.newDetail)) {
-            this.newDetail = (this.newDetail as number) + amount;
-        }
+        this.store?.addToNumericActivityDetail(this.activityId, amount);
     }
     clear() {
-        this.newDetail = undefined;
+        this.store?.clearActivityDetail(this.activityId);
+        ActionSheetController.close();
     }
     render() {
+        const detail = this.store?.getActivityDetail(this.activityId);
         return html`
             <header>
                 <activity-component
-                    .detail=${this.newDetail}
+                    .detail=${detail}
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
-                <button class="inline secondary" @click=${() => this.clear()}>
+                <button class="inline secondary" @click=${this.clear}>
                     clear
                 </button>
             </header>
-            ${this.editingNumber
+            ${!Array.isArray(detail)
                 ? html`<section class="content">
                       <section>
                           <button class="inline" @click=${() => this.add(10)}>
@@ -90,8 +72,13 @@ export class ActivityDetailEditSheet extends LitElement {
                           class="inline number-input"
                           ref="inputBox"
                           focus="true"
-                          type="text"
-                          .value=${this.newDetail || ''}
+                          type="number"
+                          .value=${`${detail}`}
+                          @input=${(e) =>
+                              this.store?.setActivityDetail(
+                                  this.activityId,
+                                  e.target.value
+                              )}
                           placeholder="enter number"
                       />
                   </section>`

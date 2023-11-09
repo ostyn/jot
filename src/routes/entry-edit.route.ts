@@ -1,6 +1,8 @@
-import { css, html, LitElement } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { css, html } from 'lit';
+import { customElement } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
+import { action, makeObservable, observable } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import { ActivityDetail, Entry } from '../interfaces/entry.interface';
@@ -8,53 +10,79 @@ import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { Helpers } from '../utils/Helpers';
 
+export class EntryEditStore {
+    constructor() {
+        makeObservable(this);
+    }
+    @observable
+    note: string = '';
+    @observable
+    activities: { [key: string]: ActivityDetail } = {};
+    @observable
+    mood: string = '';
+    @observable
+    date: string = '';
+    @action.bound
+    public setEntry(entry?: Entry) {
+        this.setActivities(entry?.activities);
+        this.setDate(entry?.date);
+        this.setMood(entry?.mood);
+        this.setNote(entry?.note);
+    }
+    @action.bound
+    public setNote(note?: string) {
+        this.note = note || '';
+    }
+    @action.bound
+    public setActivities(activities?: { [key: string]: ActivityDetail }) {
+        this.activities = activities || {};
+    }
+    @action.bound
+    public setMood(mood?: string) {
+        this.mood = mood || '0';
+    }
+    @action.bound
+    public setDate(date?: string) {
+        this.date = date || '';
+    }
+    @action.bound
+    public setActivityDetail(activityId: string, detail: ActivityDetail) {
+        this.activities[activityId] = detail;
+    }
+    @action.bound
+    public clearActivityDetail(activityId: string) {
+        if (this.activities[activityId]) delete this.activities[activityId];
+    }
+    public getActivityDetail(activityId: string): ActivityDetail {
+        return this.activities[activityId];
+    }
+    @action.bound
+    public addToNumericActivityDetail(activityId: string, amount: number) {
+        let detail = this.getActivityDetail(activityId);
+        if (!Array.isArray(detail)) {
+            detail = detail || 0;
+            console.log(activityId, detail);
+
+            this.setActivityDetail(activityId, detail + amount);
+        }
+    }
+}
+
 @customElement('entry-edit-route')
-export class EntryEditRoute extends LitElement {
-    @state()
-    workingCopy!: Entry;
+export class EntryEditRoute extends MobxLitElement {
+    store = new EntryEditStore();
     onAfterEnter(location: RouterLocation) {
         const originalEntry = entries.getEntry(location.params.id as string);
-        this.workingCopy = {
-            ...entries.getEntry(location.params.id as string),
-            activities: { ...originalEntry?.activities },
-        } as Entry;
+        this.store.setEntry(originalEntry);
     }
     longPress(id: string) {
         navigator.vibrate(100);
-        this.editActivityDetail(id, this.workingCopy?.activities[id]);
+        this.editActivityDetail(id);
     }
-    editActivityDetail(
-        id: string,
-        detail: ActivityDetail | undefined = undefined
-    ) {
+    editActivityDetail(id: string) {
         ActionSheetController.open({
             type: 'activityDetailEdit',
-            data: { id, detail },
-            onSubmit: (detail: ActivityDetail) => {
-                if (Array.isArray(detail)) {
-                    if (detail.length > 0) {
-                        this.workingCopy.activities[id] = detail;
-                    } else if (detail.length === 0) {
-                        delete this.workingCopy.activities[id];
-                    }
-                } else if (Helpers.isNumeric(detail)) {
-                    this.workingCopy = {
-                        ...this.workingCopy,
-                        activities: {
-                            ...this.workingCopy.activities,
-                            [id]: detail,
-                        },
-                    };
-                } else {
-                    this.workingCopy = {
-                        ...this.workingCopy,
-                        activities: {
-                            ...this.workingCopy.activities,
-                        },
-                    };
-                    delete this.workingCopy.activities[id];
-                }
-            },
+            data: { id, store: this.store },
         });
     }
     render() {
@@ -68,17 +96,11 @@ export class EntryEditRoute extends LitElement {
                     @click=${() =>
                         ActionSheetController.open({
                             type: 'text',
-                            data: this.workingCopy?.note,
-                            onSubmit: (data) =>
-                                (this.workingCopy = {
-                                    ...this.workingCopy,
-                                    note: data,
-                                }),
+                            data: this.store.note,
+                            onSubmit: (data) => this.store.setNote(data),
                         })}
                 >
-                    <span
-                        >${this.workingCopy?.note || 'enter note here...'}</span
-                    >
+                    <span>${this.store.note || 'enter note here...'}</span>
                     <feather-icon
                         class="note-icon"
                         name="file-text"
@@ -88,7 +110,7 @@ export class EntryEditRoute extends LitElement {
                     <input
                         type="date"
                         class="inline date-control"
-                        .value=${this.workingCopy?.date || ''}
+                        .value=${this.store.date || ''}
                         max.bind="date"
                         name=""
                     />
@@ -97,15 +119,11 @@ export class EntryEditRoute extends LitElement {
                         @click=${() =>
                             ActionSheetController.open({
                                 type: 'mood',
-                                data: this.workingCopy?.mood || 0,
-                                onSubmit: (data) =>
-                                    (this.workingCopy = {
-                                        ...this.workingCopy,
-                                        mood: data,
-                                    }),
+                                data: this.store.mood || 0,
+                                onSubmit: (data) => this.store.setMood(data),
                             })}
                     >
-                        ${moods.getMood(this.workingCopy?.mood || '0')?.emoji}
+                        ${moods.getMood(this.store.mood)?.emoji}
                     </span>
                 </div>
             </section>
@@ -113,7 +131,7 @@ export class EntryEditRoute extends LitElement {
                 @activityClick=${(e: any) => this.longPress(e.detail.id)}
                 on-activity-click.call="addActivity(activity.id)"
                 on-activity-long-click.call="longPress(activity.id)"
-                .selectedActivityInfo=${this.workingCopy?.activities}
+                .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}
             ></activity-grid>
             <div class="sticky-buttons">

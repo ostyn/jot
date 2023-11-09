@@ -21,7 +21,7 @@ export class ActivityDetailEditSheet extends LitElement {
         submit: (data: any) => void,
         _dismiss: () => void
     ): TemplateResult {
-        return html`<header>Add some details?</header>
+        return html`<header>Add some detail?</header>
             <activity-detail-edit-sheet
                 .activityId=${data.id}
                 .detail=${data.detail}
@@ -57,7 +57,7 @@ export class ActivityDetailEditSheet extends LitElement {
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
-                <button class="inline contrast" @click=${() => this.clear()}>
+                <button class="inline secondary" @click=${() => this.clear()}>
                     clear
                 </button>
             </header>

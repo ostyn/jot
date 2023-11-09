@@ -108,6 +108,7 @@ export class ActivityGridComponent extends MobxLitElement {
                           class="inline"
                       />`
                     : html`<span
+                          .title=${'search'}
                           class="grid-button"
                           @click=${() => {
                               this.search = !this.search;
@@ -116,20 +117,36 @@ export class ActivityGridComponent extends MobxLitElement {
                           <feather-icon name="search"></feather-icon>
                           ${this.searchTerm ? '"' + this.searchTerm + '"' : ''}
                       </span>`}
-                ${this.searchTerm && !this.search
+                ${this.searchTerm || this.search
                     ? html`<span
+                          .title=${'clear search'}
                           class="grid-button"
-                          @click=${() => (this.searchTerm = '')}
+                          @click=${() => {
+                              this.searchTerm = '';
+                              this.search = false;
+                          }}
                       >
                           <feather-icon name="x-circle"></feather-icon>
                       </span>`
                     : nothing}
-                <span class="grid-button" @click=${this.toggleShowArchived}>
+                <span
+                    .title=${this.filterArchived
+                        ? 'filtering archived'
+                        : 'showing all'}
+                    class="grid-button"
+                    @click=${this.toggleShowArchived}
+                >
                     ${this.filterArchived
                         ? html`<feather-icon name="eye-off"></feather-icon>`
                         : html`<feather-icon name="eye"></feather-icon>`}
                 </span>
-                <span class="grid-button" @click=${this.toggleGroup}>
+                <span
+                    .title=${this.groupActivities
+                        ? 'grouping activities'
+                        : 'no grouping'}
+                    class="grid-button"
+                    @click=${this.toggleGroup}
+                >
                     ${this.groupActivities
                         ? html`<feather-icon name="server"></feather-icon>`
                         : html`<feather-icon
@@ -138,6 +155,9 @@ export class ActivityGridComponent extends MobxLitElement {
                 </span>
                 ${this.showFilterUnused
                     ? html`<span
+                          .title=${this.filterUnused
+                              ? 'hiding unused'
+                              : 'showing unused'}
                           class="grid-button"
                           @click=${this.toggleFilterUnused}
                       >
@@ -151,6 +171,7 @@ export class ActivityGridComponent extends MobxLitElement {
                       </span>`
                     : nothing}
                 <span
+                    title="add activity"
                     class="grid-button"
                     @click=${() => this.createNewActivity()}
                 >
@@ -160,7 +181,7 @@ export class ActivityGridComponent extends MobxLitElement {
             ${this.getSortedHeaders().map(
                 (header) => html`
                     <article>
-                        <h2 class="group-header">${header}</h2>
+                        <header class="group-header">${header}</header>
                         ${(this.categoryToActivityList.get(header) || []).map(
                             (activity) => {
                                 return html`<activity-component
@@ -189,6 +210,7 @@ export class ActivityGridComponent extends MobxLitElement {
                             }
                         )}
                         <span
+                            title="add activity"
                             class="newButton"
                             @click=${() => this.createNewActivity(header)}
                         >
@@ -211,11 +233,14 @@ export class ActivityGridComponent extends MobxLitElement {
             .grid-controls {
                 text-align: center;
                 position: sticky;
-                top: 0;
+                top: 0px;
                 background-color: var(--card-background-color);
                 z-index: 90;
                 margin-left: 0.5rem;
                 margin-right: 0.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             .group-header {
                 text-transform: uppercase;
@@ -233,9 +258,11 @@ export class ActivityGridComponent extends MobxLitElement {
             }
             .grid-button {
                 padding: 0.5rem;
-                display: inline-block;
+                display: inline-flex;
                 line-height: 0;
                 cursor: pointer;
+                align-items: center;
+                gap: 8px;
             }
             activity-component.selected-item {
                 border: var(--primary) 1px solid;

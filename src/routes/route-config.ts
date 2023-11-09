@@ -3,7 +3,7 @@ import { Route, Router } from '@vaadin/router';
 import { FeatherIconNames } from 'feather-icons';
 import './activities.route';
 import './entries.route';
-import './entry.route';
+import './entry-edit.route';
 import './import.route';
 import './moods.route';
 import './search.route';
@@ -36,7 +36,7 @@ export const routes: Route[] = [
     },
     {
         path: '/entry/:id?',
-        component: 'entry-route',
+        component: 'entry-edit-route',
         name: 'entry',
     },
 

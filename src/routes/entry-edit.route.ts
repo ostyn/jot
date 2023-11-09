@@ -8,8 +8,8 @@ import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { Helpers } from '../utils/Helpers';
 
-@customElement('entry-route')
-export class EntryRoute extends LitElement {
+@customElement('entry-edit-route')
+export class EntryEditRoute extends LitElement {
     @state()
     workingCopy!: Entry;
     onAfterEnter(location: RouterLocation) {

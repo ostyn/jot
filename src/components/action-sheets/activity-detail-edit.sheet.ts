@@ -1,5 +1,5 @@
 import { css, html, nothing, TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
 import { EntryEditStore } from '../../routes/entry-edit.route';
@@ -12,6 +12,10 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     public store?: EntryEditStore;
     @property()
     public activityId!: string;
+    @state()
+    newItem: string = '';
+    @state()
+    currentlySelectedIndex?: number = undefined;
     static getActionSheet(
         data: any,
         _submit: (data: any) => void,
@@ -30,12 +34,21 @@ export class ActivityDetailEditSheet extends MobxLitElement {
         this.store?.clearActivityDetail(this.activityId);
         ActionSheetController.close();
     }
+    addItemOrSubmit(e) {
+        e.preventDefault();
+        if (this.newItem !== '') {
+            this.store?.addToArrayActivityDetail(this.activityId, this.newItem);
+            this.newItem = '';
+        } else {
+            ActionSheetController.close();
+        }
+    }
     render() {
         const detail = this.store?.getActivityDetail(this.activityId);
         return html`
             <header>
                 <activity-component
-                    .detail=${detail}
+                    .detail=${Array.isArray(detail) ? undefined : detail}
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
@@ -43,8 +56,75 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                     clear
                 </button>
             </header>
-            ${!Array.isArray(detail)
-                ? html`<section class="content">
+            ${Array.isArray(detail)
+                ? html`
+                      <div class="activity-details">
+                          ${detail.map(
+                              (item, index) =>
+                                  html`<div>
+                                      ${this.currentlySelectedIndex !== index
+                                          ? html`<activity-detail-component
+                                                @click=${() => {
+                                                    this.currentlySelectedIndex =
+                                                        index;
+                                                }}
+                                                >${item}</activity-detail-component
+                                            >`
+                                          : html`<input
+                                                    class="inline"
+                                                    type="text"
+                                                    blur.trigger="loadMru()"
+                                                    .value=${detail[index]}
+                                                    @input=${(e) =>
+                                                        this.store?.updateArrayActivityDetail(
+                                                            this.activityId,
+                                                            index,
+                                                            e.target.value
+                                                        )}
+                                                /><button
+                                                    class="inline"
+                                                    @click=${() => {
+                                                        this.store?.removeArrayActivityDetail(
+                                                            this.activityId,
+                                                            this
+                                                                .currentlySelectedIndex as number
+                                                        );
+                                                        this.currentlySelectedIndex =
+                                                            undefined;
+                                                    }}
+                                                >
+                                                    ❌
+                                                </button>`}
+                                  </div>`
+                          )}
+                      </div>
+                      <hr />
+                      <div>
+                          <form @submit=${this.addItemOrSubmit}>
+                              <input
+                                  class="width-64 inline"
+                                  ref="inputBox"
+                                  focus="true"
+                                  type="text"
+                                  .value=${this.newItem}
+                                  @input=${(e: any) =>
+                                      (this.newItem = e.target.value)}
+                                  placeholder="add item"
+                              />
+                              ${this.newItem
+                                  ? html`<button
+                                        class="inline"
+                                        @click=${this.addItemOrSubmit}
+                                    >
+                                        <feather-icon
+                                            name="play"
+                                        ></feather-icon>
+                                    </button>`
+                                  : nothing}
+                          </form>
+                      </div>
+                  `
+                : html`<section class="content">
                       <section>
                           <button class="inline" @click=${() => this.add(10)}>
                               +10
@@ -81,8 +161,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                               )}
                           placeholder="enter number"
                       />
-                  </section>`
-                : nothing}
+                  </section>`}
         `;
     }
     static styles = [
@@ -127,6 +206,10 @@ export class ActivityDetailEditSheet extends MobxLitElement {
             .activity-details {
                 display: flex;
                 flex-wrap: wrap;
+            }
+            form {
+                display: flex;
+                gap: 4px;
             }
         `,
     ];

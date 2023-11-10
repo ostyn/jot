@@ -8,7 +8,6 @@ import { ActionSheetController } from '../components/action-sheets/action-sheet-
 import { ActivityDetail, Entry } from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
-import { Helpers } from '../utils/Helpers';
 
 export class EntryEditStore {
     constructor() {
@@ -47,7 +46,9 @@ export class EntryEditStore {
     }
     @action.bound
     public setActivityDetail(activityId: string, detail: ActivityDetail) {
-        this.activities[activityId] = detail;
+        if (Array.isArray(detail) && detail.length === 0)
+            this.clearActivityDetail(activityId);
+        else this.activities[activityId] = detail;
     }
     @action.bound
     public clearActivityDetail(activityId: string) {
@@ -61,9 +62,37 @@ export class EntryEditStore {
         let detail = this.getActivityDetail(activityId);
         if (!Array.isArray(detail)) {
             detail = detail || 0;
-            console.log(activityId, detail);
 
             this.setActivityDetail(activityId, detail + amount);
+        }
+    }
+    @action.bound
+    public addToArrayActivityDetail(activityId: string, newDetail: string) {
+        let details = this.getActivityDetail(activityId);
+        if (Array.isArray(details)) {
+            this.setActivityDetail(activityId, [...details, newDetail]);
+        }
+    }
+    @action.bound
+    public updateArrayActivityDetail(
+        activityId: string,
+        index: number,
+        updatedDetail: string
+    ) {
+        let details = this.getActivityDetail(activityId);
+        if (Array.isArray(details)) {
+            const newDetails = [...details];
+            newDetails[index] = updatedDetail;
+            this.setActivityDetail(activityId, newDetails);
+        }
+    }
+    @action.bound
+    public removeArrayActivityDetail(activityId: string, index: number) {
+        let details = this.getActivityDetail(activityId);
+        if (Array.isArray(details)) {
+            const newDetails = [...details];
+            newDetails.splice(index, 1);
+            this.setActivityDetail(activityId, newDetails);
         }
     }
 }
@@ -73,7 +102,10 @@ export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
     onAfterEnter(location: RouterLocation) {
         const originalEntry = entries.getEntry(location.params.id as string);
-        this.store.setEntry(originalEntry);
+        this.store.setEntry({
+            ...originalEntry,
+            activities: { ...originalEntry?.activities },
+        } as Entry);
     }
     longPress(id: string) {
         navigator.vibrate(100);

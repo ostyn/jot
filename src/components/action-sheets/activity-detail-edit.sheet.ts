@@ -34,7 +34,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
         this.store?.clearActivityDetail(this.activityId);
         ActionSheetController.close();
     }
-    addItemOrSubmit(e) {
+    addItemOrSubmit(e: any) {
         e.preventDefault();
         if (this.newItem !== '') {
             this.store?.addToArrayActivityDetail(this.activityId, this.newItem);
@@ -75,7 +75,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                                     type="text"
                                                     blur.trigger="loadMru()"
                                                     .value=${detail[index]}
-                                                    @input=${(e) =>
+                                                    @input=${(e: any) =>
                                                         this.store?.updateArrayActivityDetail(
                                                             this.activityId,
                                                             index,
@@ -154,7 +154,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                           focus="true"
                           type="number"
                           .value=${`${detail}`}
-                          @input=${(e) =>
+                          @input=${(e: any) =>
                               this.store?.setActivityDetail(
                                   this.activityId,
                                   e.target.value

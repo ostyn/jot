@@ -17,7 +17,9 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     @state()
     currentlySelectedIndex?: number = undefined;
     @state()
-    detailIsArray = false;
+    editingArray?: boolean;
+    @property()
+    defaultIsArray?: boolean = false;
     static getActionSheet(
         data: any,
         _submit: (data: any) => void,
@@ -25,14 +27,15 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     ): TemplateResult {
         return html`<header>Add some detail?</header>
             <activity-detail-edit-sheet
+                .defaultIsArray=${data.defaultIsArray}
                 .activityId=${data.id}
                 .store=${data.store}
             ></activity-detail-edit-sheet>`;
     }
     protected firstUpdated(): void {
-        this.detailIsArray = Array.isArray(
-            this.store?.getActivityDetail(this.activityId)
-        );
+        let detail = this.store?.getActivityDetail(this.activityId);
+        if (detail) this.editingArray = Array.isArray(detail);
+        else this.editingArray = this.defaultIsArray;
     }
     add(amount: number) {
         this.store?.addToNumericActivityDetail(this.activityId, amount);
@@ -76,14 +79,14 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                             confirm('Continuing will clear existing detail')
                         ) {
                             this.store?.clearActivityDetail(this.activityId);
-                            this.detailIsArray = !this.detailIsArray;
+                            this.editingArray = !this.editingArray;
                         }
                     }}
                 >
-                    ${this.detailIsArray ? 'use number' : 'use text'}
+                    ${this.editingArray ? 'use number' : 'use text'}
                 </button>
             </header>
-            ${this.detailIsArray
+            ${this.editingArray
                 ? html`
                       <h2>Details</h2>
                       <div class="activity-details">

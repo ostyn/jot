@@ -16,6 +16,8 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     newItem: string = '';
     @state()
     currentlySelectedIndex?: number = undefined;
+    @state()
+    detailIsArray = false;
     static getActionSheet(
         data: any,
         _submit: (data: any) => void,
@@ -26,6 +28,11 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 .activityId=${data.id}
                 .store=${data.store}
             ></activity-detail-edit-sheet>`;
+    }
+    protected firstUpdated(): void {
+        this.detailIsArray = Array.isArray(
+            this.store?.getActivityDetail(this.activityId)
+        );
     }
     add(amount: number) {
         this.store?.addToNumericActivityDetail(this.activityId, amount);
@@ -44,7 +51,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
         }
     }
     render() {
-        const detail = this.store?.getActivityDetail(this.activityId);
+        const detail = this.store?.getActivityDetail(this.activityId) || [];
         return html`
             <header>
                 <activity-component
@@ -55,11 +62,32 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 <button class="inline secondary" @click=${this.clear}>
                     clear
                 </button>
+                <button
+                    class="inline contrast"
+                    @click=${() => {
+                        const existingDetail = this.store?.getActivityDetail(
+                            this.activityId
+                        );
+                        if (
+                            (Array.isArray(existingDetail) &&
+                                !existingDetail.length) ||
+                            (!Array.isArray(existingDetail) &&
+                                !existingDetail) ||
+                            confirm('Continuing will clear existing detail')
+                        ) {
+                            this.store?.clearActivityDetail(this.activityId);
+                            this.detailIsArray = !this.detailIsArray;
+                        }
+                    }}
+                >
+                    ${this.detailIsArray ? 'use number' : 'use text'}
+                </button>
             </header>
-            ${Array.isArray(detail)
+            ${this.detailIsArray
                 ? html`
+                      <h2>Details</h2>
                       <div class="activity-details">
-                          ${detail.map(
+                          ${(Array.isArray(detail) ? detail : []).map(
                               (item, index) =>
                                   html`<div>
                                       ${this.currentlySelectedIndex !== index
@@ -74,7 +102,11 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                                     class="inline"
                                                     type="text"
                                                     blur.trigger="loadMru()"
-                                                    .value=${detail[index]}
+                                                    .value=${Array.isArray(
+                                                        detail
+                                                    )
+                                                        ? detail[index]
+                                                        : ''}
                                                     @input=${(e: any) =>
                                                         this.store?.updateArrayActivityDetail(
                                                             this.activityId,
@@ -124,44 +156,60 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                           </form>
                       </div>
                   `
-                : html`<section class="content">
-                      <section>
-                          <button class="inline" @click=${() => this.add(10)}>
-                              +10
-                          </button>
-                          <button class="inline" @click=${() => this.add(1)}>
-                              +1
-                          </button>
-                          <button class="inline" @click=${() => this.add(0.25)}>
-                              +0.25
-                          </button>
-                          <button
-                              class="inline"
-                              @click=${() => this.add(-0.25)}
-                          >
-                              -0.25
-                          </button>
-                          <button class="inline" @click=${() => this.add(-1)}>
-                              -1
-                          </button>
-                          <button class="inline" @click=${() => this.add(-10)}>
-                              -10
-                          </button>
-                      </section>
-                      <input
-                          class="inline number-input"
-                          ref="inputBox"
-                          focus="true"
-                          type="number"
-                          .value=${`${detail}`}
-                          @input=${(e: any) =>
-                              this.store?.setActivityDetail(
-                                  this.activityId,
-                                  e.target.value
-                              )}
-                          placeholder="enter number"
-                      />
-                  </section>`}
+                : html`<h2>Amount</h2>
+                      <section class="content">
+                          <section>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(-10)}
+                              >
+                                  -10
+                              </button>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(-1)}
+                              >
+                                  -1
+                              </button>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(-0.25)}
+                              >
+                                  -0.25
+                              </button>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(0.25)}
+                              >
+                                  +0.25
+                              </button>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(1)}
+                              >
+                                  +1
+                              </button>
+                              <button
+                                  class="inline"
+                                  @click=${() => this.add(10)}
+                              >
+                                  +10
+                              </button>
+                          </section>
+                          <input
+                              class="inline number-input"
+                              ref="inputBox"
+                              focus="true"
+                              type="number"
+                              .value=${`${detail}`}
+                              @input=${(e: any) =>
+                                  this.store?.setActivityDetail(
+                                      this.activityId,
+                                      e.target.value
+                                  )}
+                              placeholder="enter number"
+                          />
+                      </section>`}
         `;
     }
     static styles = [

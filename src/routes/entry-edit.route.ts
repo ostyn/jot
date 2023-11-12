@@ -46,9 +46,7 @@ export class EntryEditStore {
     }
     @action.bound
     public setActivityDetail(activityId: string, detail: ActivityDetail) {
-        if (Array.isArray(detail) && detail.length === 0)
-            this.clearActivityDetail(activityId);
-        else this.activities[activityId] = detail;
+        this.activities[activityId] = detail;
     }
     @action.bound
     public clearActivityDetail(activityId: string) {
@@ -68,7 +66,7 @@ export class EntryEditStore {
     }
     @action.bound
     public addToArrayActivityDetail(activityId: string, newDetail: string) {
-        let details = this.getActivityDetail(activityId);
+        let details = this.getActivityDetail(activityId) || [];
         if (Array.isArray(details)) {
             this.setActivityDetail(activityId, [...details, newDetail]);
         }

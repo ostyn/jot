@@ -1,4 +1,4 @@
-import { computed, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
@@ -48,6 +48,13 @@ class EntriesStore {
     }
     public getEntry(id: string): Entry | undefined {
         return this.all.find((entry) => entry.id === id);
+    }
+    @action.bound
+    updateEntry(newEntry: Entry) {
+        const entryIndex = this.all.findIndex(
+            (entry) => entry.id === newEntry.id
+        );
+        this.all[entryIndex] = newEntry;
     }
     constructor() {
         makeObservable(this);

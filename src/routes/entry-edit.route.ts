@@ -1,7 +1,7 @@
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { RouterLocation } from '@vaadin/router';
+import { Router, RouterLocation } from '@vaadin/router';
 import { action, makeObservable, observable } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
@@ -21,36 +21,50 @@ export class EntryEditStore {
     mood: string = '';
     @observable
     date: string = '';
+    @observable
+    pendingChanges = false;
+    initialized = false;
     @action.bound
     public setEntry(entry?: Entry) {
         this.setActivities(entry?.activities);
         this.setDate(entry?.date);
         this.setMood(entry?.mood);
         this.setNote(entry?.note);
+        this.initialized = true;
+    }
+    @action.bound
+    public unmarkPendingChanges() {
+        this.pendingChanges = false;
     }
     @action.bound
     public setNote(note?: string) {
         this.note = note || '';
+        this.pendingChanges = true && this.initialized;
     }
     @action.bound
     public setActivities(activities?: { [key: string]: ActivityDetail }) {
         this.activities = activities || {};
+        this.pendingChanges = true && this.initialized;
     }
     @action.bound
     public setMood(mood?: string) {
         this.mood = mood || '0';
+        this.pendingChanges = true && this.initialized;
     }
     @action.bound
     public setDate(date?: string) {
         this.date = date || '';
+        this.pendingChanges = true && this.initialized;
     }
     @action.bound
     public setActivityDetail(activityId: string, detail: ActivityDetail) {
         this.activities[activityId] = detail;
+        this.pendingChanges = true && this.initialized;
     }
     @action.bound
     public clearActivityDetail(activityId: string) {
         if (this.activities[activityId]) delete this.activities[activityId];
+        this.pendingChanges = true && this.initialized;
     }
     public getActivityDetail(activityId: string): ActivityDetail {
         return this.activities[activityId];
@@ -60,7 +74,6 @@ export class EntryEditStore {
         let detail = this.getActivityDetail(activityId);
         if (!Array.isArray(detail)) {
             detail = detail || 0;
-
             this.setActivityDetail(activityId, detail + amount);
         }
     }
@@ -98,12 +111,19 @@ export class EntryEditStore {
 @customElement('entry-edit-route')
 export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
+    originalEntry?: Entry;
     onAfterEnter(location: RouterLocation) {
-        const originalEntry = entries.getEntry(location.params.id as string);
+        this.originalEntry = entries.getEntry(location.params.id as string);
         this.store.setEntry({
-            ...originalEntry,
-            activities: { ...originalEntry?.activities },
+            ...this.originalEntry,
+            activities: { ...this.originalEntry?.activities },
         } as Entry);
+    }
+    onBeforeLeave(_location: any, commands: any, _router: any) {
+        console.log(this.store.pendingChanges);
+        if (this.store.pendingChanges && !confirm('Lose unsaved changes?')) {
+            return commands.prevent();
+        }
     }
     longPress(id: string) {
         navigator.vibrate(100);
@@ -159,7 +179,6 @@ export class EntryEditRoute extends MobxLitElement {
             </section>
             <activity-grid
                 @activityClick=${(e: any) => this.longPress(e.detail.id)}
-                on-activity-click.call="addActivity(activity.id)"
                 on-activity-long-click.call="longPress(activity.id)"
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}
@@ -172,7 +191,20 @@ export class EntryEditRoute extends MobxLitElement {
                 >
                     <feather-icon name="trash-2"></feather-icon>
                 </button>
-                <button class="inline" click.trigger="submitEntry()">
+                <button
+                    class="inline"
+                    @click=${() => {
+                        this.store.unmarkPendingChanges();
+                        entries.updateEntry({
+                            ...this.originalEntry,
+                            activities: { ...this.store.activities },
+                            note: this.store.note,
+                            mood: this.store.mood,
+                            date: this.store.date,
+                        });
+                        Router.go('/');
+                    }}
+                >
                     <feather-icon name="save"></feather-icon>
                 </button>
             </div>

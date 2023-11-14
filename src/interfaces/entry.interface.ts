@@ -1,18 +1,20 @@
-export interface Entry {
+export interface Entry extends UserEditableEntryFields {
     userId?: any;
     activitiesArray?: string[];
     day?: number;
     month?: number;
     year?: number;
-    lastUpdatedBy?: EditTools;
+    lastUpdatedBy: EditTools;
     updated?: string;
-    created?: string;
+    created: string;
+    createdBy: EditTools;
+}
+export interface UserEditableEntryFields {
     id?: string;
     date: string;
     mood: string;
     activities: { [key: string]: ActivityDetail };
     note: string;
-    createdBy: EditTools;
 }
 export type ActivityDetail = number | string[];
 export enum EditTools {

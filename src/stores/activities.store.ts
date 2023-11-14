@@ -1,4 +1,5 @@
 import { action, makeObservable, observable } from 'mobx';
+import { v4 as uuidv4 } from 'uuid';
 import { Activity } from '../interfaces/activity.interface';
 
 const data = await (await fetch('/data.json')).json();
@@ -10,10 +11,10 @@ class ActivityStore {
 
     @action.bound
     public addActivity(activity: Activity) {
-        const dateString = new Date().toUTCString();
+        const dateString = new Date().toISOString();
         this.all.push({
             ...activity,
-            id: Math.random().toString(),
+            id: uuidv4(),
             updated: dateString,
             created: dateString,
         });
@@ -25,7 +26,7 @@ class ActivityStore {
             ...this.all.filter(
                 (activity) => activity.id !== updatedActivity.id
             ),
-            { ...updatedActivity, updated: new Date().toUTCString() },
+            { ...updatedActivity, updated: new Date().toISOString() },
         ];
         this.sort();
     }

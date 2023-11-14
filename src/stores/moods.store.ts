@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable } from 'mobx';
+import { v4 as uuidv4 } from 'uuid';
 import { Mood } from '../interfaces/mood.interface';
 
 const data = await (await fetch('/data.json')).json();
@@ -23,7 +24,7 @@ class MoodStore {
 
     @action.bound
     public addMood(mood: Mood) {
-        this.userCreated.push({ ...mood, id: Math.random().toString() });
+        this.userCreated.push({ ...mood, id: uuidv4() });
         this.userCreated.sort((a: Mood, b: Mood) =>
             b.rating.localeCompare(a.rating)
         );

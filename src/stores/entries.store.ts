@@ -1,5 +1,10 @@
 import { action, computed, makeObservable, observable } from 'mobx';
-import { Entry } from '../interfaces/entry.interface';
+import { v4 as uuidv4 } from 'uuid';
+import {
+    EditTools,
+    Entry,
+    UserEditableEntryFields,
+} from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
 const data = await (await fetch('/data.json')).json();
@@ -50,11 +55,44 @@ class EntriesStore {
         return this.all.find((entry) => entry.id === id);
     }
     @action.bound
-    updateEntry(newEntry: Entry) {
-        const entryIndex = this.all.findIndex(
-            (entry) => entry.id === newEntry.id
+    upsertEntry(userEntry: UserEditableEntryFields) {
+        const existingEntryIndex = this.all.findIndex(
+            (entry) => entry.id === userEntry.id
         );
-        this.all[entryIndex] = newEntry;
+        if (existingEntryIndex >= 0) {
+            let newEntry: Entry = {
+                ...this.all[existingEntryIndex],
+                ...userEntry,
+                lastUpdatedBy: EditTools.WEB,
+                updated: new Date().toISOString(),
+            };
+            this.all[existingEntryIndex] = newEntry;
+            this.all.sort((a, b) => {
+                return b.date.localeCompare(a.date);
+            });
+        } else {
+            this.insertEntry(userEntry);
+        }
+    }
+    @action.bound
+    insertEntry(userEntry: UserEditableEntryFields) {
+        const date = new Date().toISOString();
+        let newEntry: Entry = {
+            ...userEntry,
+            createdBy: EditTools.WEB,
+            id: uuidv4(),
+            lastUpdatedBy: EditTools.WEB,
+            created: date,
+            updated: date,
+        };
+        this.all.push(newEntry);
+        this.all.sort((a, b) => {
+            return b.date.localeCompare(a.date);
+        });
+    }
+    @action.bound
+    public removeEntry(id?: string) {
+        this.all = this.all.filter((entry) => entry.id !== id);
     }
     constructor() {
         makeObservable(this);

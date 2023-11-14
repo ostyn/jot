@@ -1,7 +1,8 @@
-import { css, html } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router, RouterLocation } from '@vaadin/router';
+import { format } from 'date-fns';
 import { action, makeObservable, observable } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
@@ -53,7 +54,7 @@ export class EntryEditStore {
     }
     @action.bound
     public setDate(date?: string) {
-        this.date = date || '';
+        this.date = date || format(new Date(), 'yyyy-MM-dd');
         this.pendingChanges = true && this.initialized;
     }
     @action.bound
@@ -160,7 +161,9 @@ export class EntryEditRoute extends MobxLitElement {
                     <input
                         type="date"
                         class="inline date-control"
-                        .value=${this.store.date || ''}
+                        @change=${(e: any) =>
+                            this.store.setDate(e.target.value)}
+                        .value=${this.store.date}
                         max.bind="date"
                         name=""
                     />
@@ -184,18 +187,23 @@ export class EntryEditRoute extends MobxLitElement {
                 .showFilterUnused=${true}
             ></activity-grid>
             <div class="sticky-buttons">
-                <button
-                    class="inline secondary"
-                    click.trigger="deleteEntry()"
-                    if.bind="entry.id"
-                >
-                    <feather-icon name="trash-2"></feather-icon>
-                </button>
+                ${this.originalEntry?.id
+                    ? html`<button
+                          class="inline secondary"
+                          @click=${() => {
+                              entries.removeEntry(this.originalEntry?.id);
+                              Router.go('/');
+                          }}
+                      >
+                          <feather-icon name="trash-2"></feather-icon>
+                      </button>`
+                    : nothing}
+
                 <button
                     class="inline"
                     @click=${() => {
                         this.store.unmarkPendingChanges();
-                        entries.updateEntry({
+                        entries.upsertEntry({
                             ...this.originalEntry,
                             activities: { ...this.store.activities },
                             note: this.store.note,

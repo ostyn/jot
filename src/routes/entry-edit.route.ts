@@ -121,7 +121,6 @@ export class EntryEditRoute extends MobxLitElement {
         } as Entry);
     }
     onBeforeLeave(_location: any, commands: any, _router: any) {
-        console.log(this.store.pendingChanges);
         if (this.store.pendingChanges && !confirm('Lose unsaved changes?')) {
             return commands.prevent();
         }

@@ -1,9 +1,10 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
-import { Helpers } from '../utils/Helpers';
+import { dispatchEvent, Events, Helpers } from '../utils/Helpers';
 import './activity-detail.component';
 
 @customElement('activity-component')
@@ -18,6 +19,16 @@ export class ActivityComponent extends LitElement {
     public showName: boolean = false;
     @property()
     public activity?: Activity;
+    protected firstUpdated(): void {
+        const gesture = new TinyGesture(this, {});
+        gesture.on('doubletap', () => {
+            dispatchEvent(this, Events.doubleTap);
+        });
+
+        gesture.on('longpress', () => {
+            dispatchEvent(this, Events.longPress);
+        });
+    }
     render() {
         if (!this.activity) return nothing;
         return html`

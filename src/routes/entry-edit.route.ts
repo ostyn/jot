@@ -181,8 +181,10 @@ export class EntryEditRoute extends MobxLitElement {
                 </div>
             </section>
             <activity-grid
-                @activityClick=${(e: any) => this.longPress(e.detail.id)}
-                on-activity-long-click.call="longPress(activity.id)"
+                @activityClick=${(e: any) => {
+                    this.store.addToNumericActivityDetail(e.detail.id, 1);
+                }}
+                @longPress=${(e: any) => this.longPress(e.detail.id)}
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}
             ></activity-grid>

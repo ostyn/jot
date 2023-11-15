@@ -13,8 +13,6 @@ import './activity.component';
 export class ActivityGridComponent extends MobxLitElement {
     @property() activityDetailSet = () => {};
     @property() activityDetailClear = () => {};
-    @property() onActivityClick?: (activity: Activity) => void;
-    @property() onActivityLongClick = () => {};
     @state()
     private searchTerm = '';
     @property()
@@ -194,7 +192,9 @@ export class ActivityGridComponent extends MobxLitElement {
                                             activity
                                         );
                                     }}
-                                    long-click.trigger="activityLongClick($event, activity)"
+                                    @longPress=${() => {
+                                        de(this, Events.longPress, activity);
+                                    }}
                                     .detail=${this.selectedActivityInfo?.[
                                         activity.id
                                     ]}

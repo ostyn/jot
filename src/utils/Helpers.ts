@@ -40,6 +40,5 @@ export enum Events {
     textSheetDismissed = 'textSheetDismissed',
     activityClick = 'activityClick',
     activityLongClick = 'activityLongClick',
-    doubleTap = 'doubleTap',
-    longPress = 'longPress',
+    activityDoubleClick = 'activityDoubleClick',
 }

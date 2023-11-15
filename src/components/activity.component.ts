@@ -22,11 +22,11 @@ export class ActivityComponent extends LitElement {
     protected firstUpdated(): void {
         const gesture = new TinyGesture(this, {});
         gesture.on('doubletap', () => {
-            dispatchEvent(this, Events.doubleTap);
+            dispatchEvent(this, Events.activityDoubleClick);
         });
 
         gesture.on('longpress', () => {
-            dispatchEvent(this, Events.longPress);
+            dispatchEvent(this, Events.activityLongClick);
         });
     }
     render() {

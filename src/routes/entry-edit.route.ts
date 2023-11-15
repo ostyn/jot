@@ -125,14 +125,20 @@ export class EntryEditRoute extends MobxLitElement {
             return commands.prevent();
         }
     }
-    longPress(id: string) {
+    onClick(id: string) {
+        navigator.vibrate(50);
+        if (Array.isArray(this.store.getActivityDetail(id)))
+            this.onLongClick(id);
+        else this.store.addToNumericActivityDetail(id, 1);
+    }
+    onLongClick(id: string) {
         navigator.vibrate(100);
         this.editActivityDetail(id);
     }
     editActivityDetail(id: string) {
         ActionSheetController.open({
             type: 'activityDetailEdit',
-            data: { id, store: this.store },
+            data: { id, store: this.store, defaultIsArray: true },
         });
     }
     render() {
@@ -180,10 +186,8 @@ export class EntryEditRoute extends MobxLitElement {
                 </div>
             </section>
             <activity-grid
-                @activityClick=${(e: any) => {
-                    this.store.addToNumericActivityDetail(e.detail.id, 1);
-                }}
-                @longPress=${(e: any) => this.longPress(e.detail.id)}
+                @activityClick=${(e: any) => this.onClick(e.detail.id)}
+                @activityLongClick=${(e: any) => this.onLongClick(e.detail.id)}
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}
             ></activity-grid>

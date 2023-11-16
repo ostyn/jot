@@ -1,5 +1,4 @@
 import { html, TemplateResult } from 'lit';
-import { Activity } from '../../interfaces/activity.interface';
 
 export class ActivitySheet {
     static getActionSheet(
@@ -9,7 +8,7 @@ export class ActivitySheet {
     ): TemplateResult {
         return html`<header>Select an Activity</header>
             <activity-grid
-                .onActivityClick=${(activity: Activity) => submit(activity.id)}
+                @activityClick=${(data: any) => submit(data.detail.id)}
             ></activity-grid>`;
     }
 }

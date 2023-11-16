@@ -10,10 +10,6 @@ import './activity-detail.component';
 @customElement('activity-component')
 export class ActivityComponent extends LitElement {
     @property()
-    public enableDetailClick = false;
-    // @property()
-    // public onDetailClick!: (a: any) => void;
-    @property()
     public detail?: ActivityDetail;
     @property()
     public showName: boolean = false;

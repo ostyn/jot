@@ -245,8 +245,6 @@ export class SearchRoute
                               .detail=${this.store.selectedActivityDetail
                                   ? [this.store.selectedActivityDetail]
                                   : undefined}
-                              .enableDetailClick=${true}
-                              .onDetailClick=${this.openDetailPrompt.bind(this)}
                               @activityDetailClick=${(data: any) => {
                                   this.openDetailPrompt();
                                   data.detail.event.stopPropagation();
@@ -306,7 +304,6 @@ export class SearchRoute
                                 data.detail.event.stopPropagation();
                             }}
                             @activityClick=${(data: any) => {
-                                console.log(data);
                                 this.store.setSelectedActivity(data.detail.id);
                             }}
                         ></entry-component>

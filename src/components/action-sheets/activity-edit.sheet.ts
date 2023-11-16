@@ -63,7 +63,6 @@ export class ActivityEditSheet extends MobxLitElement {
     }
     render() {
         return html` <form>
-            <section class="activity-edit-buttons"></section>
             <section class="activity-inputs">
                 <input
                     class="inline"

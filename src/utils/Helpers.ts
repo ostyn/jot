@@ -25,6 +25,8 @@ export const dispatchEvent = function (
     element.dispatchEvent(
         new CustomEvent(event.toString(), {
             detail: data,
+            bubbles: true,
+            composed: true,
         })
     );
 };
@@ -39,6 +41,7 @@ export enum Events {
     activityDetailSelected = 'activityDetailSelected',
     textSheetDismissed = 'textSheetDismissed',
     activityClick = 'activityClick',
+    activityDetailClick = 'activityDetailClick',
     activityLongClick = 'activityLongClick',
     activityDoubleClick = 'activityDoubleClick',
 }

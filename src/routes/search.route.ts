@@ -247,6 +247,10 @@ export class SearchRoute
                                   : undefined}
                               .enableDetailClick=${true}
                               .onDetailClick=${this.openDetailPrompt.bind(this)}
+                              @activityDetailClick=${(data: any) => {
+                                  this.openDetailPrompt();
+                                  data.detail.event.stopPropagation();
+                              }}
                           ></activity-component>
                       </span>`
                     : nothing}
@@ -294,13 +298,17 @@ export class SearchRoute
                         <entry-component
                             class="search-entries"
                             .entry=${entry}
-                            .onDetailClick=${(data: any) =>
+                            @activityDetailClick=${(data: any) => {
                                 this.store.setSelectedActivity(
-                                    data.id,
-                                    data.detail
-                                )}
-                            .onActivityClick=${(id: any) =>
-                                this.store.setSelectedActivity(id)}
+                                    data.detail.id,
+                                    data.detail.detail
+                                );
+                                data.detail.event.stopPropagation();
+                            }}
+                            @activityClick=${(data: any) => {
+                                console.log(data);
+                                this.store.setSelectedActivity(data.detail.id);
+                            }}
                         ></entry-component>
                     `
                 )}

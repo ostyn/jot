@@ -185,20 +185,6 @@ export class ActivityGridComponent extends MobxLitElement {
                                 return html`<activity-component
                                     .activity=${activity}
                                     .showName=${true}
-                                    @click=${() => {
-                                        de(
-                                            this,
-                                            Events.activityClick,
-                                            activity
-                                        );
-                                    }}
-                                    @activityLongClick=${() => {
-                                        de(
-                                            this,
-                                            Events.activityLongClick,
-                                            activity
-                                        );
-                                    }}
                                     .detail=${this.selectedActivityInfo?.[
                                         activity.id
                                     ]}

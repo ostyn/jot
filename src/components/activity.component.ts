@@ -11,8 +11,8 @@ import './activity-detail.component';
 export class ActivityComponent extends LitElement {
     @property()
     public enableDetailClick = false;
-    @property()
-    public onDetailClick!: (a: any) => void;
+    // @property()
+    // public onDetailClick!: (a: any) => void;
     @property()
     public detail?: ActivityDetail;
     @property()
@@ -22,17 +22,29 @@ export class ActivityComponent extends LitElement {
     protected firstUpdated(): void {
         const gesture = new TinyGesture(this, {});
         gesture.on('doubletap', () => {
-            dispatchEvent(this, Events.activityDoubleClick);
+            dispatchEvent(this, Events.activityDoubleClick, {
+                id: this.activity?.id,
+            });
         });
 
         gesture.on('longpress', () => {
-            dispatchEvent(this, Events.activityLongClick);
+            dispatchEvent(this, Events.activityLongClick, {
+                id: this.activity?.id,
+            });
         });
     }
     render() {
         if (!this.activity) return nothing;
         return html`
-            <span title=${this.activity.name}>
+            <span
+                @click=${(e: Event) => {
+                    dispatchEvent(this, Events.activityClick, {
+                        event: e,
+                        id: this.activity?.id,
+                    });
+                }}
+                title=${this.activity.name}
+            >
                 <span title.bind="activity.name" class="emoji">
                     ${this.activity.emoji}
                     ${(Helpers.isNumeric(this.detail) && this.detail != 1) ||
@@ -61,24 +73,31 @@ export class ActivityComponent extends LitElement {
                       ${(this.detail as string[]).map(
                           (textItem) =>
                               html`<activity-detail-component
-                                  @click=${(e: Event) =>
-                                      this.detailClicked(
-                                          e,
-                                          textItem,
-                                          this.activity?.id || ''
-                                      )}
+                                  @click=${(e: Event) => {
+                                      dispatchEvent(
+                                          this,
+                                          Events.activityClick,
+                                          {
+                                              event: e,
+                                              id: this.activity?.id,
+                                          }
+                                      );
+                                      dispatchEvent(
+                                          this,
+                                          Events.activityDetailClick,
+                                          {
+                                              event: e,
+                                              detail: textItem,
+                                              id: this.activity?.id,
+                                          }
+                                      );
+                                  }}
                                   >${textItem}</activity-detail-component
                               >`
                       )}
                   </span>`
                 : nothing}
         `;
-    }
-    detailClicked(event: Event, detail: string, id: string) {
-        if (this.enableDetailClick) {
-            event.stopPropagation();
-            this.onDetailClick({ detail, id });
-        }
     }
     isWide(): boolean {
         return (

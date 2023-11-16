@@ -14,10 +14,6 @@ import './activity.component';
 @customElement('entry-component')
 export class EntryComponent extends MobxLitElement {
     @property()
-    public onDetailClick!: (data: any) => void;
-    @property()
-    public onActivityClick!: (data: any) => void;
-    @property()
     public entry: Entry = {} as Entry;
     @property()
     public scrollToSelf = false;
@@ -93,12 +89,6 @@ export class EntryComponent extends MobxLitElement {
                         .activity=${activities.getActivity(activityId)}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
-                        @click=${() =>
-                            this.onActivityClick &&
-                            this.onActivityClick(activityId)}
-                        .onDetailClick=${(data: any) =>
-                            this.onDetailClick(data)}
-                        .enableDetailClick=${!!this.onDetailClick}
                     ></activity-component>`;
                 })}
             </section>

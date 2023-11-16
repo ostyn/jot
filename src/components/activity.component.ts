@@ -31,16 +31,16 @@ export class ActivityComponent extends LitElement {
     }
     render() {
         if (!this.activity) return nothing;
-        return html`
-            <span
-                @click=${(e: Event) => {
-                    dispatchEvent(this, Events.activityClick, {
-                        event: e,
-                        id: this.activity?.id,
-                    });
-                }}
-                title=${this.activity.name}
-            >
+        return html`<span
+            class="activity-container"
+            @click=${(e: Event) => {
+                dispatchEvent(this, Events.activityClick, {
+                    event: e,
+                    id: this.activity?.id,
+                });
+            }}
+        >
+            <span title=${this.activity.name}>
                 <span title.bind="activity.name" class="emoji">
                     ${this.activity.emoji}
                     ${(Helpers.isNumeric(this.detail) && this.detail != 1) ||
@@ -72,14 +72,6 @@ export class ActivityComponent extends LitElement {
                                   @click=${(e: Event) => {
                                       dispatchEvent(
                                           this,
-                                          Events.activityClick,
-                                          {
-                                              event: e,
-                                              id: this.activity?.id,
-                                          }
-                                      );
-                                      dispatchEvent(
-                                          this,
                                           Events.activityDetailClick,
                                           {
                                               event: e,
@@ -93,7 +85,7 @@ export class ActivityComponent extends LitElement {
                       )}
                   </span>`
                 : nothing}
-        `;
+        </span>`;
     }
     isWide(): boolean {
         return (
@@ -106,15 +98,16 @@ export class ActivityComponent extends LitElement {
         base,
         css`
             :host {
-                max-width: 100%;
+                display: inline-flex;
+                border: 1px solid transparent;
+                margin: 2px;
+                padding: 4px 6px;
+            }
+            .activity-container {
                 display: inline-flex;
                 text-align: center;
                 align-items: flex-start;
                 user-select: none;
-                border: 1px solid transparent;
-                align-self: start;
-                margin: 2px;
-                padding: 4px 6px;
             }
             .emoji {
                 display: inline-block;

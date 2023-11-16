@@ -96,7 +96,6 @@ export class EntryComponent extends MobxLitElement {
                         @click=${() =>
                             this.onActivityClick &&
                             this.onActivityClick(activityId)}
-                        click.trigger="activityClicked(activity.id)"
                         .onDetailClick=${(data: any) =>
                             this.onDetailClick(data)}
                         .enableDetailClick=${!!this.onDetailClick}

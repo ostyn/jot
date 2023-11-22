@@ -11,10 +11,10 @@
     },
     "dependencies": {
         "@adobe/lit-mobx": "^2.2.0",
-        "@easepick/bundle": "^1.2.1",
         "@lit-labs/motion": "^1.0.6",
         "@lit/context": "^1.0.0",
         "@picocss/pico": "^1.5.10",
+        "@uvarov.frontend/vanilla-calendar": "^2.7.2",
         "@vaadin/router": "^1.7.5",
         "date-fns": "^2.30.0",
         "escape-string-regexp": "^5.0.0",

@@ -87,7 +87,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                             .entry="${entry}"
                         ></entry-component>`
                 )}
-                <entry-loading if.bind="!isLoaded"></entry-loading>
             </section>
             <div class="sticky-buttons">
                 <button

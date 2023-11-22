@@ -44,4 +44,5 @@ export enum Events {
     activityDetailClick = 'activityDetailClick',
     activityLongClick = 'activityLongClick',
     activityDoubleClick = 'activityDoubleClick',
+    dateSelect = 'dateSelect',
 }

@@ -5,14 +5,11 @@ import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
-import { dispatchEvent as de, Events } from '../utils/Helpers';
 import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('activity-grid')
 export class ActivityGridComponent extends MobxLitElement {
-    @property() activityDetailSet = () => {};
-    @property() activityDetailClear = () => {};
     @state()
     private searchTerm = '';
     @property()

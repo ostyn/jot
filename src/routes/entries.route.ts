@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
+import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import '../components/entry.component';
 import '../components/month-control.component';
 import { Entry } from '../interfaces/entry.interface';
@@ -85,6 +86,13 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                         html`<entry-component
                             .scrollToSelf=${this.shouldScrollToSelf(entry)}
                             .entry="${entry}"
+                            @activityClick=${(e) => {
+                                ActionSheetController.open({
+                                    type: 'activityInfo',
+                                    data: { id: e.detail.id },
+                                });
+                                console.log(e.detail.id);
+                            }}
                         ></entry-component>`
                 )}
             </section>

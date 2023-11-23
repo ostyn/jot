@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns';
 import { action, computed, makeObservable, observable } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -10,6 +11,7 @@ import { StatsActivityEntry } from '../interfaces/stats.interface';
 const data = await (await fetch('/data.json')).json();
 
 const entriesData: Entry[] = data.entries;
+entriesData.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
 
 class EntriesStore {
     @observable

@@ -6,6 +6,7 @@ import { ActionSheetController } from './action-sheet-controller';
 import { ActivityDetailEditSheet } from './activity-detail-edit.sheet';
 import { ActivityDetailSelectSheet } from './activity-detail-select.sheet';
 import { ActivityEditSheet } from './activity-edit.sheet';
+import { ActivityInfoSheet } from './activity-info.sheet';
 import { ActivitySheet } from './activity.sheet';
 import './mood-edit.sheet';
 import { MoodEditSheet } from './mood-edit.sheet';
@@ -19,6 +20,7 @@ const SheetMapping = {
     ['activity']: ActivitySheet,
     ['moodEdit']: MoodEditSheet,
     ['activityEdit']: ActivityEditSheet,
+    ['activityInfo']: ActivityInfoSheet,
     ['activityDetailEdit']: ActivityDetailEditSheet,
     ['activityDetailSelect']: ActivityDetailSelectSheet,
 };

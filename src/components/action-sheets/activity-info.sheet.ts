@@ -1,7 +1,10 @@
 import { css, html, LitElement, TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
+import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
+import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { activities } from '../../stores/activities.store';
+import { entries } from '../../stores/entries.store';
 
 @customElement('activity-info-sheet')
 export class ActivityInfoSheet extends LitElement {
@@ -10,8 +13,16 @@ export class ActivityInfoSheet extends LitElement {
     @property()
     onChange!: (a: any) => {};
     daysWithActivity: number = 0;
-    percentOfDays: number = 0;
+    percentOfDays: string = '';
     totalActivity: number = 0;
+    @state()
+    selectedTextItem?: string;
+    relatedEntryMap?: Map<string, Entry>;
+    daysElapsed?: number;
+    month?: number;
+    year?: number;
+    @state()
+    dateValues: any = {};
 
     static getActionSheet(
         data: any,
@@ -20,6 +31,61 @@ export class ActivityInfoSheet extends LitElement {
     ): TemplateResult {
         return html`<header>Activity Info</header>
             <activity-info-sheet activityId=${data.id}></activity-info-sheet>`;
+    }
+    protected firstUpdated(): void {
+        let date = new Date();
+        this.onMonthChange(date.getMonth(), date.getFullYear());
+    }
+    public onMonthChange = (month: number, year: number) => {
+        this.dateValues = {};
+        this.month = month;
+        this.year = year;
+        let activityStats = entries.stats.get(this.activityId);
+        let affectedDates = activityStats?.dates;
+
+        if (activityStats && activityStats.detailsUsed && this.selectedTextItem)
+            affectedDates = activityStats.detailsUsed.get(this.selectedTextItem)
+                ?.dates;
+        const entryDates = affectedDates?.filter(
+            (date) =>
+                date.entry.dateObject.getMonth() === month &&
+                date.entry.dateObject.getFullYear() === year
+        );
+        this.relatedEntryMap = new Map();
+        this.totalActivity = 0;
+        for (let entryDate of entryDates || []) {
+            this.relatedEntryMap.set(entryDate.date, entryDate.entry);
+            const activityDetail: ActivityDetail =
+                entryDate.entry.activities[this.activityId];
+            this.totalActivity += Array.isArray(activityDetail)
+                ? activityDetail.length
+                : activityDetail;
+            this.dateValues[entryDate.date] = Array.isArray(activityDetail)
+                ? activityDetail.length
+                : activityDetail;
+        }
+
+        this.daysElapsed = this.getDaysElapsedInMonth(month, year);
+        this.daysWithActivity = this.relatedEntryMap.size;
+        this.percentOfDays = this.daysElapsed
+            ? ((this.daysWithActivity / this.daysElapsed) * 100).toFixed(2)
+            : '0.00';
+        console.log(
+            this.daysWithActivity,
+            this.daysElapsed,
+            this.percentOfDays
+        );
+    };
+    private getDaysElapsedInMonth(month: number, year: number): number {
+        const currentDate = new Date();
+        if (new Date(year, month, 1).getTime() > currentDate.getTime())
+            return 0;
+        if (
+            month === currentDate.getMonth() &&
+            year == currentDate.getFullYear()
+        )
+            return currentDate.getDate();
+        else return getDaysInMonth(new Date(year, month, 1));
     }
     render() {
         return html` <header class="activity-info-header">
@@ -42,14 +108,12 @@ export class ActivityInfoSheet extends LitElement {
             <calendar-wrapper
                 if.bind="!loading"
                 class="inline"
-                dates.bind="relatedEntryMap"
-                year.bind="year"
-                month.bind="month"
-                day.bind="day"
-                activity-id.bind="activityId"
+                .dateValues=${this.dateValues}
+                @viewChange=${(e: any) =>
+                    this.onMonthChange(e.detail.month, e.detail.year)}
                 on-date-select.call="onDateSelect(date)"
-                on-month-change.call="onMonthChange(month, year)"
             ></calendar-wrapper>
+
             <ul>
                 <li
                     class="activity-info-recent"

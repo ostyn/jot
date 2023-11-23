@@ -105,6 +105,11 @@ export class CalendarWrapperComponent extends MobxLitElement {
             }
             .date-detail {
                 color: var(--contrast);
+                background: var(--primary);
+                border-radius: 8px;
+                padding: 2px 6px;
+                margin-bottom: 2px;
+                margin-top: 2px;
             }
         `,
     ];

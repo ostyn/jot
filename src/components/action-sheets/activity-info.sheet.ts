@@ -1,8 +1,9 @@
-import { css, html, LitElement, TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
+import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { activities } from '../../stores/activities.store';
 import { entries } from '../../stores/entries.store';
 
@@ -23,6 +24,11 @@ export class ActivityInfoSheet extends LitElement {
     year?: number;
     @state()
     dateValues: any = {};
+    mfuDetails?: StatsDetailEntry[];
+    mruDetails?: StatsDetailEntry[];
+    showLists: boolean = true;
+    @state()
+    filter: string = '';
 
     static getActionSheet(
         data: any,
@@ -34,6 +40,7 @@ export class ActivityInfoSheet extends LitElement {
     }
     protected firstUpdated(): void {
         let date = new Date();
+        this.loadMru();
         this.onMonthChange(date.getMonth(), date.getFullYear());
     }
     public onMonthChange = (month: number, year: number) => {
@@ -87,8 +94,49 @@ export class ActivityInfoSheet extends LitElement {
             return currentDate.getDate();
         else return getDaysInMonth(new Date(year, month, 1));
     }
+    loadMru() {
+        if (!entries.stats.get(this.activityId)?.detailsUsed) {
+            this.showLists = false;
+            return;
+        }
+        const map: Map<string, StatsDetailEntry> =
+            entries.stats.get(this.activityId)?.detailsUsed || new Map();
+        this.mfuDetails = Array.from(map.values()).filter(
+            (frequentlyUsedDetail) =>
+                frequentlyUsedDetail.text
+                    .toLowerCase()
+                    .includes(this.filter.toLowerCase())
+        );
+        this.mfuDetails = this.mfuDetails.sort((a, b) => {
+            return b.count - a.count;
+        });
+        this.mfuDetails = this.mfuDetails.slice(
+            0,
+            Math.min(7, this.mfuDetails.length)
+        );
+
+        this.mruDetails = Array.from(map.values()).filter(
+            (recentlyUsedDetail: StatsDetailEntry) =>
+                recentlyUsedDetail.text
+                    .toLowerCase()
+                    .includes(this.filter.toLowerCase())
+        );
+        this.mruDetails = this.mruDetails.sort(
+            (a: StatsDetailEntry, b: StatsDetailEntry) => {
+                return (
+                    b.dates[0].date.localeCompare(a.dates[0].date) ||
+                    b.count - a.count
+                );
+            }
+        );
+        this.mruDetails = this.mruDetails.slice(
+            0,
+            Math.min(7, this.mruDetails.length)
+        );
+    }
     render() {
-        return html` <header class="activity-info-header">
+        return html`
+            <header class="activity-info-header">
                 <activity-component
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component
@@ -115,24 +163,34 @@ export class ActivityInfoSheet extends LitElement {
             ></calendar-wrapper>
 
             <ul>
-                <li
-                    class="activity-info-recent"
-                    click.trigger="onDateSelect(key)"
-                    repeat.for="[key, value] of relatedEntryMap"
-                >
-                    <span class="activity-info-recent-date">${'key'}</span>
-                    <activity-detail
-                        if.bind="isArray(value.activities.get(activityId))"
-                        click.trigger="selectTextItem(textItem)"
-                        repeat.for="textItem of value.activities.get(activityId)"
-                        >${'textItem'}</activity-detail
-                    >
-                    <activity-detail else
-                        >${activities.getActivity(
-                            this.activityId
-                        )}</activity-detail
-                    >
-                </li>
+                ${Array.from(this.relatedEntryMap?.entries() || []).map(
+                    ([key, value]) =>
+                        html`<li
+                            class="activity-info-recent"
+                            click.trigger="onDateSelect(key)"
+                        >
+                            <span class="activity-info-recent-date"
+                                >${key}</span
+                            >
+                            ${Array.isArray(value.activities[this.activityId])
+                                ? (
+                                      value.activities[
+                                          this.activityId
+                                      ] as string[]
+                                  ).map(
+                                      (textItem) =>
+                                          html`<activity-detail-component
+                                              click.trigger="selectTextItem(textItem)"
+                                              >${textItem}</activity-detail-component
+                                          >`
+                                  )
+                                : html`<activity-detail-component
+                                      >${activities.getActivity(
+                                          this.activityId
+                                      )}</activity-detail-component
+                                  >`}
+                        </li>`
+                )}
             </ul>
             <input
                 if.bind="showLists"
@@ -141,30 +199,98 @@ export class ActivityInfoSheet extends LitElement {
                 value.bind="filter"
                 placeholder="search..."
             />
-            <div if.bind="showLists" class="stats-block">
-                <div class="stats-column">
-                    <div
-                        click.trigger="onDateSelect(detail.dates[0].date)"
-                        repeat.for="detail of mfuDetails"
-                        class="stats-entry"
-                    >
-                        <span class="stats-entry-datapoint"
-                            >${'detail.count'}</span
-                        ><activity-detail>${'detail.text'}</activity-detail>
-                    </div>
-                </div>
-                <div if.bind="showLists" class="stats-column">
-                    <div
-                        click.trigger="onDateSelect(detail.dates[0].entry.date)"
-                        repeat.for="detail of mruDetails"
-                        class="stats-entry"
-                    >
-                        <span class="stats-entry-datapoint"
-                            >${'detail.dates[0].date'}</span
-                        ><activity-detail>${'detail.text'}</activity-detail>
-                    </div>
-                </div>
-            </div>`;
+            ${this.showLists
+                ? html`<div class="stats-block">
+                      <div class="stats-column">
+                          ${this.mfuDetails?.map(
+                              (detail) =>
+                                  html`<div
+                                      click.trigger="onDateSelect(detail.dates[0].date)"
+                                      class="stats-entry"
+                                  >
+                                      <span class="stats-entry-datapoint"
+                                          >${detail.count}</span
+                                      ><activity-detail-component
+                                          >${detail.text}</activity-detail-component
+                                      >
+                                  </div>`
+                          )}
+                      </div>
+                      <div class="stats-column">
+                          ${this.mruDetails?.map(
+                              (detail) =>
+                                  html` <div
+                                      click.trigger="onDateSelect(detail.dates[0].entry.date)"
+                                      class="stats-entry"
+                                  >
+                                      <span class="stats-entry-datapoint"
+                                          >${detail.dates[0].date}</span
+                                      ><activity-detail-component
+                                          >${detail.text}</activity-detail-component
+                                      >
+                                  </div>`
+                          )}
+                      </div>
+                  </div>`
+                : nothing}
+        `;
     }
-    static styles = [base, css``];
+    static styles = [
+        base,
+        css`
+            .activity-info-header {
+                display: flex;
+            }
+            .activity-info-recent {
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+                cursor: pointer;
+                list-style: none;
+            }
+            .activity-info-recent-date {
+                display: inline-flex;
+                padding-top: 0;
+                padding-bottom: 0;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                margin-right: 0.5rem;
+                color: var(--background-color);
+                background-color: var(--color);
+                font-size: 0.75rem;
+                line-height: 1rem;
+                justify-content: center;
+                align-items: center;
+                border-radius: 9999px;
+                border-color: #000000;
+            }
+            .stats-block {
+                display: flex;
+            }
+            .stats-column {
+                display: inline-block;
+                width: 50%;
+                user-select: none;
+            }
+            .stats-entry {
+                padding: 0.75rem;
+                cursor: pointer;
+            }
+            .stats-entry-datapoint {
+                display: inline-flex;
+                padding-top: 0;
+                padding-bottom: 0;
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+                margin-right: 0.5rem;
+                color: var(--background-color);
+                background-color: var(--color);
+                font-size: 0.75rem;
+                line-height: 1rem;
+                justify-content: center;
+                align-items: center;
+                border-radius: 9999px;
+                border-color: #000000;
+            }
+        `,
+    ];
 }

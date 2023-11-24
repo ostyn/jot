@@ -12,6 +12,8 @@ export class ActivityInfoSheet extends LitElement {
     @property()
     activityId!: string;
     @property()
+    date: Date = new Date();
+    @property()
     onChange!: (a: any) => {};
     daysWithActivity: number = 0;
     percentOfDays: string = '';
@@ -37,12 +39,14 @@ export class ActivityInfoSheet extends LitElement {
         _dismiss: () => void
     ): TemplateResult {
         return html`<header>Activity Info</header>
-            <activity-info-sheet activityId=${data.id}></activity-info-sheet>`;
+            <activity-info-sheet
+                activityId=${data.id}
+                .date=${data.date}
+            ></activity-info-sheet>`;
     }
     protected firstUpdated(): void {
-        let date = new Date();
         this.loadMru();
-        this.onMonthChange(date.getMonth(), date.getFullYear());
+        this.onMonthChange(this.date.getMonth(), this.date.getFullYear());
     }
     public onMonthChange = (month: number, year: number) => {
         this.dateValues = {};
@@ -78,11 +82,6 @@ export class ActivityInfoSheet extends LitElement {
         this.percentOfDays = this.daysElapsed
             ? ((this.daysWithActivity / this.daysElapsed) * 100).toFixed(2)
             : '0.00';
-        console.log(
-            this.daysWithActivity,
-            this.daysElapsed,
-            this.percentOfDays
-        );
     };
     private getDaysElapsedInMonth(month: number, year: number): number {
         const currentDate = new Date();
@@ -157,6 +156,7 @@ export class ActivityInfoSheet extends LitElement {
             <calendar-wrapper
                 if.bind="!loading"
                 class="inline"
+                .startingDate=${this.date}
                 .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}

@@ -39,9 +39,9 @@ export class ActivityDetailSelectSheet extends LitElement {
         return this.details?.length
             ? this.details.map(
                   (detail) =>
-                      html`<activity-detail-component
+                      html`<activity-detail
                           @click=${() => this.clickDetail(detail)}
-                          >${detail}</activity-detail-component
+                          >${detail}</activity-detail
                       >`
               )
             : html`<span>No details</span>`;

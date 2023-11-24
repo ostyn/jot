@@ -24,10 +24,11 @@ export class ActivityInfoSheet extends LitElement {
     year?: number;
     @state()
     dateValues: any = {};
+    @state()
     mfuDetails?: StatsDetailEntry[];
+    @state()
     mruDetails?: StatsDetailEntry[];
     showLists: boolean = true;
-    @state()
     filter: string = '';
 
     static getActionSheet(
@@ -179,59 +180,63 @@ export class ActivityInfoSheet extends LitElement {
                                       ] as string[]
                                   ).map(
                                       (textItem) =>
-                                          html`<activity-detail-component
+                                          html`<activity-detail
                                               click.trigger="selectTextItem(textItem)"
-                                              >${textItem}</activity-detail-component
+                                              >${textItem}</activity-detail
                                           >`
                                   )
-                                : html`<activity-detail-component
+                                : html`<activity-detail
                                       >${activities.getActivity(
                                           this.activityId
-                                      )}</activity-detail-component
+                                      )}</activity-detail
                                   >`}
                         </li>`
                 )}
             </ul>
-            <input
-                if.bind="showLists"
-                ref="inputBox"
-                type="search"
-                value.bind="filter"
-                placeholder="search..."
-            />
+
             ${this.showLists
-                ? html`<div class="stats-block">
-                      <div class="stats-column">
-                          ${this.mfuDetails?.map(
-                              (detail) =>
-                                  html`<div
-                                      click.trigger="onDateSelect(detail.dates[0].date)"
-                                      class="stats-entry"
-                                  >
-                                      <span class="stats-entry-datapoint"
-                                          >${detail.count}</span
-                                      ><activity-detail-component
-                                          >${detail.text}</activity-detail-component
+                ? html` <input
+                          type="search"
+                          @input=${(e: any) => {
+                              console.log(e.target.value);
+
+                              this.filter = e.target.value;
+                              this.loadMru();
+                          }}
+                          placeholder="search..."
+                      />
+                      <div class="stats-block">
+                          <div class="stats-column">
+                              ${this.mfuDetails?.map(
+                                  (detail) =>
+                                      html`<div
+                                          click.trigger="onDateSelect(detail.dates[0].date)"
+                                          class="stats-entry"
                                       >
-                                  </div>`
-                          )}
-                      </div>
-                      <div class="stats-column">
-                          ${this.mruDetails?.map(
-                              (detail) =>
-                                  html` <div
-                                      click.trigger="onDateSelect(detail.dates[0].entry.date)"
-                                      class="stats-entry"
-                                  >
-                                      <span class="stats-entry-datapoint"
-                                          >${detail.dates[0].date}</span
-                                      ><activity-detail-component
-                                          >${detail.text}</activity-detail-component
+                                          <span class="stats-entry-datapoint"
+                                              >${detail.count}</span
+                                          ><activity-detail
+                                              >${detail.text}</activity-detail
+                                          >
+                                      </div>`
+                              )}
+                          </div>
+                          <div class="stats-column">
+                              ${this.mruDetails?.map(
+                                  (detail) =>
+                                      html` <div
+                                          click.trigger="onDateSelect(detail.dates[0].entry.date)"
+                                          class="stats-entry"
                                       >
-                                  </div>`
-                          )}
-                      </div>
-                  </div>`
+                                          <span class="stats-entry-datapoint"
+                                              >${detail.dates[0].date}</span
+                                          ><activity-detail
+                                              >${detail.text}</activity-detail
+                                          >
+                                      </div>`
+                              )}
+                          </div>
+                      </div>`
                 : nothing}
         `;
     }
@@ -272,7 +277,8 @@ export class ActivityInfoSheet extends LitElement {
                 user-select: none;
             }
             .stats-entry {
-                padding: 0.75rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
                 cursor: pointer;
             }
             .stats-entry-datapoint {

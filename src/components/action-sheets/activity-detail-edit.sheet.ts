@@ -94,12 +94,12 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                               (item, index) =>
                                   html`<div>
                                       ${this.currentlySelectedIndex !== index
-                                          ? html`<activity-detail-component
+                                          ? html`<activity-detail
                                                 @click=${() => {
                                                     this.currentlySelectedIndex =
                                                         index;
                                                 }}
-                                                >${item}</activity-detail-component
+                                                >${item}</activity-detail
                                             >`
                                           : html`<input
                                                     class="inline"

@@ -68,7 +68,7 @@ export class ActivityComponent extends LitElement {
                   >
                       ${(this.detail as string[]).map(
                           (textItem) =>
-                              html`<activity-detail-component
+                              html`<activity-detail
                                   @click=${(e: Event) => {
                                       dispatchEvent(
                                           this,
@@ -80,7 +80,7 @@ export class ActivityComponent extends LitElement {
                                           }
                                       );
                                   }}
-                                  >${textItem}</activity-detail-component
+                                  >${textItem}</activity-detail
                               >`
                       )}
                   </span>`

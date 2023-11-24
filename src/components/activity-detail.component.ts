@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import './activity.component';
 
-@customElement('activity-detail-component')
+@customElement('activity-detail')
 export class ActivityDetailComponent extends LitElement {
     render() {
         return html`<span class="activity-detail"><slot></slot></span>`;

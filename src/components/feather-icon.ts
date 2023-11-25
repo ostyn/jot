@@ -1,4 +1,4 @@
-import { LitElement } from 'lit';
+import { css, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import feather, { FeatherAttributes, FeatherIconNames } from 'feather-icons';
@@ -14,4 +14,11 @@ export class FeatherIcon extends LitElement {
             return unsafeHTML(feather.icons[this.name].toSvg(this.options));
         return;
     }
+    static styles = [
+        css`
+            :host {
+                line-height: 1rem;
+            }
+        `,
+    ];
 }

@@ -7,6 +7,7 @@ import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { activities } from '../../stores/activities.store';
 import { entries } from '../../stores/entries.store';
+import { ActionSheetController } from './action-sheet-controller';
 
 @customElement('activity-info-sheet')
 export class ActivityInfoSheet extends LitElement {
@@ -136,6 +137,7 @@ export class ActivityInfoSheet extends LitElement {
         );
     }
     onDateSelect(dateString: string) {
+        ActionSheetController.close();
         const date = parseISO(dateString);
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,

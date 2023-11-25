@@ -17,8 +17,8 @@ export class EntryComponent extends MobxLitElement {
     public entry: Entry = {} as Entry;
     @property()
     public scrollToSelf = false;
-    firstUpdated() {
-        if (this.scrollToSelf)
+    updated() {
+        if (this.scrollToSelf) {
             setTimeout(
                 () =>
                     this.scrollIntoView({
@@ -26,6 +26,7 @@ export class EntryComponent extends MobxLitElement {
                     }),
                 1
             );
+        }
     }
     private goToSelf() {
         const queryParams = new URLSearchParams({

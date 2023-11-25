@@ -3,11 +3,43 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';
+import { activities } from '../stores/activities.store';
+import { entries } from '../stores/entries.store';
+import { moods } from '../stores/moods.store';
 import { settings } from '../stores/settings.store';
 
 @customElement('settings-route')
 export class SettingsRoute extends MobxLitElement {
     sub: any;
+    exportBackup() {
+        this.download(
+            `Backup ${new Date().toUTCString()}.json`,
+            JSON.stringify(
+                {
+                    entries: entries.all,
+                    activities: activities.all,
+                    moods: moods.userCreated,
+                },
+                undefined,
+                2
+            )
+        );
+    }
+    download(filename: string, text: string) {
+        var element = document.createElement('a');
+        element.setAttribute(
+            'href',
+            'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+        );
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
     render() {
         return html`<article>
             <header>Settings</header>
@@ -26,7 +58,7 @@ export class SettingsRoute extends MobxLitElement {
                 <button @click=${() => Router.go('import')}>
                     <feather-icon name="inbox"></feather-icon>import
                 </button>
-                <button click.trigger="export()">
+                <button @click=${this.exportBackup}>
                     <feather-icon name="archive"></feather-icon>export
                 </button>
             </section>

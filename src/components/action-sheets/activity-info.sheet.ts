@@ -163,7 +163,6 @@ export class ActivityInfoSheet extends LitElement {
                         )}
                     </div>
                 </span>
-                <close-button click.trigger="controller.ok()"></close-button>
             </header>
             <calendar-wrapper
                 if.bind="!loading"
@@ -180,7 +179,7 @@ export class ActivityInfoSheet extends LitElement {
                     ([key, value]) =>
                         html`<li
                             class="activity-info-recent"
-                            click.trigger="onDateSelect(key)"
+                            @click=${(e) => this.onDateSelect(key)}
                         >
                             <span class="activity-info-recent-date"
                                 >${key}</span
@@ -222,7 +221,10 @@ export class ActivityInfoSheet extends LitElement {
                               ${this.mfuDetails?.map(
                                   (detail) =>
                                       html`<div
-                                          click.trigger="onDateSelect(detail.dates[0].date)"
+                                          @click=${(e) =>
+                                              this.onDateSelect(
+                                                  detail.dates[0].date
+                                              )}
                                           class="stats-entry"
                                       >
                                           <span class="stats-entry-datapoint"
@@ -237,7 +239,10 @@ export class ActivityInfoSheet extends LitElement {
                               ${this.mruDetails?.map(
                                   (detail) =>
                                       html` <div
-                                          click.trigger="onDateSelect(detail.dates[0].entry.date)"
+                                          @click=${(e) =>
+                                              this.onDateSelect(
+                                                  detail.dates[0].entry.date
+                                              )}
                                           class="stats-entry"
                                       >
                                           <span class="stats-entry-datapoint"

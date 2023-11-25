@@ -104,7 +104,6 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                           : html`<input
                                                     class="inline"
                                                     type="text"
-                                                    blur.trigger="loadMru()"
                                                     .value=${Array.isArray(
                                                         detail
                                                     )

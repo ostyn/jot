@@ -306,6 +306,15 @@ export class SearchRoute
                             @activityClick=${(data: any) => {
                                 this.store.setSelectedActivity(data.detail.id);
                             }}
+                            @activityLongClick=${(e) => {
+                                ActionSheetController.open({
+                                    type: 'activityInfo',
+                                    data: {
+                                        id: e.detail.id,
+                                        date: entry.dateObject,
+                                    },
+                                });
+                            }}
                         ></entry-component>
                     `
                 )}

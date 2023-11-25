@@ -95,6 +95,15 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                     },
                                 });
                             }}
+                            @activityLongClick=${(e) => {
+                                ActionSheetController.open({
+                                    type: 'activityInfo',
+                                    data: {
+                                        id: e.detail.id,
+                                        date: entry.dateObject,
+                                    },
+                                });
+                            }}
                         ></entry-component>`
                 )}
             </section>

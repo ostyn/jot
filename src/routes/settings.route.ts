@@ -1,6 +1,7 @@
-import { html } from 'lit';
+import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { settings } from '../stores/settings.store';
 
@@ -21,7 +22,25 @@ export class SettingsRoute extends MobxLitElement {
                     ${settings.isDark ? 'Dark' : 'Light'} Mode
                 </label>
             </section>
+            <section>
+                <button @click=${() => Router.go('import')}>
+                    <feather-icon name="inbox"></feather-icon>import
+                </button>
+                <button click.trigger="export()">
+                    <feather-icon name="archive"></feather-icon>export
+                </button>
+            </section>
         </article>`;
     }
-    static styles = [base];
+    static styles = [
+        base,
+        css`
+            button {
+                display: inline-flex;
+                place-content: center;
+                align-items: center;
+                gap: 8px;
+            }
+        `,
+    ];
 }

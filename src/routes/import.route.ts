@@ -5,7 +5,7 @@ import { base } from '../baseStyles';
 @customElement('import-route')
 export class ImportRoute extends LitElement {
     render() {
-        return html`<article>Import</article>`;
+        return html`<article><header>Import</header></article>`;
     }
     static styles = [base];
 }

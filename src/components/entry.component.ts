@@ -28,11 +28,10 @@ export class EntryComponent extends MobxLitElement {
             );
     }
     private goToSelf() {
-        const date: Date = parseISO(this.entry.date);
         const queryParams = new URLSearchParams({
-            month: date.getMonth() + 1,
-            year: date.getFullYear(),
-            day: date.getDate(),
+            month: this.entry.dateObject.getMonth() + 1,
+            year: this.entry.dateObject.getFullYear(),
+            day: this.entry.dateObject.getDate(),
         } as any).toString();
         Router.go(`entries?${queryParams}`);
     }

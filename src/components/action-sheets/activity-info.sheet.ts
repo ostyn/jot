@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { getDaysInMonth } from 'date-fns';
+import { Router } from '@vaadin/router';
+import { getDaysInMonth, parseISO } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
@@ -134,6 +135,15 @@ export class ActivityInfoSheet extends LitElement {
             Math.min(7, this.mruDetails.length)
         );
     }
+    onDateSelect(dateString: string) {
+        const date = parseISO(dateString);
+        const queryParams = new URLSearchParams({
+            month: date.getMonth() + 1,
+            year: date.getFullYear(),
+            day: date.getDate(),
+        } as any).toString();
+        Router.go(`entries?${queryParams}`);
+    }
     render() {
         return html`
             <header class="activity-info-header">
@@ -160,7 +170,7 @@ export class ActivityInfoSheet extends LitElement {
                 .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}
-                on-date-select.call="onDateSelect(date)"
+                @dateSelect=${(e) => this.onDateSelect(e.detail.date)}
             ></calendar-wrapper>
 
             <ul>

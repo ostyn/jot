@@ -81,7 +81,6 @@ export class CalendarWrapperComponent extends MobxLitElement {
         }
     }
     private onViewChange() {
-        console.log(this.shownYear, this.shownMonth);
         dispatchEvent(this, Events.viewChange, {
             year: this.shownYear,
             month: this.shownMonth,

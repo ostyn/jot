@@ -26,10 +26,12 @@ export class ImportDaylio {
             moodsToMap.add(row.mood);
 
             daylioActivities.forEach((activity: any) => {
-                activitiesToMap.add(activity);
-                if (activityMappings[activity] !== undefined) {
-                    let mapping = activityMappings[activity];
-                    mappedActivities[mapping] = 1;
+                if (activity && activity !== '') {
+                    activitiesToMap.add(activity);
+                    if (activityMappings[activity] !== undefined) {
+                        let mapping = activityMappings[activity];
+                        mappedActivities[mapping] = 1;
+                    }
                 }
             });
 

@@ -27,7 +27,11 @@ export class ImportRoute extends LitElement {
     unassignedMoods: number;
     @state()
     unassignedActivities: number;
-
+    onBeforeLeave(_location: any, commands: any, _router: any) {
+        if (this.entries.length && !confirm('Lose unsaved changes?')) {
+            return commands.prevent();
+        }
+    }
     private parse(): void {
         let resp = ImportDaylio.parseCsv(
             this.csv,

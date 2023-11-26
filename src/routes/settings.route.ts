@@ -55,11 +55,18 @@ export class SettingsRoute extends MobxLitElement {
                 </label>
             </section>
             <section>
+                <header>Import</header>
                 <button @click=${() => Router.go('import')}>
-                    <feather-icon name="inbox"></feather-icon>import
+                    <feather-icon name="inbox"></feather-icon>JSON
                 </button>
+                <button @click=${() => Router.go('import')}>
+                    <feather-icon name="inbox"></feather-icon>Daylio
+                </button>
+            </section>
+            <section>
+                <header>Export</header>
                 <button @click=${this.exportBackup}>
-                    <feather-icon name="archive"></feather-icon>export
+                    <feather-icon name="archive"></feather-icon>JSON
                 </button>
             </section>
         </article>`;

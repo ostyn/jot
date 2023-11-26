@@ -12,11 +12,7 @@ import { ImportDaylio } from './ImportDaylio';
 
 @customElement('import-route')
 export class ImportRoute extends LitElement {
-    public csv = `full_date,date,weekday,time,mood,activities,note_title,note
-    2017-12-09,December 9,Saturday,01:25,rad,"shopping | 😉 | discussion...","","Choir concert and shopping"
-    2017-12-08,December 8,Friday,01:26,rad,"friends | movies | good meal","","Hung out with Vaughn and Bethany. Went to Thai food. Watched fitzwilly"
-    2017-12-07,December 7,Thursday,01:24,meh,"😶 | 😕","",""
-    2017-12-06,December 6,Wednesday,01:24,good,"😶","",""`;
+    public csv = '';
     @state()
     public moodsToMap: string[] = [];
     @state()
@@ -69,24 +65,32 @@ export class ImportRoute extends LitElement {
             },
         });
     }
-    // private openActivityPrompt(activity, original): void {
-    //     this.dialogService
-    //         .open({
-    //             viewModel: ActivityPromptDialog,
-    //             model: activity,
-    //         })
-    //         .whenClosed((response) => {
-    //             this.activityMappings[original] = response.output;
-    //             this.parse();
-    //         });
-    // }
+    handleFile() {
+        const fileInput = this.shadowRoot?.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (file.type === 'text/csv') {
+                    this.csv = event.target?.result as string;
+                    this.parse();
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            console.log('No file selected');
+        }
+    }
     render() {
         return html`<article>
-                <header>Import Daylio CSV</header>
-                <textarea
-                    @change=${(e) => (this.csv = e.target.value)}
-                ></textarea>
-                <button @click=${this.parse}>parse</button>
+                <header>Import</header>
+                <input
+                    @change=${this.handleFile}
+                    id="fileInput"
+                    type="file"
+                    accept=".csv"
+                    placeholder="Choose a file"
+                />
                 <button @click=${this.import}>import</button>
             </article>
             <article>

@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
@@ -23,6 +23,10 @@ export class ImportRoute extends LitElement {
     public moodMappings: { [n: string]: string } = {};
     @state()
     public activityMappings: { [n: string]: string } = {};
+    @state()
+    unassignedMoods: number;
+    @state()
+    unassignedActivities: number;
 
     private parse(): void {
         let resp = ImportDaylio.parseCsv(
@@ -33,6 +37,12 @@ export class ImportRoute extends LitElement {
         this.entries = resp.entries;
         this.moodsToMap = resp.moodsToMap;
         this.activitiesToMap = resp.activitiesToMap;
+        this.unassignedActivities = this.activitiesToMap.filter(
+            (mapping) => this.activityMappings[mapping] === undefined
+        ).length;
+        this.unassignedMoods = this.moodsToMap.filter(
+            (mapping) => this.moodMappings[mapping] === undefined
+        ).length;
     }
     private import(): void {
         this.entries.forEach((entry) => {
@@ -90,14 +100,29 @@ export class ImportRoute extends LitElement {
                     type="file"
                     accept=".csv"
                 />
-                <button @click=${this.import}>import</button>
+                <button
+                    .disabled=${!this.entries.length ||
+                    this.unassignedActivities > 0 ||
+                    this.unassignedMoods > 0}
+                    @click=${this.import}
+                >
+                    import
+                </button>
             </article>
             <article>
-                <h2>Moods</h2>
+                <hgroup>
+                    <h2>Moods</h2>
+                    <h3>
+                        ${this.unassignedMoods
+                            ? html`${this.unassignedMoods} remaining`
+                            : nothing}
+                    </h3>
+                </hgroup>
                 ${this.moodsToMap.map(
                     (mood) =>
                         html`<span
-                            class="mood-mappings"
+                            class=${'mood-mappings ' +
+                            (this.moodMappings[mood] ? 'mapped' : '')}
                             @click=${(e) =>
                                 this.openMoodPrompt(
                                     this.moodMappings[mood],
@@ -118,11 +143,19 @@ export class ImportRoute extends LitElement {
                 )}
             </article>
             <article>
-                <h2>Activities</h2>
+                <hgroup>
+                    <h2>Activities</h2>
+                    <h3>
+                        ${this.unassignedActivities
+                            ? `${this.unassignedActivities} remaining`
+                            : nothing}
+                    </h3>
+                </hgroup>
                 ${this.activitiesToMap.map(
                     (activity) =>
                         html`<span
-                            class="activity-mappings"
+                            class=${'activity-mappings ' +
+                            (this.activityMappings[activity] ? 'mapped' : '')}
                             @click=${(e) =>
                                 this.openActivityPrompt(
                                     this.activityMappings[activity],
@@ -162,11 +195,16 @@ export class ImportRoute extends LitElement {
                 padding: 0.25rem;
                 margin: 0.25rem;
                 cursor: pointer;
-                border: var(--primary) 1px solid;
+                border: var(--del-color) 1px solid;
                 border-radius: 12px;
                 display: inline-flex;
                 align-content: center;
                 gap: 4px;
+            }
+            .mapped {
+                border-color: var(--ins-color);
+                background-color: var(--ins-color);
+                color: var(--contrast);
             }
         `,
     ];

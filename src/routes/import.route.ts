@@ -89,7 +89,6 @@ export class ImportRoute extends LitElement {
                     id="fileInput"
                     type="file"
                     accept=".csv"
-                    placeholder="Choose a file"
                 />
                 <button @click=${this.import}>import</button>
             </article>

@@ -4,6 +4,7 @@ import { FeatherIconNames } from 'feather-icons';
 import './activities.route';
 import './entries.route';
 import './entry-edit.route';
+import './import-daylio.route';
 import './import.route';
 import './moods.route';
 import './search.route';
@@ -45,6 +46,11 @@ export const routes: Route[] = [
         component: 'settings-route',
         name: 'settings',
         options: { menuItem: true, iconName: 'settings' },
+    },
+    {
+        path: '/import-daylio',
+        component: 'import-daylio-route',
+        name: 'import-daylio',
     },
     {
         path: '/import',

@@ -59,7 +59,7 @@ export class SettingsRoute extends MobxLitElement {
                 <button @click=${() => Router.go('import')}>
                     <feather-icon name="inbox"></feather-icon>JSON
                 </button>
-                <button @click=${() => Router.go('import')}>
+                <button @click=${() => Router.go('import-daylio')}>
                     <feather-icon name="inbox"></feather-icon>Daylio
                 </button>
             </section>

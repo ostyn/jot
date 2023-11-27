@@ -30,19 +30,6 @@ export class MoodsRoute extends MobxLitElement {
                     <feather-icon name="plus-circle"></feather-icon>
                 </span>
             </section>
-            <calendar-wrapper
-                @dateSelect=${(e) => console.log(e.detail.date)}
-                .dateValues=${{
-                    '2023-11-03': '1',
-                    '2023-11-07': 123,
-                    '2023-11-08': 1.01,
-                    '2023-11-11': 7,
-                    '2023-11-15': '7.25',
-                    '2023-11-16': '😆',
-                    '2023-11-17': 'lol',
-                    '2023-11-21': '',
-                }}
-            ></calendar-wrapper>
         </article>`;
     }
     static styles = [

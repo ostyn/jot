@@ -4,7 +4,7 @@ import { Activity } from '../interfaces/activity.interface';
 
 const data = await (await fetch('/data.json')).json();
 
-const activitiesData: Activity[] = data.activities;
+const activitiesData: Activity[] = [];
 class ActivityStore {
     @observable
     public all: Activity[] = activitiesData;
@@ -28,6 +28,11 @@ class ActivityStore {
             ),
             { ...updatedActivity, updated: new Date().toISOString() },
         ];
+        this.sort();
+    }
+    @action.bound
+    bulkImport(activities: Activity[]) {
+        this.all.push(...activities);
         this.sort();
     }
     @action.bound

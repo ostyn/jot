@@ -10,7 +10,7 @@ import { StatsActivityEntry } from '../interfaces/stats.interface';
 
 const data = await (await fetch('/data.json')).json();
 
-const entriesData: Entry[] = data.entries;
+const entriesData: Entry[] = [];
 entriesData.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
 
 class EntriesStore {
@@ -75,6 +75,13 @@ class EntriesStore {
         } else {
             this.insertEntry(userEntry);
         }
+    }
+    @action.bound
+    bulkImport(entries: Entry[]) {
+        this.all.push(...entries);
+        this.all.sort((a, b) => {
+            return b.date.localeCompare(a.date);
+        });
     }
     @action.bound
     insertEntry(userEntry: UserEditableEntryFields) {

@@ -4,7 +4,7 @@ import { Mood } from '../interfaces/mood.interface';
 
 const data = await (await fetch('/data.json')).json();
 
-const moodsData: Mood[] = data.moods;
+const moodsData: Mood[] = [];
 
 class MoodStore {
     @observable
@@ -35,6 +35,13 @@ class MoodStore {
             (mood) => mood.id === updatedMood.id
         );
         this.userCreated[existingIndex] = updatedMood;
+        this.userCreated.sort((a: Mood, b: Mood) =>
+            b.rating.localeCompare(a.rating)
+        );
+    }
+    @action.bound
+    bulkImport(moods: Mood[]) {
+        this.userCreated.push(...moods);
         this.userCreated.sort((a: Mood, b: Mood) =>
             b.rating.localeCompare(a.rating)
         );

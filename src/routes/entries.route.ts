@@ -86,7 +86,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                         html`<entry-component
                             .scrollToSelf=${this.shouldScrollToSelf(entry)}
                             .entry="${entry}"
-                            @activityClick=${(e) => {
+                            @activityClick=${(e: any) => {
                                 ActionSheetController.open({
                                     type: 'activityInfo',
                                     data: {
@@ -95,7 +95,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                     },
                                 });
                             }}
-                            @activityLongClick=${(e) => {
+                            @activityLongClick=${(e: any) => {
                                 ActionSheetController.open({
                                     type: 'activityInfo',
                                     data: {

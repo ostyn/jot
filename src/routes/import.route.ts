@@ -21,7 +21,7 @@ export class ImportRoute extends LitElement {
     handleFile() {
         this.isLoading = true;
         const fileInput = this.shadowRoot?.getElementById('fileInput');
-        const file = fileInput.files[0];
+        const file = (fileInput as any).files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {

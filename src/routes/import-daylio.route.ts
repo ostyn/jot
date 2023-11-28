@@ -24,9 +24,9 @@ export class ImportDaylioRoute extends LitElement {
     @state()
     public activityMappings: { [n: string]: string } = {};
     @state()
-    unassignedMoods: number;
+    unassignedMoods: number = 0;
     @state()
-    unassignedActivities: number;
+    unassignedActivities: number = 0;
     onBeforeLeave(_location: any, commands: any, _router: any) {
         if (this.entries.length && !confirm('Lose unsaved changes?')) {
             return commands.prevent();
@@ -81,7 +81,7 @@ export class ImportDaylioRoute extends LitElement {
     }
     handleFile() {
         const fileInput = this.shadowRoot?.getElementById('fileInput');
-        const file = fileInput.files[0];
+        const file = (fileInput as any).files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -127,7 +127,7 @@ export class ImportDaylioRoute extends LitElement {
                         html`<span
                             class=${'mood-mappings ' +
                             (this.moodMappings[mood] ? 'mapped' : '')}
-                            @click=${(e) =>
+                            @click=${() =>
                                 this.openMoodPrompt(
                                     this.moodMappings[mood],
                                     mood
@@ -160,7 +160,7 @@ export class ImportDaylioRoute extends LitElement {
                         html`<span
                             class=${'activity-mappings ' +
                             (this.activityMappings[activity] ? 'mapped' : '')}
-                            @click=${(e) =>
+                            @click=${() =>
                                 this.openActivityPrompt(
                                     this.activityMappings[activity],
                                     activity

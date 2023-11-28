@@ -2,8 +2,6 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { Mood } from '../interfaces/mood.interface';
 
-const data = await (await fetch('/data.json')).json();
-
 const moodsData: Mood[] = [];
 
 class MoodStore {

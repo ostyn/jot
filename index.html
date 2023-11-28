@@ -9,7 +9,7 @@
         <script>
             document.documentElement.setAttribute(
                 'data-theme',
-                JSON.parse(window.localStorage.getItem('SettingsStore')).isDark
+                window.localStorage.getItem('isDark') === 'true'
                     ? 'dark'
                     : 'light'
             );

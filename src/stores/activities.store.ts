@@ -2,8 +2,6 @@ import { action, makeObservable, observable } from 'mobx';
 import { v4 as uuidv4 } from 'uuid';
 import { Activity } from '../interfaces/activity.interface';
 
-const data = await (await fetch('/data.json')).json();
-
 const activitiesData: Activity[] = [];
 class ActivityStore {
     @observable

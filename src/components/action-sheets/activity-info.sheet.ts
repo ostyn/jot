@@ -171,7 +171,7 @@ export class ActivityInfoSheet extends LitElement {
                 .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}
-                @dateSelect=${(e) => this.onDateSelect(e.detail.date)}
+                @dateSelect=${(e: any) => this.onDateSelect(e.detail.date)}
             ></calendar-wrapper>
 
             <ul>
@@ -179,7 +179,7 @@ export class ActivityInfoSheet extends LitElement {
                     ([key, value]) =>
                         html`<li
                             class="activity-info-recent"
-                            @click=${(e) => this.onDateSelect(key)}
+                            @click=${() => this.onDateSelect(key)}
                         >
                             <span class="activity-info-recent-date"
                                 >${key}</span
@@ -221,7 +221,7 @@ export class ActivityInfoSheet extends LitElement {
                               ${this.mfuDetails?.map(
                                   (detail) =>
                                       html`<div
-                                          @click=${(e) =>
+                                          @click=${() =>
                                               this.onDateSelect(
                                                   detail.dates[0].date
                                               )}
@@ -239,7 +239,7 @@ export class ActivityInfoSheet extends LitElement {
                               ${this.mruDetails?.map(
                                   (detail) =>
                                       html` <div
-                                          @click=${(e) =>
+                                          @click=${() =>
                                               this.onDateSelect(
                                                   detail.dates[0].entry.date
                                               )}

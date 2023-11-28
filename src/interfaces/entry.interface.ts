@@ -5,11 +5,11 @@ export interface Entry extends UserEditableEntryFields {
     updated?: string;
     created: string;
     createdBy: EditTools;
+    dateObject: Date;
 }
 export interface UserEditableEntryFields {
     id?: string;
     date: string;
-    dateObject: Date;
     mood: string;
     activities: { [key: string]: ActivityDetail };
     note: string;

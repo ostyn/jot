@@ -1,5 +1,4 @@
 import { action, makeObservable, observable } from 'mobx';
-import { makePersistable } from 'mobx-persist-store';
 import { setDarkModeFromState } from '../utils/Helpers';
 
 class SettingsStore {
@@ -9,14 +8,11 @@ class SettingsStore {
     public setIsDark(isDark: boolean) {
         setDarkModeFromState(isDark);
         this.isDark = isDark;
+        localStorage.setItem('isDark', `${this.isDark}`);
     }
     constructor() {
         makeObservable(this);
-        makePersistable(this, {
-            name: 'SettingsStore',
-            properties: ['isDark'],
-            storage: window.localStorage,
-        });
+        this.isDark = window.localStorage.getItem('isDark') === 'true';
     }
 }
 export const settings = new SettingsStore();

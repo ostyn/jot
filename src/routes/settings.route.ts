@@ -13,7 +13,7 @@ export class SettingsRoute extends MobxLitElement {
     sub: any;
     exportBackup() {
         this.download(
-            `Backup ${new Date().toUTCString()}.json`,
+            `Etch Backup ${new Date().toUTCString()}.json`,
             JSON.stringify(
                 {
                     entries: entries.all,

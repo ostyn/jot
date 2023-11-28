@@ -2,7 +2,6 @@ import { css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
-import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';

@@ -8,8 +8,6 @@ import {
 } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
-const data = await (await fetch('/data.json')).json();
-
 const entriesData: Entry[] = [];
 entriesData.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
 
@@ -78,6 +76,7 @@ class EntriesStore {
     }
     @action.bound
     bulkImport(entries: Entry[]) {
+        entries.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
         this.all.push(...entries);
         this.all.sort((a, b) => {
             return b.date.localeCompare(a.date);
@@ -93,6 +92,7 @@ class EntriesStore {
             lastUpdatedBy: EditTools.WEB,
             created: date,
             updated: date,
+            dateObject: parseISO(userEntry.date),
         };
         this.all.push(newEntry);
         this.all.sort((a, b) => {

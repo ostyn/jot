@@ -16,16 +16,18 @@ export class ActivityComponent extends LitElement {
     @property()
     public activity?: Activity;
     protected firstUpdated(): void {
-        const gesture = new TinyGesture(this, {});
-        gesture.on('doubletap', () => {
-            dispatchEvent(this, Events.activityDoubleClick, {
-                id: this.activity?.id,
+        setTimeout(() => {
+            const gesture = new TinyGesture(this, {});
+            gesture.on('doubletap', () => {
+                dispatchEvent(this, Events.activityDoubleClick, {
+                    id: this.activity?.id,
+                });
             });
-        });
 
-        gesture.on('longpress', () => {
-            dispatchEvent(this, Events.activityLongClick, {
-                id: this.activity?.id,
+            gesture.on('longpress', () => {
+                dispatchEvent(this, Events.activityLongClick, {
+                    id: this.activity?.id,
+                });
             });
         });
     }

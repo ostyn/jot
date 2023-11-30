@@ -67,7 +67,6 @@ export class NavBar extends LitElement {
                 height: 4rem;
                 background-color: var(--card-background-color);
                 box-shadow: var(--card-box-shadow);
-                line-height: 0;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -97,14 +96,12 @@ export class NavBar extends LitElement {
                 width: 1.5rem;
             }
             .menu-bar-item-active feather-icon {
+                line-height: 0px;
                 transition: all 0.2s;
                 background: var(--secondary);
                 color: var(--primary-inverse);
                 border-radius: 20px;
                 padding: 4px 20px;
-            }
-            .menu-bar-item-text {
-                line-height: 1.25rem;
             }
             a:focus,
             a:active {

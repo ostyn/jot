@@ -2824,6 +2824,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dexie@npm:^3.2.4":
+  version: 3.2.4
+  resolution: "dexie@npm:3.2.4"
+  checksum: d385da36cfd4e5b36cb1dbf05647d0d6a06f0b1da1183e7549898cc0f548835246ef8c01f44bdf3c39f1b1c8e3d97c8e2eab4925f34e2a101c383a661f3a45b8
+  languageName: node
+  linkType: hard
+
 "dot-prop@npm:^5.2.0":
   version: 5.3.0
   resolution: "dot-prop@npm:5.3.0"
@@ -3131,6 +3138,7 @@ __metadata:
     "@vaadin/router": "npm:^1.7.5"
     date-fns: "npm:^2.30.0"
     date-fns-tz: "npm:^2.0.0"
+    dexie: "npm:^3.2.4"
     escape-string-regexp: "npm:^5.0.0"
     feather-icons: "npm:^4.29.1"
     lit: "npm:^3.0.1"

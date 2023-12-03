@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { until } from 'lit/directives/until.js';
 import { Router } from '@vaadin/router';
 import { getDaysInMonth, parseISO } from 'date-fns';
 import { base } from '../../baseStyles';
@@ -150,7 +151,7 @@ export class ActivityInfoSheet extends LitElement {
         return html`
             <header class="activity-info-header">
                 <activity-component
-                    .activity=${activities.getActivity(this.activityId)}
+                    .activity=${until(activities.getActivity(this.activityId))}
                 ></activity-component
                 ><span>
                     <div>This month: ${this.daysWithActivity}</div>

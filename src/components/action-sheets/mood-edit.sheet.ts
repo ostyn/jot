@@ -23,8 +23,7 @@ export class MoodEditSheet extends LitElement {
         }
     }
     submitMood() {
-        if (this.localMood.id) moods.updateMood(this.localMood);
-        else moods.addMood(this.localMood);
+        moods.updateMood(this.localMood);
         dispatchEvent(this, Events.moodSubmitted);
     }
     static getActionSheet(

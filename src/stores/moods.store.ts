@@ -5,7 +5,6 @@ import {
     observable,
     runInAction,
 } from 'mobx';
-import { v4 as uuidv4 } from 'uuid';
 import { moodDao } from '../dao/MoodDao';
 import { Mood } from '../interfaces/mood.interface';
 
@@ -25,15 +24,6 @@ class MoodStore {
     @computed
     public get all() {
         return [...this.userCreated, ...this.default];
-    }
-
-    @action.bound
-    public async addMood(mood: Mood) {
-        await moodDao.saveItem(mood);
-        const updatedMoods = await moodDao.getItems();
-        runInAction(() => {
-            this.userCreated = updatedMoods;
-        });
     }
     @action.bound
     public async updateMood(updatedMood: Mood) {

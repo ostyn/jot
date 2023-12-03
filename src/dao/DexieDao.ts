@@ -20,8 +20,8 @@ export class DexieDao implements TrackerDao {
         return this.getItemsFromQuery(rawItems);
     }
     private processData(item: any): any {
-        if (item.created) item.created = new Date(item.created);
-        if (item.updated) item.updated = new Date(item.updated);
+        // if (item.created) item.created = new Date(item.created);
+        // if (item.updated) item.updated = new Date(item.updated);
         return this.afterLoadFixup(item);
     }
     getItemsFromQuery(rawItems: any): Promise<any> {

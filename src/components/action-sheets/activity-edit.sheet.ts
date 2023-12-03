@@ -26,9 +26,7 @@ export class ActivityEditSheet extends MobxLitElement {
         }
     }
     submitActivity() {
-        if (this.localActivity.id)
-            activities.updateActivity(this.localActivity);
-        else activities.addActivity(this.localActivity);
+        activities.updateActivity(this.localActivity);
         dispatchEvent(this, Events.activitySubmitted);
     }
     selectCategory(value: string) {
@@ -62,7 +60,7 @@ export class ActivityEditSheet extends MobxLitElement {
             ></activity-edit-sheet>`;
     }
     render() {
-        return html` <form>
+        return html`<form>
             <section class="activity-inputs">
                 <input
                     class="inline"

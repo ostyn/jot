@@ -94,7 +94,7 @@ export class EntryComponent extends MobxLitElement {
             <section class="entry-activities">
                 ${activityOrder.map((activityId) => {
                     return html`<activity-component
-                        .activity=${activities.getActivity(activityId)}
+                        .activity=${until(activities.getActivity(activityId))}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
                     ></activity-component>`;

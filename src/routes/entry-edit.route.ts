@@ -143,9 +143,6 @@ export class EntryEditRoute extends MobxLitElement {
         });
     }
     render() {
-        const currentMood = moods
-            .getMood(this.store.mood)
-            .then((mood) => mood?.emoji);
         return html`
             <section
                 class="entry-editor-buttons"
@@ -184,7 +181,11 @@ export class EntryEditRoute extends MobxLitElement {
                                 data: this.store.mood || 0,
                                 onSubmit: (data) => this.store.setMood(data),
                             })}
-                        >${until(currentMood)}
+                        >${until(
+                            moods
+                                .getMood(this.store.mood)
+                                .then((mood) => mood?.emoji)
+                        )}
                     </span>
                 </div>
             </section>

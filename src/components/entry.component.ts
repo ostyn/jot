@@ -1,5 +1,6 @@
 import { css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';
@@ -72,14 +73,22 @@ export class EntryComponent extends MobxLitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    .title=${moods.getMood(this.entry.mood)?.name || ''}
+                    .title=${until(
+                        moods
+                            .getMood(this.entry.mood)
+                            .then((mood) => mood?.name)
+                    )}
                     @click=${() =>
                         ActionSheetController.open({
                             type: 'moodEdit',
                             data: moods.getMood(this.entry.mood),
                         })}
                 >
-                    ${moods.getMood(this.entry.mood)?.emoji}
+                    ${until(
+                        moods
+                            .getMood(this.entry.mood)
+                            .then((mood) => mood?.emoji)
+                    )}
                 </span>
             </section>
             <section class="entry-activities">

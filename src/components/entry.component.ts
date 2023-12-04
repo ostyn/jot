@@ -74,22 +74,17 @@ export class EntryComponent extends MobxLitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    .title=${until(
-                        moods
-                            .getMood(this.entry.mood)
-                            .then((mood) => mood?.name)
-                    )}
+                    .title=${moods.all.find(
+                        (mood) => mood.id === this.entry.mood
+                    )?.name || ''}
                     @click=${() =>
                         ActionSheetController.open({
                             type: 'moodEdit',
                             data: moods.getMood(this.entry.mood),
                         })}
                 >
-                    ${until(
-                        moods
-                            .getMood(this.entry.mood)
-                            .then((mood) => mood?.emoji)
-                    )}
+                    ${moods.all.find((mood) => mood.id === this.entry.mood)
+                        ?.emoji || ''}
                 </span>
             </section>
             <section class="entry-activities">

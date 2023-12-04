@@ -19,11 +19,16 @@ class MoodStore {
             id: '0',
             rating: '3',
             name: 'TBD',
-        },
+        } as Mood,
     ];
     @computed
     public get all() {
         return [...this.userCreated, ...this.default];
+    }
+    @action.bound
+    public async reset() {
+        this.userCreated = [];
+        moodDao.reset();
     }
     @action.bound
     public async updateMood(updatedMood: Mood) {

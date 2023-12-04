@@ -1,67 +1,19 @@
-import { autoinject } from "aurelia-framework";
-import { IEntry } from "./../elements/entry/entry.interface";
-import { DexieDao } from "./DexieDao";
-import { DexieDatabase } from "./DexieDatabase";
-@autoinject
+import { db } from '../services/Dexie';
+import { DexieDao } from './DexieDao';
+
 export class EntryDao extends DexieDao {
-  path;
-  constructor(dexie: DexieDatabase) {
-    super("entries", dexie);
-  }
+    constructor() {
+        super('entries');
+    }
+    async getEntriesFromYearAndMonth(year: number, month: number) {
+        let x = await db
+            .table('entries')
+            .where('dateObject')
+            .between(new Date(year, month - 1, 1), new Date(year, month, 1))
+            .reverse()
+            .toArray();
 
-  async getAll() {
-    return this.dexie.db[this.name].toArray();
-  }
-  async getEntriesFromYearAndMonth(
-    year = undefined,
-    month = undefined,
-    day = undefined
-  ) {
-    let queryObj = {};
-    if (day !== undefined && day !== "" && !Number.isNaN(day))
-      queryObj["day"] = day;
-    if (month !== undefined && month !== "" && !Number.isNaN(month))
-      queryObj["month"] = month;
-    if (year !== undefined && year !== "" && !Number.isNaN(year))
-      queryObj["year"] = year;
-    let x = await this.dexie.db[this.name]
-      .where(queryObj)
-      .reverse()
-      .sortBy("date");
-
-    return this.getItemsFromQuery(x);
-  }
-  // private backfill() {
-  //   let batch = this.db.batch();
-
-  //   this.db
-  //     .collection("entries")
-  //     .where("userId", "==", firebase.auth().currentUser.uid)
-  //     .get()
-  //     .then((querySnapshot) => {
-  //       let i = 0;
-  //       querySnapshot.forEach((doc) => {
-  //         const docRef = this.db.collection("entries").doc(doc.id);
-  //         batch.update(docRef, {
-  //           activitiesArray: Array.from(
-  //             this.processFirestoreData(doc).activities.keys()
-  //           ),
-  //         });
-  //         i++;
-  //         if (i > 100) {
-  //           batch.commit();
-  //           batch = this.db.batch();
-  //           i = 0;
-  //         }
-  //       });
-
-  //       batch.commit();
-  //     });
-  // }
-
-  beforeSaveFixup(item: IEntry) {
-    var clone = Object.assign({}, item);
-    clone.activitiesArray = Array.from(item.activities.keys());
-    return clone;
-  }
+        return x;
+    }
 }
+export const entryDao = new EntryDao();

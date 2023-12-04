@@ -1,3 +1,4 @@
+import { EditTools } from '../interfaces/entry.interface';
 import { db } from '../services/Dexie';
 import { TrackerDao } from './TrackerDao';
 
@@ -12,6 +13,9 @@ export class DexieDao implements TrackerDao {
         this.notify = notify;
         notify();
     }
+    reset() {
+        db.table(this.name).clear();
+    }
     async getItem(id: string): Promise<any> {
         return this.processData(await db.table(this.name).get(id));
     }
@@ -20,8 +24,6 @@ export class DexieDao implements TrackerDao {
         return this.getItemsFromQuery(rawItems);
     }
     private processData(item: any): any {
-        // if (item.created) item.created = new Date(item.created);
-        // if (item.updated) item.updated = new Date(item.updated);
         return this.afterLoadFixup(item);
     }
     getItemsFromQuery(rawItems: any): Promise<any> {
@@ -39,6 +41,10 @@ export class DexieDao implements TrackerDao {
         if (!passedEntry.created) {
             passedEntry.created = passedEntry.updated;
         }
+        passedEntry.lastUpdatedBy = EditTools.WEB;
+        if (!passedEntry.createdBy) {
+            passedEntry.createdBy = EditTools.WEB;
+        }
         passedEntry = this.beforeSaveFixup(passedEntry);
         const newLocal = db.table(this.name).put(passedEntry);
         newLocal.then(() => {
@@ -46,7 +52,10 @@ export class DexieDao implements TrackerDao {
         });
         return newLocal;
     }
-    async saveItems(passedItems: any[]): Promise<any> {
+    async saveItems(
+        passedItems: any[],
+        importTool = EditTools.DAYLIO_IMPORT
+    ): Promise<any> {
         const itemsToSave: any[] = [];
         passedItems.forEach((item) => {
             let newItem = { ...item };
@@ -56,6 +65,10 @@ export class DexieDao implements TrackerDao {
             newItem.updated = new Date();
             if (!newItem.created) {
                 newItem.created = newItem.updated;
+            }
+            item.lastUpdatedBy = importTool;
+            if (!item.createdBy) {
+                item.createdBy = importTool;
             }
             newItem = this.beforeSaveFixup(newItem);
             itemsToSave.push(newItem);

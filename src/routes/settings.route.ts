@@ -44,6 +44,7 @@ export class SettingsRoute extends MobxLitElement {
         return html`<article>
             <header>Settings</header>
             <section>
+                <header>Theme</header>
                 <label class="inline"
                     ><input
                         .checked=${settings.isDark}
@@ -57,19 +58,32 @@ export class SettingsRoute extends MobxLitElement {
             <section>
                 <header>Import</header>
                 <button @click=${() => Router.go('import')}>
-                    <feather-icon name="inbox"></feather-icon>JSON
+                    <feather-icon name="inbox"></feather-icon>Import JSON
                 </button>
                 <button @click=${() => Router.go('import-daylio')}>
-                    <feather-icon name="inbox"></feather-icon>Daylio
+                    <feather-icon name="inbox"></feather-icon>Import Daylio
                 </button>
             </section>
             <section>
                 <header>Export</header>
                 <button @click=${this.exportBackup}>
-                    <feather-icon name="archive"></feather-icon>JSON
+                    <feather-icon name="archive"></feather-icon>Export JSON
+                </button>
+            </section>
+            <section>
+                <header>Reset</header>
+                <button class="secondary" @click=${this.resetAll}>
+                    <feather-icon name="trash"></feather-icon>Delete All
                 </button>
             </section>
         </article>`;
+    }
+    resetAll() {
+        if (confirm('Delete all data?')) {
+            entries.reset();
+            activities.reset();
+            moods.reset();
+        }
     }
     static styles = [
         base,

@@ -1,6 +1,8 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
+import { entryDao } from '../dao/EntryDao';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
@@ -27,6 +29,31 @@ export class ImportRoute extends LitElement {
             reader.onload = (event) => {
                 if (file.type === 'application/json') {
                     const data = JSON.parse(event.target?.result as string);
+                    data.entries.forEach((entry: Entry) => {
+                        entry.created = parseISO(
+                            entry.created as unknown as string
+                        );
+                        entry.updated = parseISO(
+                            entry.updated as unknown as string
+                        );
+                        entry.dateObject = new Date(entry.date);
+                    });
+                    data.moods.forEach((mood: Mood) => {
+                        mood.created = parseISO(
+                            mood.created as unknown as string
+                        );
+                        mood.updated = parseISO(
+                            mood.updated as unknown as string
+                        );
+                    });
+                    data.activities.forEach((activity: Activity) => {
+                        activity.created = parseISO(
+                            activity.created as unknown as string
+                        );
+                        activity.updated = parseISO(
+                            activity.updated as unknown as string
+                        );
+                    });
                     this.entries = data.entries;
                     this.moods = data.moods;
                     this.activities = data.activities;

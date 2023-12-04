@@ -7,7 +7,11 @@ import { format } from 'date-fns';
 import { action, makeObservable, observable } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
-import { ActivityDetail, Entry } from '../interfaces/entry.interface';
+import {
+    ActivityDetail,
+    EditTools,
+    Entry,
+} from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 
@@ -113,13 +117,23 @@ export class EntryEditStore {
 @customElement('entry-edit-route')
 export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
-    originalEntry?: Entry;
-    onAfterEnter(location: RouterLocation) {
-        this.originalEntry = entries.getEntry(location.params.id as string);
-        this.store.setEntry({
-            ...this.originalEntry,
-            activities: { ...this.originalEntry?.activities },
-        } as Entry);
+    originalEntry?: Partial<Entry>;
+    async onAfterEnter(location: RouterLocation) {
+        if (location.params.id) {
+            this.originalEntry = await entries.getEntry(
+                location.params.id as string
+            );
+        } else {
+            this.originalEntry = {
+                activities: {},
+                date: '',
+                mood: '0',
+                note: '',
+                createdBy: EditTools.WEB,
+                lastUpdatedBy: EditTools.WEB,
+            };
+        }
+        this.store.setEntry(this.originalEntry as Entry);
     }
     onBeforeLeave(_location: any, commands: any, _router: any) {
         if (this.store.pendingChanges && !confirm('Lose unsaved changes?')) {
@@ -218,6 +232,9 @@ export class EntryEditRoute extends MobxLitElement {
                             note: this.store.note,
                             mood: this.store.mood,
                             date: this.store.date,
+                            lastUpdatedBy: EditTools.WEB,
+                            dateObject: new Date(this.store.date),
+                            createdBy: EditTools.WEB,
                         });
                         Router.go('/');
                     }}

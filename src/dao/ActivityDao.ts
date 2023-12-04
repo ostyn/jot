@@ -6,11 +6,7 @@ export class ActivityDao extends DexieDao {
         super('activities');
     }
     sortItems(items: Activity[]) {
-        return items.sort((a, b) => {
-            if (Number(a.isArchived) - Number(b.isArchived) !== 0)
-                return Number(a.isArchived) - Number(b.isArchived);
-            return a.created.localeCompare(b.created);
-        });
+        return items;
     }
 }
 export const activityDao = new ActivityDao();

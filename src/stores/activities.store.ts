@@ -3,15 +3,31 @@ import { activityDao } from '../dao/ActivityDao';
 import { Activity } from '../interfaces/activity.interface';
 
 const activitiesData: Activity[] = await activityDao.getItems();
+const activitiesMap: any = {};
+activitiesData.forEach((activity) => {
+    activitiesMap[activity.id] = activity;
+});
 class ActivityStore {
     @observable
     public all: Activity[] = activitiesData;
+    @observable
+    map: any = activitiesMap;
+    @action.bound
+    public async reset() {
+        this.all = [];
+        this.map = {};
+        activityDao.reset();
+    }
     @action.bound
     public async updateActivity(updatedActivity: Activity) {
         await activityDao.saveItem(updatedActivity);
         const updatedActivities = await activityDao.getItems();
         runInAction(() => {
             this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
         });
     }
     @action.bound
@@ -20,6 +36,10 @@ class ActivityStore {
         const updatedActivities = await activityDao.getItems();
         runInAction(() => {
             this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
         });
     }
     @action.bound
@@ -28,10 +48,14 @@ class ActivityStore {
         const updatedActivities = await activityDao.getItems();
         runInAction(() => {
             this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
         });
     }
-    public getActivity(id: string): Promise<Activity | undefined> {
-        return activityDao.getItem(id);
+    public getActivity(id: string): Activity | undefined {
+        return this.map[id];
     }
     public getCategories() {
         return [...new Set(this.all.map((a) => a.category || ''))].sort();

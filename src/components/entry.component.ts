@@ -63,6 +63,7 @@ export class EntryComponent extends MobxLitElement {
                 //TODO add tiebreaker using names
             }
         );
+
         return html`<article>
             <section class="entry-header">
                 <hgroup>
@@ -94,7 +95,7 @@ export class EntryComponent extends MobxLitElement {
             <section class="entry-activities">
                 ${activityOrder.map((activityId) => {
                     return html`<activity-component
-                        .activity=${until(activities.getActivity(activityId))}
+                        .activity=${activities.getActivity(activityId)}
                         .detail=${this.entry.activities[activityId]}
                         class="entry-activity"
                     ></activity-component>`;
@@ -117,10 +118,10 @@ export class EntryComponent extends MobxLitElement {
                     ${this.entry.created
                         ? html`<span if.bind="showCreatedDate">
                               Entered
-                              ${DateHelpers.stringDateToDate(
+                              ${DateHelpers.dateToStringDate(
                                   this.entry.created
                               )},
-                              ${DateHelpers.stringDateToTime(
+                              ${DateHelpers.dateToStringTime(
                                   this.entry.created
                               )}<br />
                           </span>`
@@ -129,10 +130,10 @@ export class EntryComponent extends MobxLitElement {
                     this.entry.created !== this.entry.updated
                         ? html`<span>
                               Updated
-                              ${DateHelpers.stringDateToDate(
+                              ${DateHelpers.dateToStringDate(
                                   this.entry.updated
                               )},
-                              ${DateHelpers.stringDateToTime(
+                              ${DateHelpers.dateToStringTime(
                                   this.entry.updated
                               )}<br />
                           </span>`

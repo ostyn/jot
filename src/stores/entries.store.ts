@@ -1,16 +1,15 @@
-import { parseISO } from 'date-fns';
-import { action, computed, makeObservable, observable } from 'mobx';
-import { v4 as uuidv4 } from 'uuid';
 import {
-    EditTools,
-    Entry,
-    UserEditableEntryFields,
-} from '../interfaces/entry.interface';
+    action,
+    computed,
+    makeObservable,
+    observable,
+    runInAction,
+} from 'mobx';
+import { entryDao } from '../dao/EntryDao';
+import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 
-const entriesData: Entry[] = [];
-entriesData.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
-
+const entriesData: Entry[] = await entryDao.getItems();
 class EntriesStore {
     @observable
     public all: Entry[] = entriesData;
@@ -51,57 +50,45 @@ class EntriesStore {
         });
         return activityStats;
     }
-    public getEntry(id: string): Entry | undefined {
-        return this.all.find((entry) => entry.id === id);
+    @action.bound
+    public async reset() {
+        this.all = [];
+        entryDao.reset();
+    }
+    public getEntry(id: string): Promise<Entry | undefined> {
+        return entryDao.getItem(id);
     }
     @action.bound
-    upsertEntry(userEntry: UserEditableEntryFields) {
-        const existingEntryIndex = this.all.findIndex(
-            (entry) => entry.id === userEntry.id
-        );
-        if (existingEntryIndex >= 0) {
-            let newEntry: Entry = {
-                ...this.all[existingEntryIndex],
-                ...userEntry,
-                lastUpdatedBy: EditTools.WEB,
-                updated: new Date().toISOString(),
-            };
-            this.all[existingEntryIndex] = newEntry;
-            this.all.sort((a, b) => {
-                return b.date.localeCompare(a.date);
-            });
-        } else {
-            this.insertEntry(userEntry);
-        }
-    }
-    @action.bound
-    bulkImport(entries: Entry[]) {
-        entries.forEach((entry) => (entry.dateObject = parseISO(entry.date)));
-        this.all.push(...entries);
-        this.all.sort((a, b) => {
-            return b.date.localeCompare(a.date);
+    async upsertEntry(userEntry: Partial<Entry>) {
+        entryDao.saveItem(userEntry);
+        const updatedEntries = await entryDao.getItems();
+        runInAction(() => {
+            this.all = updatedEntries;
         });
     }
     @action.bound
-    insertEntry(userEntry: UserEditableEntryFields) {
-        const date = new Date().toISOString();
-        let newEntry: Entry = {
-            ...userEntry,
-            createdBy: EditTools.WEB,
-            id: uuidv4(),
-            lastUpdatedBy: EditTools.WEB,
-            created: date,
-            updated: date,
-            dateObject: parseISO(userEntry.date),
-        };
-        this.all.push(newEntry);
-        this.all.sort((a, b) => {
-            return b.date.localeCompare(a.date);
+    async bulkImport(entries: Entry[]) {
+        entryDao.saveItems(entries);
+        const updatedEntries = await entryDao.getItems();
+        runInAction(() => {
+            this.all = updatedEntries;
         });
     }
     @action.bound
-    public removeEntry(id?: string) {
-        this.all = this.all.filter((entry) => entry.id !== id);
+    async insertEntry(userEntry: any) {
+        entryDao.saveItem(userEntry);
+        const updatedEntries = await entryDao.getItems();
+        runInAction(() => {
+            this.all = updatedEntries;
+        });
+    }
+    @action.bound
+    public async removeEntry(id?: string) {
+        entryDao.deleteItem(id);
+        const updatedEntries = await entryDao.getItems();
+        runInAction(() => {
+            this.all = updatedEntries;
+        });
     }
     constructor() {
         makeObservable(this);

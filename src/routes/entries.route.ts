@@ -6,14 +6,15 @@ import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import '../components/entry.component';
 import '../components/month-control.component';
+import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
-import { entries } from '../stores/entries.store';
 
 @customElement('entries-route')
 export class EntriesRoute extends LitElement implements AfterEnterObserver {
     @state() currentDate: Date = new Date();
     public router?: Router;
     @state() scrollToDate?: number;
+    @state() filteredEntries: Entry[] = [];
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
@@ -28,7 +29,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         );
         this.getParamsAndUpdate();
     }
-    private getParamsAndUpdate = () => {
+    private getParamsAndUpdate = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');
@@ -48,6 +49,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             : new Date().getFullYear();
 
         this.currentDate = new Date(currentYear, currentMonth, currentDay);
+        this.filteredEntries = await entryDao.getEntriesFromYearAndMonth(
+            this.currentDate.getFullYear(),
+            this.currentDate.getMonth() + 1
+        );
     };
     shouldScrollToSelf(entry: Entry) {
         return parseISO(entry.date).getDate() === this.scrollToDate;
@@ -55,7 +60,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     onMonthClick() {
         window.scrollTo({ top: 0 });
     }
-    onMonthChange(e: CustomEvent) {
+    async onMonthChange(e: CustomEvent) {
         const date: Date = e.detail;
         window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
@@ -66,13 +71,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         Router.go(`entries?${queryParams}`);
     }
     render() {
-        const filteredEntries = entries.all.filter((entry) => {
-            const parts = entry.date.split('-');
-            return (
-                parseInt(parts[0]) == this.currentDate.getFullYear() &&
-                parseInt(parts[1]) == this.currentDate.getMonth() + 1
-            );
-        });
         return html`<section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}
@@ -81,8 +79,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             <section>
-                ${filteredEntries.map(
-                    (entry) =>
+                ${this.filteredEntries.map(
+                    (entry: Entry) =>
                         html`<entry-component
                             .scrollToSelf=${this.shouldScrollToSelf(entry)}
                             .entry="${entry}"

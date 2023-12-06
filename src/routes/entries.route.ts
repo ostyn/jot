@@ -108,6 +108,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   opacity: 0,
                               },
                           ],
+                          skipInitial: true,
                       })}
                   >
                       <article aria-busy="true"></article>

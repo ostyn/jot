@@ -2,6 +2,7 @@ import { css, html, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import VanillaCalendar, { Options } from '@uvarov.frontend/vanilla-calendar';
+import { TypesCalendar } from '@uvarov.frontend/vanilla-calendar/src/types';
 import { parseISO } from 'date-fns';
 import { dispatchEvent, Events } from '../utils/Helpers';
 import calendarDark from '/node_modules/@uvarov.frontend/vanilla-calendar/build/themes/dark.min.css?inline';
@@ -12,6 +13,8 @@ import calendar from '/node_modules/@uvarov.frontend/vanilla-calendar/build/vani
 export class CalendarWrapperComponent extends MobxLitElement {
     @property()
     startingDate = new Date();
+    @property()
+    type: TypesCalendar = 'default';
     @property()
     dateValues: { [key: string]: string } = {};
     calendar!: VanillaCalendar<HTMLElement, Partial<Options>>;
@@ -24,6 +27,7 @@ export class CalendarWrapperComponent extends MobxLitElement {
         this.shownMonth = this.startingDate.getMonth();
         this.shownYear = this.startingDate.getFullYear();
         const options: Partial<Options> = {
+            type: this.type,
             settings: {
                 iso8601: false,
                 visibility: {

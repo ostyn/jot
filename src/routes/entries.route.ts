@@ -1,8 +1,8 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
-import { parseISO } from 'date-fns';
+import { lastDayOfMonth, parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import '../components/entry.component';
@@ -38,21 +38,23 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');
         const yearParam = urlParams.get('year');
-        let currentDay;
-        if (dayParam) {
-            currentDay = Number.parseInt(dayParam);
-            this.scrollToDate = currentDay;
-        } else {
-            currentDay = 1;
-        }
         const currentMonth = monthParam
             ? Number.parseInt(monthParam) - 1
             : new Date().getMonth();
         const currentYear = yearParam
             ? Number.parseInt(yearParam)
             : new Date().getFullYear();
+        if (dayParam) {
+            const currentDay = Number.parseInt(dayParam);
+            this.currentDate = new Date(currentYear, currentMonth, currentDay);
+            this.scrollToDate = currentDay;
+        } else {
+            this.currentDate = lastDayOfMonth(
+                new Date(currentYear, currentMonth, 1)
+            );
+            this.scrollToDate = undefined;
+        }
 
-        this.currentDate = new Date(currentYear, currentMonth, currentDay);
         const currentUpdateCycle = this.updateNum++;
         entryDao
             .getEntriesFromYearAndMonth(

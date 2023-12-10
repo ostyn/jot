@@ -51,7 +51,7 @@ export class CalendarWrapperComponent extends MobxLitElement {
                     const date = parseISO((dates as string[])[0]);
                     if (this.shownMonth === date.getMonth())
                         dispatchEvent(this, Events.dateSelect, {
-                            date: (dates as string[])[0],
+                            date,
                         });
                     else {
                         this.shownMonth = date.getMonth();
@@ -66,6 +66,9 @@ export class CalendarWrapperComponent extends MobxLitElement {
                 },
                 clickMonth: (_event, month) => {
                     this.shownMonth = month;
+                    dispatchEvent(this, Events.monthSelect, {
+                        date: new Date(this.shownYear, this.shownMonth, 1),
+                    });
                     this.onViewChange();
                 },
                 clickYear: (_event, year) => {

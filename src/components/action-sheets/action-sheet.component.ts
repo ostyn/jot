@@ -8,6 +8,7 @@ import { ActivityDetailSelectSheet } from './activity-detail-select.sheet';
 import { ActivityEditSheet } from './activity-edit.sheet';
 import { ActivityInfoSheet } from './activity-info.sheet';
 import { ActivitySheet } from './activity.sheet';
+import { DateSheet } from './date.sheet';
 import './mood-edit.sheet';
 import { MoodEditSheet } from './mood-edit.sheet';
 import './moods.sheet';
@@ -16,6 +17,7 @@ import { TextSheet } from './text.sheet';
 
 const SheetMapping = {
     ['text']: TextSheet,
+    ['date']: DateSheet,
     ['mood']: MoodsSheet,
     ['activity']: ActivitySheet,
     ['moodEdit']: MoodEditSheet,

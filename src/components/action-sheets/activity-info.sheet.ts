@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { until } from 'lit/directives/until.js';
 import { Router } from '@vaadin/router';
-import { getDaysInMonth, parseISO } from 'date-fns';
+import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
@@ -137,9 +137,8 @@ export class ActivityInfoSheet extends LitElement {
             Math.min(7, this.mruDetails.length)
         );
     }
-    onDateSelect(dateString: string) {
+    onDateSelect(date: Date) {
         ActionSheetController.close();
-        const date = parseISO(dateString);
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
             year: date.getFullYear(),

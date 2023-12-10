@@ -74,10 +74,17 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         return parseISO(entry.date).getDate() === this.scrollToDate;
     }
     onMonthClick() {
-        window.scrollTo({ top: 0 });
+        ActionSheetController.open({
+            type: 'date',
+            data: { date: this.currentDate, type: 'month' },
+            onSubmit: (e) => this.goToMonth(e.date),
+        });
     }
     async onMonthChange(e: CustomEvent) {
         const date: Date = e.detail;
+        this.goToMonth(date);
+    }
+    private goToMonth(date: Date) {
         window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,

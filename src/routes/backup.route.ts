@@ -2,9 +2,12 @@ import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { animate } from '@lit-labs/motion';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
+import { Activity } from '../interfaces/activity.interface';
+import { Entry } from '../interfaces/entry.interface';
+import { Mood } from '../interfaces/mood.interface';
 import { GoogleDriveService } from '../services/google-drive.service';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
@@ -101,6 +104,7 @@ export class BackupRoute extends LitElement {
                             </h4>
                         </hgroup>
                         <button
+                            @click=${() => this.restore(file)}
                             aria-busy=${ifDefined(this.isDeletingId[file.id])}
                             class="inline iconButton"
                         >
@@ -130,6 +134,46 @@ export class BackupRoute extends LitElement {
                     </article>`
             )}
         </article>`;
+    }
+    async restore(file: any) {
+        if (
+            confirm(
+                `WARNING: All existing data will be lost. This will restore all content to the backup made on ${format(
+                    new Date(file.createdTime),
+                    'yyyy-MM-dd@HH:mm'
+                )}. Continue?`
+            )
+        ) {
+            const resp = await this.gdrive.getFile(file.id);
+            console.log(resp);
+            const newEntries = resp.result.entries;
+            const newActivities = resp.result.activities;
+            const newMoods = resp.result.moods;
+
+            newEntries.forEach((entry: Entry) => {
+                entry.created = parseISO(entry.created as unknown as string);
+                entry.updated = parseISO(entry.updated as unknown as string);
+                entry.dateObject = new Date(entry.date);
+            });
+            newMoods.forEach((mood: Mood) => {
+                mood.created = parseISO(mood.created as unknown as string);
+                mood.updated = parseISO(mood.updated as unknown as string);
+            });
+            newActivities.forEach((activity: Activity) => {
+                activity.created = parseISO(
+                    activity.created as unknown as string
+                );
+                activity.updated = parseISO(
+                    activity.updated as unknown as string
+                );
+            });
+            entries.reset();
+            activities.reset();
+            moods.reset();
+            moods.bulkImport(newMoods);
+            activities.bulkImport(newActivities);
+            entries.bulkImport(newEntries);
+        }
     }
     static styles = [
         base,

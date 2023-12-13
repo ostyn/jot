@@ -60,7 +60,7 @@ class EntriesStore {
     }
     @action.bound
     async upsertEntry(userEntry: Partial<Entry>) {
-        entryDao.saveItem(userEntry);
+        await entryDao.saveItem(userEntry);
         const updatedEntries = await entryDao.getItems();
         runInAction(() => {
             this.all = updatedEntries;
@@ -68,7 +68,7 @@ class EntriesStore {
     }
     @action.bound
     async bulkImport(entries: Entry[]) {
-        entryDao.saveItems(entries);
+        await entryDao.saveItems(entries);
         const updatedEntries = await entryDao.getItems();
         runInAction(() => {
             this.all = updatedEntries;
@@ -76,7 +76,7 @@ class EntriesStore {
     }
     @action.bound
     async insertEntry(userEntry: any) {
-        entryDao.saveItem(userEntry);
+        await entryDao.saveItem(userEntry);
         const updatedEntries = await entryDao.getItems();
         runInAction(() => {
             this.all = updatedEntries;
@@ -84,7 +84,7 @@ class EntriesStore {
     }
     @action.bound
     public async removeEntry(id?: string) {
-        entryDao.deleteItem(id);
+        await entryDao.deleteItem(id);
         const updatedEntries = await entryDao.getItems();
         runInAction(() => {
             this.all = updatedEntries;

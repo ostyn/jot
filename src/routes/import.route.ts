@@ -2,7 +2,6 @@ import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
-import { entryDao } from '../dao/EntryDao';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';

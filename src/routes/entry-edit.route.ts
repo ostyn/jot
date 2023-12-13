@@ -1,6 +1,5 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router, RouterLocation } from '@vaadin/router';
 import { format } from 'date-fns';
@@ -195,11 +194,7 @@ export class EntryEditRoute extends MobxLitElement {
                                 data: this.store.mood || 0,
                                 onSubmit: (data) => this.store.setMood(data),
                             })}
-                        >${until(
-                            moods
-                                .getMood(this.store.mood)
-                                .then((mood) => mood?.emoji)
-                        )}
+                        >${moods?.getMood(this.store.mood)?.emoji || ''}
                     </span>
                 </div>
             </section>

@@ -56,6 +56,12 @@ export class SettingsRoute extends MobxLitElement {
                 </label>
             </section>
             <section>
+                <header>Backup</header>
+                <button @click=${() => Router.go('backup')}>
+                    <feather-icon name="tool"></feather-icon>Manage Backup
+                </button>
+            </section>
+            <section>
                 <header>Import</header>
                 <button @click=${() => Router.go('import')}>
                     <feather-icon name="inbox"></feather-icon>Import JSON

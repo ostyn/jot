@@ -1,6 +1,5 @@
 import { css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';

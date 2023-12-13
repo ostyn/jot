@@ -179,7 +179,7 @@ export class ActivityInfoSheet extends LitElement {
                     ([key, value]) =>
                         html`<li
                             class="activity-info-recent"
-                            @click=${() => this.onDateSelect(key)}
+                            @click=${() => this.onDateSelect(value.dateObject)}
                         >
                             <span class="activity-info-recent-date"
                                 >${key}</span
@@ -223,7 +223,7 @@ export class ActivityInfoSheet extends LitElement {
                                       html`<div
                                           @click=${() =>
                                               this.onDateSelect(
-                                                  detail.dates[0].date
+                                                  new Date(detail.dates[0].date)
                                               )}
                                           class="stats-entry"
                                       >
@@ -241,7 +241,8 @@ export class ActivityInfoSheet extends LitElement {
                                       html` <div
                                           @click=${() =>
                                               this.onDateSelect(
-                                                  detail.dates[0].entry.date
+                                                  detail.dates[0].entry
+                                                      .dateObject
                                               )}
                                           class="stats-entry"
                                       >

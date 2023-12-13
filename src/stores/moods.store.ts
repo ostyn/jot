@@ -54,9 +54,10 @@ class MoodStore {
             this.userCreated = updatedMoods;
         });
     }
-    public async getMood(id: string): Promise<Mood | undefined> {
+    public getMood(id: string): Mood | undefined {
         if (id === '0') return this.default[0];
-        return moodDao.getItem(id);
+        return this.userCreated.find((mood) => mood.id === id);
+        // return moodDao.getItem(id);
     }
     constructor() {
         makeObservable(this);

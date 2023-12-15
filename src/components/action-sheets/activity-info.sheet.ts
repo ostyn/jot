@@ -15,7 +15,7 @@ export class ActivityInfoSheet extends LitElement {
     @property()
     activityId!: string;
     @property()
-    date: Date = new Date();
+    date!: Date;
     @property()
     onChange!: (a: any) => {};
     daysWithActivity: number = 0;

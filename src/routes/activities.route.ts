@@ -15,6 +15,15 @@ export class ActivitiesRoute extends LitElement {
                     type: 'activityEdit',
                     data: await activities.getActivity(e.detail.id),
                 })}
+            @activityLongClick=${(e: any) => {
+                ActionSheetController.open({
+                    type: 'activityInfo',
+                    data: {
+                        id: e.detail.id,
+                        date: new Date(),
+                    },
+                });
+            }}
         ></activity-grid>`;
     }
     static styles = [base];

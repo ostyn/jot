@@ -209,8 +209,6 @@ export class ActivityInfoSheet extends LitElement {
                 ? html` <input
                           type="search"
                           @input=${(e: any) => {
-                              console.log(e.target.value);
-
                               this.filter = e.target.value;
                               this.loadMru();
                           }}

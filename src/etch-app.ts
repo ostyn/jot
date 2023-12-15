@@ -2,6 +2,7 @@ import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { provide } from '@lit/context';
 import { Router } from '@vaadin/router';
+import { registerSW } from 'virtual:pwa-register';
 import { base } from './baseStyles';
 import './components/action-sheets/action-sheet.component';
 import './components/feather-icon';
@@ -17,6 +18,12 @@ export class EtchApp extends LitElement {
     @provide({ context: routerContext })
     private router: Router = new Router();
     protected firstUpdated(): void {
+        const updateSW = registerSW({
+            onNeedRefresh() {
+                if (confirm('Update available. Install now?')) updateSW();
+            },
+            onOfflineReady() {},
+        });
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
     }

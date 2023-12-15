@@ -16,6 +16,10 @@ import { moods } from '../stores/moods.store';
 @customElement('backup-route')
 export class BackupRoute extends LitElement {
     @state()
+    userInfo?: { name: string; picture: string };
+    @state()
+    backups: { id: string; description: string; createdTime: string }[] = [];
+    @state()
     isDeletingId: any = {};
     @state()
     isLoading = false;
@@ -34,22 +38,18 @@ export class BackupRoute extends LitElement {
             }),
             `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}`
         );
-        this.files = await this.gdrive.listFolder();
+        this.backups = await this.gdrive.listFolder();
         this.isLoading = false;
     };
     delete = async (id: string) => {
         this.isDeletingId = { ...this.isDeletingId, [id]: true };
         await this.gdrive.deleteFile(id);
-        this.files = await this.gdrive.listFolder();
+        this.backups = await this.gdrive.listFolder();
     };
-    @state()
-    userInfo: { name: string; picture: string };
-    @state()
-    files = [];
     protected async firstUpdated() {
         if (this.gdrive.hasValidToken()) {
             this.userInfo = await this.gdrive.getUserInfo();
-            this.files = await this.gdrive.listFolder();
+            this.backups = await this.gdrive.listFolder();
         }
     }
     render() {
@@ -77,8 +77,8 @@ export class BackupRoute extends LitElement {
                           Authenticate with Google
                       </button>`}
             </header>
-            ${this.files.map(
-                (file) =>
+            ${this.backups.map(
+                (backup) =>
                     html`<article
                         ${animate({
                             in: [
@@ -95,22 +95,22 @@ export class BackupRoute extends LitElement {
                         class="backup"
                     >
                         <hgroup>
-                            <h3>${file.description}</h3>
+                            <h3>${backup.description}</h3>
                             <h4>
                                 ${format(
-                                    new Date(file.createdTime),
+                                    new Date(backup.createdTime),
                                     'yyyy-MM-dd@HH:mm'
                                 )}
                             </h4>
                         </hgroup>
                         <button
-                            @click=${() => this.restore(file)}
-                            aria-busy=${ifDefined(this.isDeletingId[file.id])}
+                            @click=${() => this.restore(backup)}
+                            aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
                             <feather-icon
                                 name=${ifDefined(
-                                    this.isDeletingId[file.id]
+                                    this.isDeletingId[backup.id]
                                         ? undefined
                                         : 'copy'
                                 )}
@@ -118,13 +118,13 @@ export class BackupRoute extends LitElement {
                             Restore
                         </button>
                         <button
-                            @click=${() => this.delete(file.id)}
-                            aria-busy=${ifDefined(this.isDeletingId[file.id])}
+                            @click=${() => this.delete(backup.id)}
+                            aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
                             <feather-icon
                                 name=${ifDefined(
-                                    this.isDeletingId[file.id]
+                                    this.isDeletingId[backup.id]
                                         ? undefined
                                         : 'trash'
                                 )}
@@ -145,7 +145,6 @@ export class BackupRoute extends LitElement {
             )
         ) {
             const resp = await this.gdrive.getFile(file.id);
-            console.log(resp);
             const newEntries = resp.result.entries;
             const newActivities = resp.result.activities;
             const newMoods = resp.result.moods;

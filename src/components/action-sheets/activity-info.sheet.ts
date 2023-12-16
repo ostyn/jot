@@ -1,7 +1,8 @@
 import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { until } from 'lit/directives/until.js';
 import { Router } from '@vaadin/router';
-import { getDaysInMonth, parseISO } from 'date-fns';
+import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
@@ -14,7 +15,7 @@ export class ActivityInfoSheet extends LitElement {
     @property()
     activityId!: string;
     @property()
-    date: Date = new Date();
+    date!: Date;
     @property()
     onChange!: (a: any) => {};
     daysWithActivity: number = 0;
@@ -136,9 +137,8 @@ export class ActivityInfoSheet extends LitElement {
             Math.min(7, this.mruDetails.length)
         );
     }
-    onDateSelect(dateString: string) {
+    onDateSelect(date: Date) {
         ActionSheetController.close();
-        const date = parseISO(dateString);
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
             year: date.getFullYear(),
@@ -150,7 +150,7 @@ export class ActivityInfoSheet extends LitElement {
         return html`
             <header class="activity-info-header">
                 <activity-component
-                    .activity=${activities.getActivity(this.activityId)}
+                    .activity=${until(activities.getActivity(this.activityId))}
                 ></activity-component
                 ><span>
                     <div>This month: ${this.daysWithActivity}</div>
@@ -179,7 +179,7 @@ export class ActivityInfoSheet extends LitElement {
                     ([key, value]) =>
                         html`<li
                             class="activity-info-recent"
-                            @click=${() => this.onDateSelect(key)}
+                            @click=${() => this.onDateSelect(value.dateObject)}
                         >
                             <span class="activity-info-recent-date"
                                 >${key}</span
@@ -209,8 +209,6 @@ export class ActivityInfoSheet extends LitElement {
                 ? html` <input
                           type="search"
                           @input=${(e: any) => {
-                              console.log(e.target.value);
-
                               this.filter = e.target.value;
                               this.loadMru();
                           }}
@@ -223,7 +221,7 @@ export class ActivityInfoSheet extends LitElement {
                                       html`<div
                                           @click=${() =>
                                               this.onDateSelect(
-                                                  detail.dates[0].date
+                                                  new Date(detail.dates[0].date)
                                               )}
                                           class="stats-entry"
                                       >
@@ -241,7 +239,8 @@ export class ActivityInfoSheet extends LitElement {
                                       html` <div
                                           @click=${() =>
                                               this.onDateSelect(
-                                                  detail.dates[0].entry.date
+                                                  detail.dates[0].entry
+                                                      .dateObject
                                               )}
                                           class="stats-entry"
                                       >

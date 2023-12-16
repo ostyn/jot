@@ -1,54 +1,64 @@
-import { action, makeObservable, observable } from 'mobx';
-import { v4 as uuidv4 } from 'uuid';
+import { action, makeObservable, observable, runInAction } from 'mobx';
+import { activityDao } from '../dao/ActivityDao';
 import { Activity } from '../interfaces/activity.interface';
 
-const activitiesData: Activity[] = [];
+const activitiesData: Activity[] = await activityDao.getItems();
+const activitiesMap: any = {};
+activitiesData.forEach((activity) => {
+    activitiesMap[activity.id] = activity;
+});
 class ActivityStore {
     @observable
     public all: Activity[] = activitiesData;
-
+    @observable
+    map: any = activitiesMap;
     @action.bound
-    public addActivity(activity: Activity) {
-        const dateString = new Date().toISOString();
-        this.all.push({
-            ...activity,
-            id: uuidv4(),
-            updated: dateString,
-            created: dateString,
+    public async reset() {
+        this.all = [];
+        this.map = {};
+        activityDao.reset();
+    }
+    @action.bound
+    public async updateActivity(updatedActivity: Activity) {
+        await activityDao.saveItem(updatedActivity);
+        const updatedActivities = await activityDao.getItems();
+        runInAction(() => {
+            this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
         });
-        this.sort();
     }
     @action.bound
-    public updateActivity(updatedActivity: Activity) {
-        this.all = [
-            ...this.all.filter(
-                (activity) => activity.id !== updatedActivity.id
-            ),
-            { ...updatedActivity, updated: new Date().toISOString() },
-        ];
-        this.sort();
+    public async bulkImport(activities: Activity[]) {
+        await activityDao.saveItems(activities);
+        const updatedActivities = await activityDao.getItems();
+        runInAction(() => {
+            this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
+        });
     }
     @action.bound
-    bulkImport(activities: Activity[]) {
-        this.all.push(...activities);
-        this.sort();
-    }
-    @action.bound
-    public removeActivity(id: string) {
-        this.all = this.all.filter((activity) => activity.id !== id);
+    public async removeActivity(id: string) {
+        await activityDao.deleteItem(id);
+        const updatedActivities = await activityDao.getItems();
+        runInAction(() => {
+            this.all = updatedActivities;
+            this.map = {};
+            this.all.forEach((activity) => {
+                this.map[activity.id] = activity;
+            });
+        });
     }
     public getActivity(id: string): Activity | undefined {
-        return this.all.find((activity) => activity.id === id);
+        return this.map[id];
     }
     public getCategories() {
-        return [...new Set(this.all.map((a) => a.category || ''))];
-    }
-    private sort() {
-        this.all.sort((a, b) => {
-            if (Number(a.isArchived) - Number(b.isArchived) !== 0)
-                return Number(a.isArchived) - Number(b.isArchived);
-            return a.created.localeCompare(b.created);
-        });
+        return [...new Set(this.all.map((a) => a.category || ''))].sort();
     }
     constructor() {
         makeObservable(this);

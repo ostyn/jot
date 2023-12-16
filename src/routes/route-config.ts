@@ -2,6 +2,7 @@ import { createContext } from '@lit/context';
 import { Route, Router } from '@vaadin/router';
 import { FeatherIconNames } from 'feather-icons';
 import './activities.route';
+import './backup.route';
 import './entries.route';
 import './entry-edit.route';
 import './import-daylio.route';
@@ -61,6 +62,11 @@ export const routes: Route[] = [
         path: '/search',
         component: 'search-route',
         name: 'search',
+    },
+    {
+        path: '/backup',
+        component: 'backup-route',
+        name: 'backup',
     },
 ] as EtchRoute[];
 export type EtchRoute = Route & {

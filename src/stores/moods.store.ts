@@ -1,55 +1,63 @@
-import { action, computed, makeObservable, observable } from 'mobx';
-import { v4 as uuidv4 } from 'uuid';
+import {
+    action,
+    computed,
+    makeObservable,
+    observable,
+    runInAction,
+} from 'mobx';
+import { moodDao } from '../dao/MoodDao';
 import { Mood } from '../interfaces/mood.interface';
 
-const moodsData: Mood[] = [];
+const savedMoods = await moodDao.getItems();
 
 class MoodStore {
     @observable
-    public userCreated: Mood[] = moodsData;
+    public userCreated: Mood[] = savedMoods;
     public default: Mood[] = [
         {
             emoji: '🚧',
             id: '0',
             rating: '3',
             name: 'TBD',
-        },
+        } as Mood,
     ];
     @computed
     public get all() {
         return [...this.userCreated, ...this.default];
     }
-
     @action.bound
-    public addMood(mood: Mood) {
-        this.userCreated.push({ ...mood, id: uuidv4() });
-        this.userCreated.sort((a: Mood, b: Mood) =>
-            b.rating.localeCompare(a.rating)
-        );
+    public async reset() {
+        this.userCreated = [];
+        moodDao.reset();
     }
     @action.bound
-    public updateMood(updatedMood: Mood) {
-        const existingIndex = this.userCreated.findIndex(
-            (mood) => mood.id === updatedMood.id
-        );
-        this.userCreated[existingIndex] = updatedMood;
-        this.userCreated.sort((a: Mood, b: Mood) =>
-            b.rating.localeCompare(a.rating)
-        );
+    public async updateMood(updatedMood: Mood) {
+        await moodDao.saveItem(updatedMood);
+        const updatedMoods = await moodDao.getItems();
+        runInAction(() => {
+            this.userCreated = updatedMoods;
+        });
     }
     @action.bound
-    bulkImport(moods: Mood[]) {
-        this.userCreated.push(...moods);
-        this.userCreated.sort((a: Mood, b: Mood) =>
-            b.rating.localeCompare(a.rating)
-        );
+    public async bulkImport(moods: Mood[]) {
+        await moodDao.saveItems(moods);
+        const updatedMoods = await moodDao.getItems();
+        runInAction(() => {
+            this.userCreated = updatedMoods;
+        });
     }
     @action.bound
-    public removeMood(id: string) {
-        this.userCreated = this.userCreated.filter((mood) => mood.id !== id);
+    public async removeMood(id: string) {
+        await moodDao.deleteItem(id);
+        const updatedMoods = await moodDao.getItems();
+        runInAction(() => {
+            this.userCreated = updatedMoods;
+        });
     }
     public getMood(id: string): Mood | undefined {
-        return this.all.find((mood) => mood.id === id);
+        if (id === '0') return this.default[0];
+        return this.userCreated.find((mood) => mood.id === id);
+        // return moodDao.getItem(id);
     }
     constructor() {
         makeObservable(this);

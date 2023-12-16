@@ -1,7 +1,18 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta charset="UTF-8" />
+        <meta name="description" content="A daily tracker and journaling PWA" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="icon" href="/favicon.ico" />
+        <link
+            rel="apple-touch-icon"
+            href="/apple-touch-icon-180x180.png"
+            sizes="180x180"
+        />
+        <link rel="mask-icon" href="/vite.svg" color="#000000" />
+        <title>Etch</title>
         <link
             rel="stylesheet"
             href="/node_modules/@picocss/pico/css/pico.min.css"
@@ -19,9 +30,64 @@
                 import('/node_modules/urlpattern-polyfill/index.js');
             }
         </script>
+        <script type="text/javascript">
+            // TODO(developer): Set to client ID and API key from the Developer Console
+            const CLIENT_ID = '';
+            const API_KEY = '';
+
+            // Discovery doc URL for APIs used by the quickstart
+            const DISCOVERY_DOC =
+                'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+            // Authorization scopes required by the API; multiple scopes can be
+            // included, separated by spaces.
+            const SCOPES =
+                'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile';
+
+            var tokenClient;
+
+            /**
+             * Callback after api.js is loaded.
+             */
+            function gapiLoaded() {
+                gapi.load('client', initializeGapiClient);
+            }
+
+            /**
+             * Callback after the API client is loaded. Loads the
+             * discovery doc to initialize the API.
+             */
+            async function initializeGapiClient() {
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    discoveryDocs: [DISCOVERY_DOC],
+                });
+            }
+
+            /**
+             * Callback after Google Identity Services are loaded.
+             */
+            function gisLoaded() {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '', // defined later
+                });
+            }
+        </script>
         <script type="module" src="/src/etch-app.ts"></script>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Etch</title>
+        <script
+            async
+            defer
+            src="https://apis.google.com/js/api.js"
+            onload="gapiLoaded()"
+        ></script>
+        <script
+            async
+            defer
+            src="https://accounts.google.com/gsi/client"
+            onload="gisLoaded()"
+        ></script>
     </head>
     <body>
         <etch-app> </etch-app>

@@ -62,6 +62,7 @@ export class EntryComponent extends MobxLitElement {
                 //TODO add tiebreaker using names
             }
         );
+
         return html`<article>
             <section class="entry-header">
                 <hgroup>
@@ -72,14 +73,17 @@ export class EntryComponent extends MobxLitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    .title=${moods.getMood(this.entry.mood)?.name || ''}
+                    .title=${moods.all.find(
+                        (mood) => mood.id === this.entry.mood
+                    )?.name || ''}
                     @click=${() =>
                         ActionSheetController.open({
                             type: 'moodEdit',
                             data: moods.getMood(this.entry.mood),
                         })}
                 >
-                    ${moods.getMood(this.entry.mood)?.emoji}
+                    ${moods.all.find((mood) => mood.id === this.entry.mood)
+                        ?.emoji || ''}
                 </span>
             </section>
             <section class="entry-activities">
@@ -108,10 +112,10 @@ export class EntryComponent extends MobxLitElement {
                     ${this.entry.created
                         ? html`<span if.bind="showCreatedDate">
                               Entered
-                              ${DateHelpers.stringDateToDate(
+                              ${DateHelpers.dateToStringDate(
                                   this.entry.created
                               )},
-                              ${DateHelpers.stringDateToTime(
+                              ${DateHelpers.dateToStringTime(
                                   this.entry.created
                               )}<br />
                           </span>`
@@ -120,10 +124,10 @@ export class EntryComponent extends MobxLitElement {
                     this.entry.created !== this.entry.updated
                         ? html`<span>
                               Updated
-                              ${DateHelpers.stringDateToDate(
+                              ${DateHelpers.dateToStringDate(
                                   this.entry.updated
                               )},
-                              ${DateHelpers.stringDateToTime(
+                              ${DateHelpers.dateToStringTime(
                                   this.entry.updated
                               )}<br />
                           </span>`

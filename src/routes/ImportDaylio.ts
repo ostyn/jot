@@ -52,7 +52,8 @@ export class ImportDaylio {
                 note: row.note_title
                     ? row.note_title + '\n\n' + row.note
                     : row.note,
-                created: zonedDate.toISOString(),
+                created: zonedDate,
+                updated: zonedDate,
                 createdBy: EditTools.DAYLIO_IMPORT,
                 lastUpdatedBy: EditTools.DAYLIO_IMPORT,
             };

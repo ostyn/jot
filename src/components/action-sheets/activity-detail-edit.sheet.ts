@@ -1,5 +1,6 @@
 import { css, html, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
 import { EntryEditStore } from '../../routes/entry-edit.route';
@@ -60,7 +61,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 <activity-component
                     .detail=${Array.isArray(detail) ? undefined : detail}
                     .showName=${true}
-                    .activity=${activities.getActivity(this.activityId)}
+                    .activity=${until(activities.getActivity(this.activityId))}
                 ></activity-component>
                 <button class="inline secondary" @click=${this.clear}>
                     clear

@@ -26,5 +26,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: sudo corepack enable
     - run: sudo yarn set version stable
+    - run: yarn config set nodeLinker node-modules
     - run: sudo yarn
     - run: sudo yarn build

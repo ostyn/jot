@@ -25,6 +25,6 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm install yarn
-    - run: npx yarn
-    - run: npx yarn build
+    - run: corepack enable
+    - run: yarn
+    - run: yarn build

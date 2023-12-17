@@ -27,12 +27,6 @@ jobs:
       env:
         VITE_GOOGLE_CLIENT_ID: true
         VITE_GOOGLE_API_KEY: true
-    - run: export VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-    - run: export VITE_GOOGLE_API_KEY=${{ secrets.VITE_GOOGLE_API_KEY }}
-    - run: echo ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-    - run: echo ${{ secrets.VITE_GOOGLE_API_KEY }}
-    - run: echo $VITE_GOOGLE_CLIENT_ID
-    - run: echo $VITE_GOOGLE_API_KEY
     - run: corepack enable
     - run: yarn set version stable
     - run: yarn config set nodeLinker node-modules

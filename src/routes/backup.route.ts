@@ -13,6 +13,13 @@ import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 
+declare global {
+    interface Window {
+        gapi: any;
+        google: any;
+    }
+}
+
 @customElement('backup-route')
 export class BackupRoute extends LitElement {
     @state()
@@ -49,8 +56,8 @@ export class BackupRoute extends LitElement {
 
     // TODO(developer): Set to client ID and API key from the Developer Console
 
-    CLIENT_ID;
-    API_KEY;
+    CLIENT_ID!: string;
+    API_KEY!: string;
 
     // Discovery doc URL for APIs used by the quickstart
     DISCOVERY_DOC =
@@ -65,7 +72,7 @@ export class BackupRoute extends LitElement {
      * Callback after api.js is loaded.
      */
     gapiLoaded = async () => {
-        gapi.load('client', this.initializeGapiClient);
+        window.gapi.load('client', this.initializeGapiClient);
     };
 
     /**
@@ -73,7 +80,7 @@ export class BackupRoute extends LitElement {
      * discovery doc to initialize the API.
      */
     initializeGapiClient = async () => {
-        await gapi.client.init({
+        await window.gapi.client.init({
             apiKey: this.API_KEY,
             discoveryDocs: [this.DISCOVERY_DOC],
         });
@@ -83,8 +90,7 @@ export class BackupRoute extends LitElement {
      * Callback after Google Identity Services are loaded.
      */
     gisLoaded = () => {
-        console.log(this.CLIENT_ID);
-        const tokenClient = google.accounts.oauth2.initTokenClient({
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: this.CLIENT_ID,
             scope: this.SCOPES,
             callback: this.checkForToken, // defined later

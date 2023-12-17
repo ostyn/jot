@@ -7,7 +7,7 @@ declare global {
 }
 export class GoogleDriveService {
     tokenClient: any;
-    init(tokenClient) {
+    init(tokenClient: any) {
         this.tokenClient = tokenClient;
     }
     public async addFile(

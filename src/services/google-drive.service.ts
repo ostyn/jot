@@ -3,10 +3,13 @@ import { addSeconds } from 'date-fns';
 declare global {
     interface Window {
         gapi: any;
-        tokenClient: any;
     }
 }
 export class GoogleDriveService {
+    tokenClient: any;
+    init(tokenClient) {
+        this.tokenClient = tokenClient;
+    }
     public async addFile(
         name: string,
         content: string,
@@ -75,8 +78,8 @@ export class GoogleDriveService {
     public hasValidToken(): boolean {
         const now = new Date();
         if (
-            window.gapi.client.getToken() &&
-            window.gapi.client.getToken().expiry > now
+            window.gapi?.client?.getToken() &&
+            window.gapi?.client?.getToken()?.expiry > now
         )
             return true;
         else if (localStorage.getItem('gapi_token')) {
@@ -89,7 +92,7 @@ export class GoogleDriveService {
         return false;
     }
     public async authenticate(callback = () => {}) {
-        window.tokenClient.callback = async (resp: any) => {
+        this.tokenClient.callback = async (resp: any) => {
             if (resp.error !== undefined) {
                 throw resp;
             }
@@ -98,7 +101,7 @@ export class GoogleDriveService {
             localStorage.setItem('gapi_token', JSON.stringify(resp));
             callback();
         };
-        window.tokenClient.requestAccessToken({ prompt: 'consent' });
+        this.tokenClient.requestAccessToken({ prompt: 'consent' });
     }
     public async getUserInfo(): Promise<{ name: string; picture: string }> {
         const resp = await fetch(

@@ -101,8 +101,8 @@ export class BackupRoute extends LitElement {
 
     someHTML: any;
     protected async firstUpdated() {
-        this.CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-        this.API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+        this.CLIENT_ID = `${import.meta.env.VITE_GOOGLE_CLIENT_ID}`;
+        this.API_KEY = `${import.meta.env.VITE_GOOGLE_API_KEY}`;
         console.log('jawa', this.CLIENT_ID, this.API_KEY);
         // this.someHTML = unsafeHTML(
         //     await (await fetch('https://apis.google.com/js/api.js')).text()

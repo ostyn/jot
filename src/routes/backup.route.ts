@@ -100,8 +100,8 @@ export class BackupRoute extends LitElement {
 
     someHTML: any;
     protected async firstUpdated() {
-        this.CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-        this.API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+        this.CLIENT_ID = import.meta.env.VITE_GCLIENT_ID;
+        this.API_KEY = import.meta.env.VITE_GAPI_KEY;
 
         const script = document.createElement('script');
         script.type = 'text/javascript';

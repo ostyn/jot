@@ -24,14 +24,14 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-      env:
-        VITE_GOOGLE_CLIENT_ID: true
-        VITE_GOOGLE_API_KEY: true
     - run: corepack enable
     - run: yarn set version stable
     - run: yarn config set nodeLinker node-modules
     - run: yarn
     - run: yarn build
+      env:
+        VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
     - name: Setup Pages
       if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v3

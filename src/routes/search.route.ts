@@ -1,5 +1,6 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { AfterEnterObserver, AfterLeaveObserver, Router } from '@vaadin/router';
@@ -133,6 +134,7 @@ export class SearchRoute
     extends MobxLitElement
     implements AfterEnterObserver, AfterLeaveObserver
 {
+    inputRef: Ref<HTMLElement> = createRef();
     store = new SearchStore();
     reactionDisposer: any;
     onAfterEnter() {
@@ -165,6 +167,9 @@ export class SearchRoute
                 }
             }
         );
+    }
+    protected firstUpdated(): void {
+        this.inputRef?.value?.focus();
     }
     // Updating state based on initial URL and back/forward browser buttons
     private getParamsAndUpdate = () => {
@@ -227,6 +232,7 @@ export class SearchRoute
     render() {
         return html` <section class="search-bar">
                 <input
+                    ${ref(this.inputRef)}
                     type="search"
                     class="inline"
                     focus="true"

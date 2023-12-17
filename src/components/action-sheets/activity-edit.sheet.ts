@@ -1,5 +1,6 @@
 import { css, html, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
 import { Activity } from '../../interfaces/activity.interface';
@@ -9,6 +10,7 @@ import { ActionSheetController } from './action-sheet-controller';
 
 @customElement('activity-edit-sheet')
 export class ActivityEditSheet extends MobxLitElement {
+    inputRef: Ref<HTMLElement> = createRef();
     @property({ attribute: false })
     activity!: Activity;
     @state()
@@ -38,6 +40,7 @@ export class ActivityEditSheet extends MobxLitElement {
     }
     selectCustom() {
         this.isCustom = true;
+        this.inputRef?.value?.focus();
     }
     openInfo() {
         ActionSheetController.open({
@@ -156,6 +159,7 @@ export class ActivityEditSheet extends MobxLitElement {
                                 />
                                 ${this.isCustom
                                     ? html`<input
+                                          ${ref(this.inputRef)}
                                           class="custom-category"
                                           type="text"
                                           @change=${(e: any) =>

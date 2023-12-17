@@ -1,10 +1,12 @@
 import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { base } from '../../baseStyles';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 
 @customElement('text-sheet')
 export class TextSheet extends LitElement {
+    inputRef: Ref<Element> = createRef();
     @property()
     public text?: string;
     @state()
@@ -23,6 +25,7 @@ export class TextSheet extends LitElement {
     }
     protected firstUpdated() {
         this.newText = this.text || '';
+        this?.inputRef?.value?.focus();
     }
     disconnectedCallback() {
         // Was getting multiple of these
@@ -34,6 +37,7 @@ export class TextSheet extends LitElement {
     render() {
         return html`<span>
             <textarea
+                ${ref(this.inputRef)}
                 name="text"
                 attach-focus
                 class="text-prompt-input"

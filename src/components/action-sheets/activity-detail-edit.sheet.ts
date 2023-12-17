@@ -1,5 +1,6 @@
 import { css, html, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
@@ -9,6 +10,7 @@ import { ActionSheetController } from './action-sheet-controller';
 
 @customElement('activity-detail-edit-sheet')
 export class ActivityDetailEditSheet extends MobxLitElement {
+    inputRef: Ref<HTMLElement> = createRef();
     @property()
     public store?: EntryEditStore;
     @property()
@@ -37,6 +39,9 @@ export class ActivityDetailEditSheet extends MobxLitElement {
         let detail = this.store?.getActivityDetail(this.activityId);
         if (detail) this.editingArray = Array.isArray(detail);
         else this.editingArray = this.defaultIsArray;
+        setTimeout(() => {
+            this.inputRef?.value?.focus();
+        }, 1);
     }
     add(amount: number) {
         this.store?.addToNumericActivityDetail(this.activityId, amount);
@@ -139,7 +144,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                               <input
                                   class="width-64 inline"
                                   ref="inputBox"
-                                  focus="true"
+                                  ${ref(this.inputRef)}
                                   type="text"
                                   .value=${this.newItem}
                                   @input=${(e: any) =>

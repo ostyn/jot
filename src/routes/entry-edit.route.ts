@@ -155,6 +155,12 @@ export class EntryEditRoute extends MobxLitElement {
             data: { id, store: this.store, defaultIsArray: true },
         });
     }
+    deleteEntry(): void {
+        if (confirm('Sure you want to delete?')) {
+            entries.removeEntry(this.originalEntry?.id);
+            Router.go('/');
+        }
+    }
     render() {
         return html`
             <section
@@ -208,10 +214,7 @@ export class EntryEditRoute extends MobxLitElement {
                 ${this.originalEntry?.id
                     ? html`<button
                           class="inline secondary"
-                          @click=${() => {
-                              entries.removeEntry(this.originalEntry?.id);
-                              Router.go('/');
-                          }}
+                          @click=${this.deleteEntry}
                       >
                           <feather-icon name="trash-2"></feather-icon>
                       </button>`

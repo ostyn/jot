@@ -25,8 +25,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
       env:
-        VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+        VITE_GOOGLE_CLIENT_ID: true
+        VITE_GOOGLE_API_KEY: true
     - run: export VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }}
     - run: export VITE_GOOGLE_API_KEY=${{ secrets.VITE_GOOGLE_API_KEY }}
     - run: echo ${{ secrets.VITE_GOOGLE_CLIENT_ID }}

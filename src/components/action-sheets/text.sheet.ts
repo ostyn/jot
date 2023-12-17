@@ -6,7 +6,7 @@ import { dispatchEvent, Events } from '../../utils/Helpers';
 
 @customElement('text-sheet')
 export class TextSheet extends LitElement {
-    inputRef: Ref<Element> = createRef();
+    inputRef: Ref<HTMLElement> = createRef();
     @property()
     public text?: string;
     @state()

@@ -197,9 +197,9 @@ export class ActivityInfoSheet extends LitElement {
                                           >`
                                   )
                                 : html`<activity-detail
-                                      >${activities.getActivity(
+                                      >${value.activities[
                                           this.activityId
-                                      )}</activity-detail
+                                      ]}</activity-detail
                                   >`}
                         </li>`
                 )}

@@ -95,18 +95,14 @@ export class BackupRoute extends LitElement {
             scope: this.SCOPES,
             callback: this.checkForToken,
         });
-        console.log('ewok', tokenClient);
         this.gdrive.init(tokenClient);
     };
 
     someHTML: any;
     protected async firstUpdated() {
-        this.CLIENT_ID = `${import.meta.env.VITE_GOOGLE_CLIENT_ID}`;
-        this.API_KEY = `${import.meta.env.VITE_GOOGLE_API_KEY}`;
-        console.log('jawa', this.CLIENT_ID, this.API_KEY);
-        // this.someHTML = unsafeHTML(
-        //     await (await fetch('https://apis.google.com/js/api.js')).text()
-        // );
+        this.CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+        this.API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.async = true;
@@ -119,6 +115,7 @@ export class BackupRoute extends LitElement {
         script2.onload = this.gisLoaded;
         script2.src = 'https://accounts.google.com/gsi/client';
         document.getElementsByTagName('head')[0].appendChild(script2);
+
         this.checkForToken();
     }
     checkForToken = async () => {

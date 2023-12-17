@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router, RouterLocation } from '@vaadin/router';
 import { format } from 'date-fns';
-import { action, makeObservable, observable } from 'mobx';
+import { action, makeObservable, observable, toJS } from 'mobx';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import {
@@ -223,7 +223,7 @@ export class EntryEditRoute extends MobxLitElement {
                         this.store.unmarkPendingChanges();
                         entries.upsertEntry({
                             ...this.originalEntry,
-                            activities: { ...this.store.activities },
+                            activities: toJS(this.store.activities),
                             note: this.store.note,
                             mood: this.store.mood,
                             date: this.store.date,

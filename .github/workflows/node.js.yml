@@ -30,8 +30,8 @@ jobs:
     - run: yarn
     - run: yarn build
       env:
-        VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+        VITE_GCLIENT_ID: ${{ secrets.VITE_GCLIENT_ID }}
+        VITE_GAPI_KEY: ${{ secrets.VITE_GAPI_KEY }}
     - name: Setup Pages
       if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v3

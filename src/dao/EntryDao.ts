@@ -15,5 +15,12 @@ export class EntryDao extends DexieDao {
 
         return x;
     }
+    async getItems(): Promise<any> {
+        return await db
+            .table(this.name)
+            .orderBy('dateObject')
+            .reverse()
+            .toArray();
+    }
 }
 export const entryDao = new EntryDao();

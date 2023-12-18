@@ -1,8 +1,8 @@
 import { EditTools } from '../interfaces/entry.interface';
 import { db } from '../services/Dexie';
-import { TrackerDao } from './TrackerDao';
+import { EtchDao } from './EtchDao';
 
-export class DexieDao implements TrackerDao {
+export class DexieDao implements EtchDao {
     name: string;
     notify: any = () => {};
 
@@ -17,25 +17,17 @@ export class DexieDao implements TrackerDao {
         db.table(this.name).clear();
     }
     async getItem(id: string): Promise<any> {
-        return this.processData(await db.table(this.name).get(id));
+        return await db.table(this.name).get(id);
     }
     async getItems(): Promise<any> {
-        let rawItems = await db.table(this.name).toArray();
-        return this.getItemsFromQuery(rawItems);
-    }
-    private processData(item: any): any {
-        return this.afterLoadFixup(item);
-    }
-    getItemsFromQuery(rawItems: any): Promise<any> {
-        let items: any[] = [];
-        rawItems.forEach((item: any) => {
-            items.push(this.processData(item));
-        });
-        return Promise.resolve(this.sortItems(items));
+        let items = await db.table(this.name).toArray();
+        return this.sortItems(items);
     }
     saveItem(passedEntry: any): Promise<any> {
         if (passedEntry.id === undefined || !passedEntry.id) {
-            passedEntry.id = crypto.randomUUID();
+            passedEntry.id = crypto.randomUUID
+                ? crypto.randomUUID()
+                : Math.random();
         }
         passedEntry.updated = new Date();
         if (!passedEntry.created) {
@@ -45,7 +37,6 @@ export class DexieDao implements TrackerDao {
         if (!passedEntry.createdBy) {
             passedEntry.createdBy = EditTools.WEB;
         }
-        passedEntry = this.beforeSaveFixup(passedEntry);
         const newLocal = db.table(this.name).put(passedEntry);
         newLocal.then(() => {
             this.notify();
@@ -70,7 +61,6 @@ export class DexieDao implements TrackerDao {
             if (!item.createdBy) {
                 item.createdBy = importTool;
             }
-            newItem = this.beforeSaveFixup(newItem);
             itemsToSave.push(newItem);
         });
 
@@ -81,13 +71,7 @@ export class DexieDao implements TrackerDao {
         await db.table(this.name).delete(id);
         this.notify();
     }
-    beforeSaveFixup(item: any) {
-        return item;
-    }
-    afterLoadFixup(item: any) {
-        return item;
-    }
-    sortItems(items: any): any[] {
+    sortItems(items: any[]): any[] {
         return items;
     }
 }

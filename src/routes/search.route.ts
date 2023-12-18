@@ -1,7 +1,6 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
-import { until } from 'lit/directives/until.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { AfterEnterObserver, AfterLeaveObserver, Router } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
@@ -245,10 +244,8 @@ export class SearchRoute
                     ? html`<span>
                           <activity-component
                               .showName=${true}
-                              .activity=${until(
-                                  activities.getActivity(
-                                      this.store.selectedActivityId
-                                  )
+                              .activity=${activities.getActivity(
+                                  this.store.selectedActivityId
                               )}
                               @click=${this.openActivitySelect}
                               .detail=${this.store.selectedActivityDetail

@@ -140,7 +140,7 @@ export class BackupRoute extends LitElement {
                                       this.isLoading ? undefined : 'refresh-cw'
                                   )}
                               ></feather-icon>
-                              Manual Backup
+                              Backup
                           </button>`
                     : html`<button
                           @click=${this.auth}

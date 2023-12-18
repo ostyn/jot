@@ -137,33 +137,45 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                           skipInitial: true,
                       })}
                   >
-                      ${this.filteredEntries.map(
-                          (entry: Entry) =>
-                              html`<entry-component
-                                  .scrollToSelf=${this.shouldScrollToSelf(
-                                      entry
-                                  )}
-                                  .entry="${entry}"
-                                  @activityClick=${(e: any) => {
-                                      ActionSheetController.open({
-                                          type: 'activityInfo',
-                                          data: {
-                                              id: e.detail.id,
-                                              date: entry.dateObject,
-                                          },
-                                      });
-                                  }}
-                                  @activityLongClick=${(e: any) => {
-                                      ActionSheetController.open({
-                                          type: 'activityInfo',
-                                          data: {
-                                              id: e.detail.id,
-                                              date: entry.dateObject,
-                                          },
-                                      });
-                                  }}
-                              ></entry-component>`
-                      )}
+                      ${this.filteredEntries.length
+                          ? this.filteredEntries.map(
+                                (entry: Entry) =>
+                                    html`<entry-component
+                                        .scrollToSelf=${this.shouldScrollToSelf(
+                                            entry
+                                        )}
+                                        .entry="${entry}"
+                                        @activityClick=${(e: any) => {
+                                            ActionSheetController.open({
+                                                type: 'activityInfo',
+                                                data: {
+                                                    id: e.detail.id,
+                                                    date: entry.dateObject,
+                                                },
+                                            });
+                                        }}
+                                        @activityLongClick=${(e: any) => {
+                                            ActionSheetController.open({
+                                                type: 'activityInfo',
+                                                data: {
+                                                    id: e.detail.id,
+                                                    date: entry.dateObject,
+                                                },
+                                            });
+                                        }}
+                                    ></entry-component>`
+                            )
+                          : html`<article class="emptyPlaceholder">
+                                <h2>No Entries</h2>
+                                <button
+                                    class="newButton"
+                                    @click=${() => Router.go('entry')}
+                                >
+                                    <feather-icon name="plus"></feather-icon>
+
+                                    Add Entry
+                                </button>
+                            </article>`}
                   </section>`}
             <div class="sticky-buttons">
                 <button
@@ -187,11 +199,22 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 background-color: var(--background-color);
                 padding-top: 0.375rem;
                 padding-bottom: 0.375rem;
-
                 margin: 0.5rem;
             }
             .loader {
                 height: 100vh;
+            }
+            .emptyPlaceholder {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .newButton {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                width: auto;
             }
         `,
     ];

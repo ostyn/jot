@@ -7,7 +7,6 @@ import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
-import { ActionSheetController } from './action-sheets/action-sheet-controller';
 import './activity.component';
 
 @customElement('entry-component')
@@ -73,17 +72,9 @@ export class EntryComponent extends MobxLitElement {
                 </hgroup>
                 <span
                     class="entry-header-emoji"
-                    .title=${moods.all.find(
-                        (mood) => mood.id === this.entry.mood
-                    )?.name || ''}
-                    @click=${() =>
-                        ActionSheetController.open({
-                            type: 'moodEdit',
-                            data: moods.getMood(this.entry.mood),
-                        })}
+                    .title=${moods.getMood(this.entry.mood)?.name || ''}
                 >
-                    ${moods.all.find((mood) => mood.id === this.entry.mood)
-                        ?.emoji || ''}
+                    ${moods.getMood(this.entry.mood)?.emoji || ''}
                 </span>
             </section>
             <section class="entry-activities">

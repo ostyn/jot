@@ -11,6 +11,7 @@ import {
     ChevronRight,
     Copy,
     createElement,
+    DownloadCloud,
     Eye,
     EyeOff,
     FileText,
@@ -31,6 +32,7 @@ import {
     Trash,
     Trash2,
     TrendingUp,
+    UploadCloud,
     Wrench,
     XCircle,
 } from 'lucide';
@@ -67,6 +69,8 @@ const mapping = {
     BookOpen,
     Activity,
     Settings,
+    UploadCloud,
+    DownloadCloud,
 };
 export type EtchIconName = keyof typeof mapping;
 

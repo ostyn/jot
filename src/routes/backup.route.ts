@@ -30,7 +30,8 @@ export class BackupRoute extends LitElement {
     isDeletingId: any = {};
     @state()
     isLoading = false;
-    gdrive = new GoogleDriveService();
+    gdrive = new GoogleDriveService(this.checkForToken.bind(this));
+
     auth = async () => {
         this.gdrive.authenticate(this.checkForToken);
     };
@@ -54,76 +55,15 @@ export class BackupRoute extends LitElement {
         this.backups = await this.gdrive.listFolder();
     };
 
-    // TODO(developer): Set to client ID and API key from the Developer Console
-
-    CLIENT_ID!: string;
-    API_KEY!: string;
-
-    // Discovery doc URL for APIs used by the quickstart
-    DISCOVERY_DOC =
-        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-
-    // Authorization scopes required by the API; multiple scopes can be
-    // included, separated by spaces.
-    SCOPES =
-        'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile';
-
-    /**
-     * Callback after api.js is loaded.
-     */
-    gapiLoaded = async () => {
-        window.gapi.load('client', this.initializeGapiClient);
-    };
-
-    /**
-     * Callback after the API client is loaded. Loads the
-     * discovery doc to initialize the API.
-     */
-    initializeGapiClient = async () => {
-        await window.gapi.client.init({
-            apiKey: this.API_KEY,
-            discoveryDocs: [this.DISCOVERY_DOC],
-        });
-    };
-
-    /**
-     * Callback after Google Identity Services are loaded.
-     */
-    gisLoaded = () => {
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-            client_id: this.CLIENT_ID,
-            scope: this.SCOPES,
-            callback: this.checkForToken,
-        });
-        this.gdrive.init(tokenClient);
-    };
-
-    someHTML: any;
     protected async firstUpdated() {
-        this.CLIENT_ID = `${import.meta.env.VITE_GCLIENT_ID}`;
-        this.API_KEY = `${import.meta.env.VITE_GAPI_KEY}`;
-
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.async = true;
-        script.onload = this.gapiLoaded;
-        script.src = 'https://apis.google.com/js/api.js';
-        document.getElementsByTagName('head')[0].appendChild(script);
-        const script2 = document.createElement('script');
-        script2.type = 'text/javascript';
-        script2.async = true;
-        script2.onload = this.gisLoaded;
-        script2.src = 'https://accounts.google.com/gsi/client';
-        document.getElementsByTagName('head')[0].appendChild(script2);
-
         this.checkForToken();
     }
-    checkForToken = async () => {
+    private async checkForToken() {
         if (this.gdrive.hasValidToken()) {
             this.userInfo = await this.gdrive.getUserInfo();
             this.backups = await this.gdrive.listFolder();
         }
-    };
+    }
     render() {
         return html` <article>
             <header>
@@ -137,7 +77,7 @@ export class BackupRoute extends LitElement {
                           >
                               <etch-icon
                                   name=${ifDefined(
-                                      this.isLoading ? undefined : 'RefreshCw'
+                                      this.isLoading ? undefined : 'UploadCloud'
                                   )}
                               ></etch-icon>
                               Backup
@@ -184,7 +124,7 @@ export class BackupRoute extends LitElement {
                                 name=${ifDefined(
                                     this.isDeletingId[backup.id]
                                         ? undefined
-                                        : 'Copy'
+                                        : 'DownloadCloud'
                                 )}
                             ></etch-icon>
                             Restore

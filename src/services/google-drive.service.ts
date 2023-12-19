@@ -6,9 +6,54 @@ declare global {
     }
 }
 export class GoogleDriveService {
+    constructor(public onReadyCallback = () => {}) {
+        this.loadGoogleDependencies();
+    }
     tokenClient: any;
     init(tokenClient: any) {
         this.tokenClient = tokenClient;
+    }
+
+    CLIENT_ID!: string;
+    API_KEY!: string;
+    DISCOVERY_DOC =
+        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+    SCOPES =
+        'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile';
+
+    gapiLoaded = async () => {
+        window.gapi.load('client', this.initializeGapiClient);
+    };
+    initializeGapiClient = async () => {
+        await window.gapi.client.init({
+            apiKey: this.API_KEY,
+            discoveryDocs: [this.DISCOVERY_DOC],
+        });
+        this.onReadyCallback();
+    };
+    gisLoaded = () => {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: this.CLIENT_ID,
+            scope: this.SCOPES,
+        });
+        this.init(tokenClient);
+    };
+    private loadGoogleDependencies() {
+        this.CLIENT_ID = `${import.meta.env.VITE_GCLIENT_ID}`;
+        this.API_KEY = `${import.meta.env.VITE_GAPI_KEY}`;
+
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = this.gapiLoaded;
+        script.src = 'https://apis.google.com/js/api.js';
+        document.getElementsByTagName('head')[0].appendChild(script);
+        const script2 = document.createElement('script');
+        script2.type = 'text/javascript';
+        script2.async = true;
+        script2.onload = this.gisLoaded;
+        script2.src = 'https://accounts.google.com/gsi/client';
+        document.getElementsByTagName('head')[0].appendChild(script2);
     }
     public async addFile(
         name: string,
@@ -84,7 +129,7 @@ export class GoogleDriveService {
             return true;
         else if (localStorage.getItem('gapi_token')) {
             const token = JSON.parse(localStorage.getItem('gapi_token') || '');
-            if (new Date(token.expiry) > now) {
+            if (window.gapi?.client && new Date(token.expiry) > now) {
                 window.gapi.client.setToken(token);
                 return true;
             }

@@ -1,6 +1,5 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { animate } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { lastDayOfMonth, parseISO } from 'date-fns';
 import { base } from '../baseStyles';
@@ -67,8 +66,12 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 // button and not be cycled through every month you clicked after
                 // you finish loading
                 if (currentUpdateCycle + 1 === this.updateNum) {
-                    this.filteredEntries = entries;
+                    this.filteredEntries = entries.slice(0, 5);
                     this.isLoading = false;
+                    if (this.filteredEntries.length < entries.length)
+                        setTimeout(() => {
+                            this.filteredEntries = [...entries];
+                        }, 250);
                 }
             });
     };
@@ -104,39 +107,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             ${this.isLoading
-                ? html`<section
-                      class="loader"
-                      ${animate({
-                          in: [
-                              {
-                                  opacity: 0,
-                              },
-                          ],
-                          out: [
-                              {
-                                  opacity: 0,
-                              },
-                          ],
-                          skipInitial: true,
-                      })}
-                  >
+                ? html`<section class="loader">
                       <article aria-busy="true"></article>
                   </section>`
-                : html` <section
-                      ${animate({
-                          in: [
-                              {
-                                  opacity: 0,
-                              },
-                          ],
-                          out: [
-                              {
-                                  opacity: 0,
-                              },
-                          ],
-                          skipInitial: true,
-                      })}
-                  >
+                : html` <section>
                       ${this.filteredEntries.length
                           ? this.filteredEntries.map(
                                 (entry: Entry) =>

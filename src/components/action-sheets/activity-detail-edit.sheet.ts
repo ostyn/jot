@@ -155,9 +155,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                         class="inline"
                                         @click=${this.addItemOrSubmit}
                                     >
-                                        <feather-icon
-                                            name="play"
-                                        ></feather-icon>
+                                        <etch-icon name="Play"></etch-icon>
                                     </button>`
                                   : nothing}
                           </form>

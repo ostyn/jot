@@ -58,28 +58,28 @@ export class SettingsRoute extends MobxLitElement {
             <section>
                 <header>Backup</header>
                 <button @click=${() => Router.go('backup')}>
-                    <feather-icon name="tool"></feather-icon>Manage Backup
+                    <etch-icon name="Wrench"></etch-icon>Manage Backup
                 </button>
             </section>
             <section>
                 <header>Import</header>
                 <button @click=${() => Router.go('import')}>
-                    <feather-icon name="inbox"></feather-icon>Import JSON
+                    <etch-icon name="Inbox"></etch-icon>Import JSON
                 </button>
                 <button @click=${() => Router.go('import-daylio')}>
-                    <feather-icon name="inbox"></feather-icon>Import Daylio
+                    <etch-icon name="Inbox"></etch-icon>Import Daylio
                 </button>
             </section>
             <section>
                 <header>Export</header>
                 <button @click=${this.exportBackup}>
-                    <feather-icon name="archive"></feather-icon>Export JSON
+                    <etch-icon name="Archive"></etch-icon>Export JSON
                 </button>
             </section>
             <section>
                 <header>Reset</header>
                 <button class="secondary" @click=${this.resetAll}>
-                    <feather-icon name="trash"></feather-icon>Delete All
+                    <etch-icon name="Trash"></etch-icon>Delete All
                 </button>
             </section>
         </article>`;

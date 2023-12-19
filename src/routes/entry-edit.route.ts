@@ -177,10 +177,7 @@ export class EntryEditRoute extends MobxLitElement {
                         })}
                 >
                     <span>${this.store.note || 'enter note here...'}</span>
-                    <feather-icon
-                        class="note-icon"
-                        name="file-text"
-                    ></feather-icon>
+                    <etch-icon class="note-icon" name="FileText"></etch-icon>
                 </article>
                 <div class="right-column">
                     <input
@@ -216,7 +213,7 @@ export class EntryEditRoute extends MobxLitElement {
                           class="inline secondary"
                           @click=${this.deleteEntry}
                       >
-                          <feather-icon name="trash-2"></feather-icon>
+                          <etch-icon name="Trash2"></etch-icon>
                       </button>`
                     : nothing}
 
@@ -237,7 +234,7 @@ export class EntryEditRoute extends MobxLitElement {
                         Router.go('/');
                     }}
                 >
-                    <feather-icon name="save"></feather-icon>
+                    <etch-icon name="Save"></etch-icon>
                 </button>
             </div>
         `;

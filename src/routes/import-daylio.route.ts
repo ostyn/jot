@@ -134,15 +134,15 @@ export class ImportDaylioRoute extends LitElement {
                                 )}
                         >
                             ${mood}
-                            <feather-icon name="arrow-right"></feather-icon>
+                            <etch-icon name="ArrowRight"></etch-icon>
                             ${this.moodMappings[mood]
                                 ? html`
                                       ${this.getMood(this.moodMappings[mood])
                                           ?.emoji}
                                   `
-                                : html`<feather-icon
-                                      name="alert-triangle"
-                                  ></feather-icon>`}
+                                : html`<etch-icon
+                                      name="AlertTriangle"
+                                  ></etch-icon>`}
                         </span>`
                 )}
             </article>
@@ -167,16 +167,16 @@ export class ImportDaylioRoute extends LitElement {
                                 )}
                         >
                             ${activity}
-                            <feather-icon name="arrow-right"></feather-icon>
+                            <etch-icon name="ArrowRight"></etch-icon>
                             ${this.activityMappings[activity]
                                 ? html`
                                       ${this.getActivity(
                                           this.activityMappings[activity]
                                       )?.emoji}
                                   `
-                                : html`<feather-icon
-                                      name="alert-triangle"
-                                  ></feather-icon>`}
+                                : html`<etch-icon
+                                      name="AlertTriangle"
+                                  ></etch-icon>`}
                         </span>`
                 )}
             </article>

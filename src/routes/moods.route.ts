@@ -27,7 +27,7 @@ export class MoodsRoute extends MobxLitElement {
                     >`;
                 })}
                 <span class="moods-mood" @click=${() => this.moodSelected()}>
-                    <feather-icon name="plus-circle"></feather-icon>
+                    <etch-icon name="PlusCircle"></etch-icon>
                 </span>
             </section>
         </article>`;

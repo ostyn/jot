@@ -135,11 +135,11 @@ export class BackupRoute extends LitElement {
                               @click=${this.sync}
                               aria-busy=${ifDefined(this.isLoading)}
                           >
-                              <feather-icon
+                              <etch-icon
                                   name=${ifDefined(
-                                      this.isLoading ? undefined : 'refresh-cw'
+                                      this.isLoading ? undefined : 'RefreshCw'
                                   )}
-                              ></feather-icon>
+                              ></etch-icon>
                               Backup
                           </button>`
                     : html`<button
@@ -180,13 +180,13 @@ export class BackupRoute extends LitElement {
                             aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
-                            <feather-icon
+                            <etch-icon
                                 name=${ifDefined(
                                     this.isDeletingId[backup.id]
                                         ? undefined
-                                        : 'copy'
+                                        : 'Copy'
                                 )}
-                            ></feather-icon>
+                            ></etch-icon>
                             Restore
                         </button>
                         <button
@@ -194,13 +194,13 @@ export class BackupRoute extends LitElement {
                             aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
-                            <feather-icon
+                            <etch-icon
                                 name=${ifDefined(
                                     this.isDeletingId[backup.id]
                                         ? undefined
-                                        : 'trash'
+                                        : 'Trash'
                                 )}
-                            ></feather-icon>
+                            ></etch-icon>
                             Delete
                         </button>
                     </article>`

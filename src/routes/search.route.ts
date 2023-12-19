@@ -262,36 +262,36 @@ export class SearchRoute
                 <span>
                     ${!this.store.selectedActivityId ||
                     !this.store.selectedActivityDetail
-                        ? html`<feather-icon
+                        ? html`<etch-icon
                               @click=${() => this.addFilter()}
-                              name="plus-circle"
-                          ></feather-icon>`
+                              name="PlusCircle"
+                          ></etch-icon>`
                         : nothing}
                     ${this.store.searchTerm ||
                     this.store.selectedActivityId ||
                     this.store.selectedActivityDetail
-                        ? html`<feather-icon
+                        ? html`<etch-icon
                               if.bind="searchBoxValue || selectedActivity || selectedDetail"
                               @click=${this.clearSelection}
-                              name="x-circle"
-                          ></feather-icon>`
+                              name="XCircle"
+                          ></etch-icon>`
                         : nothing}
                 </span>
                 <span>
                     ${this.store.currentPage !== 0
-                        ? html`<feather-icon
+                        ? html`<etch-icon
                               role="link"
                               @click=${this.store.prevPage}
-                              name="chevron-left"
-                          ></feather-icon>`
+                              name="ChevronLeft"
+                          ></etch-icon>`
                         : nothing}
                     ${this.store.currentPage !==
                     this.store.pageData.lastPageIndex
-                        ? html`<feather-icon
+                        ? html`<etch-icon
                               role="link"
                               @click=${this.store.nextPage}
-                              name="chevron-right"
-                          ></feather-icon>`
+                              name="ChevronRight"
+                          ></etch-icon>`
                         : nothing}
                 </span>
                 <div>${this.store.resultsText}</div>
@@ -345,7 +345,7 @@ export class SearchRoute
             .search-bar input {
                 width: 8rem;
             }
-            .search-bar feather-icon {
+            .search-bar etch-icon {
                 cursor: pointer;
             }
         `,

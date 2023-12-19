@@ -1,6 +1,6 @@
 import { createContext } from '@lit/context';
 import { Route, Router } from '@vaadin/router';
-import { FeatherIconNames } from 'feather-icons';
+import { EtchIconName } from '../components/etch-icon';
 import './activities.route';
 import './backup.route';
 import './entries.route';
@@ -12,24 +12,24 @@ import './search.route';
 import './settings.route';
 
 export const routerContext = createContext<Router>('router');
-export const routes: Route[] = [
+export const routes: EtchRoute[] = [
     {
         path: '/entries',
         component: 'entries-route',
         name: 'entries',
-        options: { menuItem: true, iconName: 'book-open' },
+        options: { menuItem: true, iconName: 'BookOpen' },
     },
     {
         path: '/moods',
         component: 'moods-route',
         name: 'moods',
-        options: { menuItem: true, iconName: 'smile' },
+        options: { menuItem: true, iconName: 'Smile' },
     },
     {
         path: '/activities',
         component: 'activities-route',
         name: 'activities',
-        options: { menuItem: true, iconName: 'activity' },
+        options: { menuItem: true, iconName: 'Activity' },
     },
     {
         path: '/',
@@ -46,7 +46,7 @@ export const routes: Route[] = [
         path: '/settings',
         component: 'settings-route',
         name: 'settings',
-        options: { menuItem: true, iconName: 'settings' },
+        options: { menuItem: true, iconName: 'Settings' },
     },
     {
         path: '/import-daylio',
@@ -68,7 +68,7 @@ export const routes: Route[] = [
         component: 'backup-route',
         name: 'backup',
     },
-] as EtchRoute[];
+];
 export type EtchRoute = Route & {
-    options?: { iconName?: FeatherIconNames; menuItem?: boolean };
+    options?: { iconName?: EtchIconName; menuItem?: boolean };
 };

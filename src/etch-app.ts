@@ -5,7 +5,7 @@ import { Router } from '@vaadin/router';
 import { registerSW } from 'virtual:pwa-register';
 import { base } from './baseStyles';
 import './components/action-sheets/action-sheet.component';
-import './components/feather-icon';
+import './components/etch-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
 

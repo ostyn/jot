@@ -38,14 +38,11 @@ export class NavBar extends LitElement {
                                 : 'menu-bar-item-inactive')}
                             href="${route.path}"
                         >
-                            <feather-icon
-                                name=${route.options?.iconName || 'smile'}
-                                .options="${{
-                                    height: '1.5rem',
-                                    width: '1.5rem',
-                                }}"
+                            <etch-icon
+                                name=${route.options?.iconName || 'Smile'}
+                                size="large"
                             >
-                            </feather-icon>
+                            </etch-icon>
                             <span class="menu-bar-item-text">
                                 ${this.isRouteSelected(route.path)
                                     ? route.name
@@ -95,7 +92,7 @@ export class NavBar extends LitElement {
                 height: 1.5rem;
                 width: 1.5rem;
             }
-            .menu-bar-item-active feather-icon {
+            .menu-bar-item-active etch-icon {
                 line-height: 0px;
                 transition: all 0.2s;
                 background: var(--secondary);

@@ -12,11 +12,16 @@ import { settings } from '../stores/settings.store';
 export class SettingsRoute extends MobxLitElement {
     sub: any;
     exportBackup() {
+        const backupEntries = entries.all.map((entry) => {
+            const newEntry: any = { ...entry };
+            delete newEntry.dateObject;
+            return newEntry;
+        });
         this.download(
             `Etch Backup ${new Date().toUTCString()}.json`,
             JSON.stringify(
                 {
-                    entries: entries.all,
+                    entries: backupEntries,
                     activities: activities.all,
                     moods: moods.userCreated,
                 },

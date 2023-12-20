@@ -50,17 +50,12 @@ export class DexieDao implements EtchDao {
         const itemsToSave: any[] = [];
         passedItems.forEach((item) => {
             let newItem = { ...item };
-            if (newItem.id === undefined || !newItem.id) {
-                newItem.id = crypto.randomUUID();
-            }
-            newItem.updated = new Date();
-            if (!newItem.created) {
-                newItem.created = newItem.updated;
-            }
+            newItem.id ||= crypto.randomUUID();
+            newItem.created ||= new Date();
+            newItem.updated ||= newItem.created;
+
             item.lastUpdatedBy = importTool;
-            if (!item.createdBy) {
-                item.createdBy = importTool;
-            }
+            item.createdBy ||= importTool;
             itemsToSave.push(newItem);
         });
 

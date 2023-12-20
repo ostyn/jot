@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { animate } from '@lit-labs/motion';
@@ -33,7 +33,7 @@ export class BackupRoute extends LitElement {
     gdrive = new GoogleDriveService(this.checkForToken.bind(this));
 
     auth = async () => {
-        this.gdrive.authenticate(this.checkForToken);
+        this.gdrive.authenticate(this.checkForToken.bind(this));
     };
     sync = async () => {
         this.isLoading = true;
@@ -75,11 +75,11 @@ export class BackupRoute extends LitElement {
                               @click=${this.sync}
                               aria-busy=${ifDefined(this.isLoading)}
                           >
-                              <etch-icon
-                                  name=${ifDefined(
-                                      this.isLoading ? undefined : 'UploadCloud'
-                                  )}
-                              ></etch-icon>
+                              ${!this.isLoading
+                                  ? html`<etch-icon
+                                        name="UploadCloud"
+                                    ></etch-icon>`
+                                  : nothing}
                               Backup
                           </button>`
                     : html`<button
@@ -120,13 +120,11 @@ export class BackupRoute extends LitElement {
                             aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
-                            <etch-icon
-                                name=${ifDefined(
-                                    this.isDeletingId[backup.id]
-                                        ? undefined
-                                        : 'DownloadCloud'
-                                )}
-                            ></etch-icon>
+                            ${!this.isDeletingId[backup.id]
+                                ? html`<etch-icon
+                                      name="DownloadCloud"
+                                  ></etch-icon>`
+                                : nothing}
                             Restore
                         </button>
                         <button
@@ -134,13 +132,9 @@ export class BackupRoute extends LitElement {
                             aria-busy=${ifDefined(this.isDeletingId[backup.id])}
                             class="inline iconButton"
                         >
-                            <etch-icon
-                                name=${ifDefined(
-                                    this.isDeletingId[backup.id]
-                                        ? undefined
-                                        : 'Trash'
-                                )}
-                            ></etch-icon>
+                            ${!this.isDeletingId[backup.id]
+                                ? html`<etch-icon name="Trash"></etch-icon>`
+                                : nothing}
                             Delete
                         </button>
                     </article>`

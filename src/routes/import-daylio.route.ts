@@ -49,9 +49,7 @@ export class ImportDaylioRoute extends LitElement {
         ).length;
     }
     private import(): void {
-        this.entries.forEach((entry) => {
-            entries.insertEntry(entry);
-        });
+        entries.bulkImport(this.entries);
     }
     private getMood(moodId: string): Mood | undefined {
         return moods.getMood(moodId);

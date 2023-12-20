@@ -19,6 +19,14 @@ export class ImportRoute extends LitElement {
     moods: Mood[] = [];
     @state()
     isLoading = false;
+    @state()
+    importEntries = true;
+    @state()
+    importMoods = true;
+    @state()
+    importActivities = true;
+    @state()
+    overwriteExistingData = true;
     handleFile() {
         this.isLoading = true;
         const fileInput = this.shadowRoot?.getElementById('fileInput');
@@ -65,32 +73,86 @@ export class ImportRoute extends LitElement {
         }
     }
     import() {
-        this.isLoading = true;
-        setTimeout(() => {
-            entries.bulkImport(this.entries);
-            activities.bulkImport(this.activities);
-            moods.bulkImport(this.moods);
-            this.isLoading = false;
-        }, 1);
+        if (confirm('Are you sure?')) {
+            this.isLoading = true;
+            setTimeout(() => {
+                if (this.importEntries) {
+                    if (this.overwriteExistingData) {
+                        entries.reset();
+                    }
+                    entries.bulkImport(this.entries);
+                }
+                if (this.importMoods) {
+                    if (this.overwriteExistingData) {
+                        moods.reset();
+                    }
+                    moods.bulkImport(this.moods);
+                }
+                if (this.importActivities) {
+                    if (this.overwriteExistingData) {
+                        activities.reset();
+                    }
+                    activities.bulkImport(this.activities);
+                }
+                this.isLoading = false;
+            }, 1);
+        }
     }
     render() {
         return html`<article>
-                <header>Import</header>
-                <input
-                    @change=${this.handleFile}
-                    id="fileInput"
-                    type="file"
-                    accept=".json"
-                />
-                ${this.isLoading
-                    ? html`<span aria-busy="true">Loading...</span>`
-                    : this.entries.length
-                    ? html`<button @click=${this.import}>Import</button>`
-                    : nothing}
-            </article>
-            ${this.entries.map(
-                (e) => html`<entry-component .entry=${e}></entry-component>`
-            )} `;
+            <header>Import</header>
+            <input
+                @change=${this.handleFile}
+                id="fileInput"
+                type="file"
+                accept=".json"
+            />
+
+            ${this.entries.length || this.moods.length || this.activities.length
+                ? html` <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.overwriteExistingData}
+                              @change=${() =>
+                                  (this.overwriteExistingData =
+                                      !this.overwriteExistingData)}
+                          />Overwrite Existing Data
+                      </label>
+                      <p>
+                          <label
+                              ><input
+                                  type="checkbox"
+                                  ?checked=${this.importEntries}
+                                  @change=${() =>
+                                      (this.importEntries =
+                                          !this.importEntries)}
+                              />Entries: ${this.entries.length}
+                          </label>
+                          <label
+                              ><input
+                                  type="checkbox"
+                                  ?checked=${this.importMoods}
+                                  @change=${() =>
+                                      (this.importMoods = !this.importMoods)}
+                              />Moods: ${this.moods.length}
+                          </label>
+                          <label
+                              ><input
+                                  type="checkbox"
+                                  ?checked=${this.importActivities}
+                                  @change=${() =>
+                                      (this.importActivities =
+                                          !this.importActivities)}
+                              />Activities: ${this.activities.length}
+                          </label>
+                      </p>`
+                : nothing}
+            ${this.isLoading
+                ? html`<span aria-busy="true">Loading...</span>`
+                : this.entries.length
+                ? html`<button @click=${this.import}>Import</button>`
+                : nothing}
+        </article>`;
     }
     static styles = [base];
 }

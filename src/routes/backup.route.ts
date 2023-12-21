@@ -76,9 +76,9 @@ export class BackupRoute extends LitElement {
                               aria-busy=${ifDefined(this.isLoading)}
                           >
                               ${!this.isLoading
-                                  ? html`<etch-icon
+                                  ? html`<jot-icon
                                         name="UploadCloud"
-                                    ></etch-icon>`
+                                    ></jot-icon>`
                                   : nothing}
                               Backup
                           </button>`
@@ -121,9 +121,9 @@ export class BackupRoute extends LitElement {
                             class="inline iconButton"
                         >
                             ${!this.isDeletingId[backup.id]
-                                ? html`<etch-icon
+                                ? html`<jot-icon
                                       name="DownloadCloud"
-                                  ></etch-icon>`
+                                  ></jot-icon>`
                                 : nothing}
                             Restore
                         </button>
@@ -133,7 +133,7 @@ export class BackupRoute extends LitElement {
                             class="inline iconButton"
                         >
                             ${!this.isDeletingId[backup.id]
-                                ? html`<etch-icon name="Trash"></etch-icon>`
+                                ? html`<jot-icon name="Trash"></jot-icon>`
                                 : nothing}
                             Delete
                         </button>

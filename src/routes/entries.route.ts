@@ -145,7 +145,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                     class="newButton"
                                     @click=${() => Router.go('entry')}
                                 >
-                                    <etch-icon name="Plus"></etch-icon>
+                                    <jot-icon name="Plus"></jot-icon>
 
                                     Add Entry
                                 </button>
@@ -156,10 +156,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                     class="inline contrast"
                     @click=${() => Router.go('search')}
                 >
-                    <etch-icon name="Search"></etch-icon>
+                    <jot-icon name="Search"></jot-icon>
                 </button>
                 <button class="inline" @click=${() => Router.go('entry')}>
-                    <etch-icon name="PenLine"></etch-icon>
+                    <jot-icon name="PenLine"></jot-icon>
                 </button>
             </div>`;
     }

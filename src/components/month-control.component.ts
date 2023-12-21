@@ -42,11 +42,11 @@ export class MonthControlComponent extends LitElement {
     render() {
         this.syncDisplayWithDate();
         this.getStats();
-        return html`<etch-icon
+        return html`<jot-icon
                 class="next-prev-button"
                 @click=${this.prev}
                 name="ChevronLeft"
-            ></etch-icon>
+            ></jot-icon>
             <span class="month-header-container">
                 <div class="month-header">
                     <span
@@ -56,18 +56,18 @@ export class MonthControlComponent extends LitElement {
                     >
                     ${this.showStreakMessage && this.stats?.todayInStreak
                         ? html`<span class="streak-stats">
-                              <etch-icon name="TrendingUp"></etch-icon>
+                              <jot-icon name="TrendingUp"></jot-icon>
                               ${this.stats?.currentStreak}
                           </span>`
                         : nothing}
                 </div>
             </span>
 
-            <etch-icon
+            <jot-icon
                 class="next-prev-button"
                 @click=${this.next}
                 name="ChevronRight"
-            ></etch-icon>`;
+            ></jot-icon>`;
     }
     static styles = [
         base,
@@ -101,7 +101,7 @@ export class MonthControlComponent extends LitElement {
                 font-weight: 700;
                 filter: grayscale(1);
             }
-            .streak-stats etch-icon {
+            .streak-stats jot-icon {
                 height: auto;
             }
         `,

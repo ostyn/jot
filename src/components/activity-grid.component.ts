@@ -109,7 +109,7 @@ export class ActivityGridComponent extends MobxLitElement {
                               this.search = !this.search;
                           }}
                       >
-                          <etch-icon name="Search"></etch-icon>
+                          <jot-icon name="Search"></jot-icon>
                           ${this.searchTerm ? '"' + this.searchTerm + '"' : ''}
                       </span>`}
                 ${this.searchTerm || this.search
@@ -121,7 +121,7 @@ export class ActivityGridComponent extends MobxLitElement {
                               this.search = false;
                           }}
                       >
-                          <etch-icon name="XCircle"></etch-icon>
+                          <jot-icon name="XCircle"></jot-icon>
                       </span>`
                     : nothing}
                 <span
@@ -132,8 +132,8 @@ export class ActivityGridComponent extends MobxLitElement {
                     @click=${this.toggleShowArchived}
                 >
                     ${this.filterArchived
-                        ? html`<etch-icon name="EyeOff"></etch-icon>`
-                        : html`<etch-icon name="Eye"></etch-icon>`}
+                        ? html`<jot-icon name="EyeOff"></jot-icon>`
+                        : html`<jot-icon name="Eye"></jot-icon>`}
                 </span>
                 <span
                     .title=${this.groupActivities
@@ -143,8 +143,8 @@ export class ActivityGridComponent extends MobxLitElement {
                     @click=${this.toggleGroup}
                 >
                     ${this.groupActivities
-                        ? html`<etch-icon name="Server"></etch-icon>`
-                        : html`<etch-icon name="AlignJustify"></etch-icon>`}
+                        ? html`<jot-icon name="Server"></jot-icon>`
+                        : html`<jot-icon name="AlignJustify"></jot-icon>`}
                 </span>
                 ${this.showFilterUnused
                     ? html`<span
@@ -155,8 +155,8 @@ export class ActivityGridComponent extends MobxLitElement {
                           @click=${this.toggleFilterUnused}
                       >
                           ${this.filterUnused
-                              ? html`<etch-icon name="Minimize2"></etch-icon>`
-                              : html`<etch-icon name="Maximize2"></etch-icon>`}
+                              ? html`<jot-icon name="Minimize2"></jot-icon>`
+                              : html`<jot-icon name="Maximize2"></jot-icon>`}
                       </span>`
                     : nothing}
                 <span
@@ -164,7 +164,7 @@ export class ActivityGridComponent extends MobxLitElement {
                     class="grid-button"
                     @click=${() => this.createNewActivity()}
                 >
-                    <etch-icon name="PlusCircle"></etch-icon>
+                    <jot-icon name="PlusCircle"></jot-icon>
                 </span>
             </div>
             ${this.getSortedHeaders().map(
@@ -195,7 +195,7 @@ export class ActivityGridComponent extends MobxLitElement {
                             class="newButton"
                             @click=${() => this.createNewActivity(header)}
                         >
-                            <etch-icon name="PlusCircle"></etch-icon>
+                            <jot-icon name="PlusCircle"></jot-icon>
                         </span>
                     </article>
                 `

@@ -5,12 +5,12 @@ import { Router } from '@vaadin/router';
 import { registerSW } from 'virtual:pwa-register';
 import { base } from './baseStyles';
 import './components/action-sheets/action-sheet.component';
-import './components/etch-icon';
+import './components/jot-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
 
-@customElement('etch-app')
-export class EtchApp extends LitElement {
+@customElement('jot-app')
+export class JotApp extends LitElement {
     @state()
     sheet = 'other';
     @state()

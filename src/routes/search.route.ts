@@ -262,36 +262,36 @@ export class SearchRoute
                 <span>
                     ${!this.store.selectedActivityId ||
                     !this.store.selectedActivityDetail
-                        ? html`<etch-icon
+                        ? html`<jot-icon
                               @click=${() => this.addFilter()}
                               name="PlusCircle"
-                          ></etch-icon>`
+                          ></jot-icon>`
                         : nothing}
                     ${this.store.searchTerm ||
                     this.store.selectedActivityId ||
                     this.store.selectedActivityDetail
-                        ? html`<etch-icon
+                        ? html`<jot-icon
                               if.bind="searchBoxValue || selectedActivity || selectedDetail"
                               @click=${this.clearSelection}
                               name="XCircle"
-                          ></etch-icon>`
+                          ></jot-icon>`
                         : nothing}
                 </span>
                 <span>
                     ${this.store.currentPage !== 0
-                        ? html`<etch-icon
+                        ? html`<jot-icon
                               role="link"
                               @click=${this.store.prevPage}
                               name="ChevronLeft"
-                          ></etch-icon>`
+                          ></jot-icon>`
                         : nothing}
                     ${this.store.currentPage !==
                     this.store.pageData.lastPageIndex
-                        ? html`<etch-icon
+                        ? html`<jot-icon
                               role="link"
                               @click=${this.store.nextPage}
                               name="ChevronRight"
-                          ></etch-icon>`
+                          ></jot-icon>`
                         : nothing}
                 </span>
                 <div>${this.store.resultsText}</div>
@@ -345,7 +345,7 @@ export class SearchRoute
             .search-bar input {
                 width: 8rem;
             }
-            .search-bar etch-icon {
+            .search-bar jot-icon {
                 cursor: pointer;
             }
         `,

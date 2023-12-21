@@ -18,7 +18,7 @@ export class SettingsRoute extends MobxLitElement {
             return newEntry;
         });
         this.download(
-            `Etch Backup ${new Date().toUTCString()}.json`,
+            `Jot Backup ${new Date().toUTCString()}.json`,
             JSON.stringify(
                 {
                     entries: backupEntries,
@@ -63,28 +63,28 @@ export class SettingsRoute extends MobxLitElement {
             <section>
                 <header>Backup</header>
                 <button @click=${() => Router.go('backup')}>
-                    <etch-icon name="Wrench"></etch-icon>Manage Backup
+                    <jot-icon name="Wrench"></jot-icon>Manage Backup
                 </button>
             </section>
             <section>
                 <header>Import</header>
                 <button @click=${() => Router.go('import')}>
-                    <etch-icon name="Inbox"></etch-icon>Import JSON
+                    <jot-icon name="Inbox"></jot-icon>Import JSON
                 </button>
                 <button @click=${() => Router.go('import-daylio')}>
-                    <etch-icon name="Inbox"></etch-icon>Import Daylio
+                    <jot-icon name="Inbox"></jot-icon>Import Daylio
                 </button>
             </section>
             <section>
                 <header>Export</header>
                 <button @click=${this.exportBackup}>
-                    <etch-icon name="Archive"></etch-icon>Export JSON
+                    <jot-icon name="Archive"></jot-icon>Export JSON
                 </button>
             </section>
             <section>
                 <header>Reset</header>
                 <button class="secondary" @click=${this.resetAll}>
-                    <etch-icon name="Trash"></etch-icon>Delete All
+                    <jot-icon name="Trash"></jot-icon>Delete All
                 </button>
             </section>
         </article>`;

@@ -1,8 +1,8 @@
 import { EditTools } from '../interfaces/entry.interface';
 import { db } from '../services/Dexie';
-import { EtchDao } from './EtchDao';
+import { JotDao } from './JotDao';
 
-export class DexieDao implements EtchDao {
+export class DexieDao implements JotDao {
     name: string;
     notify: any = () => {};
 

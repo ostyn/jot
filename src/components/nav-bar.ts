@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { consume } from '@lit/context';
 import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';
-import { EtchRoute, routerContext } from '../routes/route-config';
+import { JotRoute, routerContext } from '../routes/route-config';
 
 @customElement('nav-bar')
 export class NavBar extends LitElement {
@@ -29,8 +29,8 @@ export class NavBar extends LitElement {
         return html`
             <footer>
                 ${(this.router?.getRoutes() || [])
-                    .filter((route: EtchRoute) => route.options?.menuItem)
-                    .map((route: EtchRoute) => {
+                    .filter((route: JotRoute) => route.options?.menuItem)
+                    .map((route: JotRoute) => {
                         return html`<a
                             class=${'menu-bar-item ' +
                             (this.isRouteSelected(route.path)
@@ -38,11 +38,11 @@ export class NavBar extends LitElement {
                                 : 'menu-bar-item-inactive')}
                             href="${route.path}"
                         >
-                            <etch-icon
+                            <jot-icon
                                 name=${route.options?.iconName || 'Smile'}
                                 size="large"
                             >
-                            </etch-icon>
+                            </jot-icon>
                             <span class="menu-bar-item-text">
                                 ${this.isRouteSelected(route.path)
                                     ? route.name
@@ -92,7 +92,7 @@ export class NavBar extends LitElement {
                 height: 1.5rem;
                 width: 1.5rem;
             }
-            .menu-bar-item-active etch-icon {
+            .menu-bar-item-active jot-icon {
                 line-height: 0px;
                 transition: all 0.2s;
                 background: var(--secondary);

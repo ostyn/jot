@@ -1,4 +1,4 @@
-export interface EtchDao {
+export interface JotDao {
     getItem(id: string): Promise<any>;
     getItems(): Promise<any>;
     saveItem(passedEntry: any): Promise<any>;

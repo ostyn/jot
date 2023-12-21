@@ -72,12 +72,12 @@ const mapping = {
     UploadCloud,
     DownloadCloud,
 };
-export type EtchIconName = keyof typeof mapping;
+export type JotIconName = keyof typeof mapping;
 
-@customElement('etch-icon')
-export class EtchIcon extends LitElement {
+@customElement('jot-icon')
+export class JotIcon extends LitElement {
     @property({ type: String })
-    name: EtchIconName = 'Menu';
+    name: JotIconName = 'Menu';
     @property({ type: Object })
     size: 'small' | 'medium' | 'large' | 'xlarge' = 'medium';
     render() {

@@ -1,6 +1,6 @@
 import { createContext } from '@lit/context';
 import { Route, Router } from '@vaadin/router';
-import { EtchIconName } from '../components/etch-icon';
+import { JotIconName } from '../components/jot-icon';
 import './activities.route';
 import './backup.route';
 import './entries.route';
@@ -12,7 +12,7 @@ import './search.route';
 import './settings.route';
 
 export const routerContext = createContext<Router>('router');
-export const routes: EtchRoute[] = [
+export const routes: JotRoute[] = [
     {
         path: '/entries',
         component: 'entries-route',
@@ -69,6 +69,6 @@ export const routes: EtchRoute[] = [
         name: 'backup',
     },
 ];
-export type EtchRoute = Route & {
-    options?: { iconName?: EtchIconName; menuItem?: boolean };
+export type JotRoute = Route & {
+    options?: { iconName?: JotIconName; menuItem?: boolean };
 };

@@ -132,15 +132,15 @@ export class ImportDaylioRoute extends LitElement {
                                 )}
                         >
                             ${mood}
-                            <etch-icon name="ArrowRight"></etch-icon>
+                            <jot-icon name="ArrowRight"></jot-icon>
                             ${this.moodMappings[mood]
                                 ? html`
                                       ${this.getMood(this.moodMappings[mood])
                                           ?.emoji}
                                   `
-                                : html`<etch-icon
+                                : html`<jot-icon
                                       name="AlertTriangle"
-                                  ></etch-icon>`}
+                                  ></jot-icon>`}
                         </span>`
                 )}
             </article>
@@ -165,16 +165,16 @@ export class ImportDaylioRoute extends LitElement {
                                 )}
                         >
                             ${activity}
-                            <etch-icon name="ArrowRight"></etch-icon>
+                            <jot-icon name="ArrowRight"></jot-icon>
                             ${this.activityMappings[activity]
                                 ? html`
                                       ${this.getActivity(
                                           this.activityMappings[activity]
                                       )?.emoji}
                                   `
-                                : html`<etch-icon
+                                : html`<jot-icon
                                       name="AlertTriangle"
-                                  ></etch-icon>`}
+                                  ></jot-icon>`}
                         </span>`
                 )}
             </article>

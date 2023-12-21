@@ -14,8 +14,8 @@ export default defineConfig({
         VitePWA({
             registerType: 'prompt',
             manifest: {
-                name: 'Etch',
-                short_name: 'etch',
+                name: 'Jot',
+                short_name: 'jot',
                 shortcuts: [
                     {
                         name: 'New Entry',

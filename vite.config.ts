@@ -15,7 +15,7 @@ export default defineConfig({
             registerType: 'prompt',
             manifest: {
                 name: 'Jot',
-                short_name: 'jot',
+                short_name: 'Jot',
                 shortcuts: [
                     {
                         name: 'New Entry',

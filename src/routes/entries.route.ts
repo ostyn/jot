@@ -1,7 +1,8 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { AfterEnterObserver, Router } from '@vaadin/router';
-import { lastDayOfMonth, parseISO } from 'date-fns';
+import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
+import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
 import '../components/entry.component';
@@ -16,12 +17,20 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     public router?: Router;
     @state() scrollToDate?: number;
     @state() filteredEntries: Entry[] = [];
+    gesture?: TinyGesture<this>;
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
             this.getParamsAndUpdate
         );
         this.getParamsAndUpdate();
+        this.gesture = new TinyGesture(this, {});
+        this.gesture.on('swiperight', (_event) => {
+            this.goToMonth(addMonths(this.currentDate, -1));
+        });
+        this.gesture.on('swipeleft', (_event) => {
+            this.goToMonth(addMonths(this.currentDate, 1));
+        });
     }
     onAfterLeave() {
         window.removeEventListener(
@@ -29,6 +38,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             this.getParamsAndUpdate
         );
         this.getParamsAndUpdate();
+        this.gesture?.destroy();
     }
     updateNum = 0;
     private getParamsAndUpdate = async () => {
@@ -110,7 +120,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ? html`<section class="loader">
                       <article aria-busy="true"></article>
                   </section>`
-                : html` <section>
+                : html` <section class="entries">
                       ${this.filteredEntries.length
                           ? this.filteredEntries.map(
                                 (entry: Entry) =>
@@ -166,6 +176,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     static styles = [
         base,
         css`
+            .entries {
+                min-height: calc(100vh - 10rem);
+            }
             .month-control-bar {
                 position: sticky;
                 z-index: 50;

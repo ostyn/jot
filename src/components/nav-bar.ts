@@ -93,7 +93,6 @@ export class NavBar extends LitElement {
                 transition: height 0.2s;
                 cursor: pointer;
                 width: 5rem;
-                height: 3rem;
                 display: inline-flex;
                 flex-flow: column;
                 align-items: center;

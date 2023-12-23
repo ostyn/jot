@@ -73,7 +73,7 @@ export class NavBar extends LitElement {
 
             @media not all and (min-resolution: 0.001dpcm) {
                 @supports (-webkit-appearance: none) {
-                    #footer {
+                    footer {
                         padding-bottom: 16px;
                     }
                 }

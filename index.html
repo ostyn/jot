@@ -30,6 +30,11 @@
                     : 'light'
             );
         </script>
+        <style>
+            html {
+                overscroll-behavior: none;
+            }
+        </style>
         <script>
             if (!globalThis.URLPattern) {
                 import('/node_modules/urlpattern-polyfill/index.js');

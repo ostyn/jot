@@ -34,7 +34,6 @@ export class ImportRoute extends LitElement {
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                alert(file.type);
                 if (
                     file.type === 'application/json' ||
                     file.type === 'text/plain'

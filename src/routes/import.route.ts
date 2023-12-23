@@ -34,7 +34,10 @@ export class ImportRoute extends LitElement {
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                if (file.type === 'application/json') {
+                if (
+                    file.type === 'application/json' ||
+                    file.type === 'application/text'
+                ) {
                     const data = JSON.parse(event.target?.result as string);
                     data.entries.forEach((entry: Entry) => {
                         entry.created = parseISO(

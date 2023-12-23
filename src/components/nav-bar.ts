@@ -69,7 +69,11 @@ export class NavBar extends LitElement {
                 background-color: var(--card-background-color);
                 box-shadow: var(--card-box-shadow);
                 z-index: 100;
-                padding-bottom: 16px;
+            }
+            @supports (-webkit-hyphens: none) {
+                #footer {
+                    padding-bottom: 16px;
+                }
             }
 
             .footer-content {

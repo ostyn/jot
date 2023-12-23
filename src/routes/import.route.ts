@@ -105,7 +105,7 @@ export class ImportRoute extends LitElement {
                 @change=${this.handleFile}
                 id="fileInput"
                 type="file"
-                accept=".json"
+                accept=".json,.txt"
             />
 
             ${this.entries.length || this.moods.length || this.activities.length

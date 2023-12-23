@@ -70,9 +70,12 @@ export class NavBar extends LitElement {
                 box-shadow: var(--card-box-shadow);
                 z-index: 100;
             }
-            @supports (-webkit-hyphens: none) {
-                #footer {
-                    padding-bottom: 16px;
+
+            @media not all and (min-resolution: 0.001dpcm) {
+                @supports (-webkit-appearance: none) {
+                    #footer {
+                        padding-bottom: 16px;
+                    }
                 }
             }
 

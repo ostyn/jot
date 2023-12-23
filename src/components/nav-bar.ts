@@ -31,24 +31,25 @@ export class NavBar extends LitElement {
                 ${(this.router?.getRoutes() || [])
                     .filter((route: JotRoute) => route.options?.menuItem)
                     .map((route: JotRoute) => {
-                        return html`<a
-                            class=${'menu-bar-item ' +
-                            (this.isRouteSelected(route.path)
-                                ? 'menu-bar-item-active'
-                                : 'menu-bar-item-inactive')}
-                            href="${route.path}"
-                        >
-                            <jot-icon
-                                name=${route.options?.iconName || 'Smile'}
-                                size="large"
+                        return html`<a class="item-wrapper" href="${route.path}"
+                            ><span
+                                class=${'menu-bar-item ' +
+                                (this.isRouteSelected(route.path)
+                                    ? 'menu-bar-item-active'
+                                    : 'menu-bar-item-inactive')}
                             >
-                            </jot-icon>
-                            <span class="menu-bar-item-text">
-                                ${this.isRouteSelected(route.path)
-                                    ? route.name
-                                    : nothing}</span
-                            >
-                        </a>`;
+                                <jot-icon
+                                    name=${route.options?.iconName || 'Smile'}
+                                    size="large"
+                                >
+                                </jot-icon>
+                                <span class="menu-bar-item-text">
+                                    ${this.isRouteSelected(route.path)
+                                        ? route.name
+                                        : nothing}</span
+                                >
+                            </span></a
+                        >`;
                     })}
             </footer>
         `;
@@ -70,6 +71,11 @@ export class NavBar extends LitElement {
                 user-select: none;
                 gap: 0.5rem;
                 z-index: 100;
+            }
+            .item-wrapper {
+                height: 100%;
+                display: flex;
+                align-items: center;
             }
 
             .menu-bar-item {

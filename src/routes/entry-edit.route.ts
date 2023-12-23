@@ -140,13 +140,13 @@ export class EntryEditRoute extends MobxLitElement {
         }
     }
     onClick(id: string) {
-        navigator.vibrate(50);
+        navigator?.vibrate(50);
         if (Array.isArray(this.store.getActivityDetail(id)))
             this.onLongClick(id);
         else this.store.addToNumericActivityDetail(id, 1);
     }
     onLongClick(id: string) {
-        navigator.vibrate(100);
+        navigator?.vibrate(100);
         this.editActivityDetail(id);
     }
     editActivityDetail(id: string) {

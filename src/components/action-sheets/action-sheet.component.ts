@@ -105,7 +105,7 @@ export class ActionSheetComponent extends LitElement {
                         this.dismiss();
                     }
                 });
-            }, el2.scrollTop / 4);
+            }, el2.scrollTop / 3);
         }
     }
     render() {

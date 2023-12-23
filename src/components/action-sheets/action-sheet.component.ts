@@ -70,6 +70,17 @@ export class ActionSheetComponent extends LitElement {
     }
     show() {
         this.hideSheet = false;
+        setTimeout(() => {
+            const el2 = this.shadowRoot?.querySelector('.popup');
+            if (el2) {
+                el2.scrollBy({ top: window.innerHeight / 2 });
+                el2.addEventListener('scroll', (_event) => {
+                    if (el2.scrollTop < 10) {
+                        this.dismiss();
+                    }
+                });
+            }
+        }, 1);
     }
     getActionSheet() {
         return SheetMapping[this.currentSheet].getActionSheet(
@@ -83,8 +94,19 @@ export class ActionSheetComponent extends LitElement {
         if (this.onSubmit) this.onSubmit(data);
     }
     dismiss() {
-        this.hideSheet = true;
-        if (this.onDismiss) this.onDismiss();
+        const el2 = this.shadowRoot?.querySelector('.popup');
+        if (el2) {
+            el2.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                this.hideSheet = true;
+                if (this.onDismiss) this.onDismiss();
+                el2.removeEventListener('scroll', (_event) => {
+                    if (el2.scrollTop < 10) {
+                        this.dismiss();
+                    }
+                });
+            }, el2.scrollTop / 4);
+        }
     }
     render() {
         if (this.hideSheet) return nothing;
@@ -150,7 +172,7 @@ export class ActionSheetComponent extends LitElement {
                 margin-bottom: 0px;
             }
             .spacer {
-                min-height: 50vh;
+                min-height: 80vh;
             }
         `,
     ];

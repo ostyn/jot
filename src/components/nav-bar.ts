@@ -28,29 +28,34 @@ export class NavBar extends LitElement {
     render() {
         return html`
             <footer>
-                ${(this.router?.getRoutes() || [])
-                    .filter((route: JotRoute) => route.options?.menuItem)
-                    .map((route: JotRoute) => {
-                        return html`<a class="item-wrapper" href="${route.path}"
-                            ><span
-                                class=${'menu-bar-item ' +
-                                (this.isRouteSelected(route.path)
-                                    ? 'menu-bar-item-active'
-                                    : 'menu-bar-item-inactive')}
-                            >
-                                <jot-icon
-                                    name=${route.options?.iconName || 'Smile'}
-                                    size="large"
+                <span class="footer-content">
+                    ${(this.router?.getRoutes() || [])
+                        .filter((route: JotRoute) => route.options?.menuItem)
+                        .map((route: JotRoute) => {
+                            return html`<a
+                                class="item-wrapper"
+                                href="${route.path}"
+                                ><span
+                                    class=${'menu-bar-item ' +
+                                    (this.isRouteSelected(route.path)
+                                        ? 'menu-bar-item-active'
+                                        : 'menu-bar-item-inactive')}
                                 >
-                                </jot-icon>
-                                <span class="menu-bar-item-text">
-                                    ${this.isRouteSelected(route.path)
-                                        ? route.name
-                                        : nothing}</span
-                                >
-                            </span></a
-                        >`;
-                    })}
+                                    <jot-icon
+                                        name=${route.options?.iconName ||
+                                        'Smile'}
+                                        size="large"
+                                    >
+                                    </jot-icon>
+                                    <span class="menu-bar-item-text">
+                                        ${this.isRouteSelected(route.path)
+                                            ? route.name
+                                            : nothing}</span
+                                    >
+                                </span></a
+                            >`;
+                        })}
+                </span>
             </footer>
         `;
     }
@@ -58,22 +63,24 @@ export class NavBar extends LitElement {
         base,
         css`
             footer {
-                text-align: center;
                 width: 100%;
                 position: fixed;
                 bottom: -1px;
-                height: 4rem;
                 background-color: var(--card-background-color);
                 box-shadow: var(--card-box-shadow);
+                z-index: 100;
+                padding-bottom: 8px;
+            }
+            .footer-content {
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 user-select: none;
                 gap: 0.5rem;
-                z-index: 100;
             }
             .item-wrapper {
-                height: 100%;
+                height: 64px;
+                width: 96px;
                 display: flex;
                 align-items: center;
             }

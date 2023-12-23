@@ -70,9 +70,7 @@ export class NavBar extends LitElement {
                 box-shadow: var(--card-box-shadow);
                 z-index: 100;
                 //This is for the iOS navbar
-                @supports (-webkit-touch-callout: none) {
-                    padding-bottom: 16px;
-                }
+                padding-bottom: 16px;
             }
             .footer-content {
                 display: flex;

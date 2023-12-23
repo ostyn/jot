@@ -71,11 +71,9 @@ export class NavBar extends LitElement {
                 z-index: 100;
             }
 
-            @media not all and (min-resolution: 0.001dpcm) {
-                @supports (-webkit-appearance: none) {
-                    footer {
-                        padding-bottom: 16px;
-                    }
+            @supports (-webkit-hyphens: none) {
+                footer {
+                    padding-bottom: 16px;
                 }
             }
 

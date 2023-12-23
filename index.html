@@ -31,8 +31,13 @@
             );
         </script>
         <style>
-            html {
-                overscroll-behavior: none;
+            body {
+                overscroll-behavior-y: contain;
+            }
+            jot-app {
+                height: 100vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
         </style>
         <script>

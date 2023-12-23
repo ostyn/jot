@@ -37,7 +37,7 @@ export class ImportRoute extends LitElement {
                 alert(file.type);
                 if (
                     file.type === 'application/json' ||
-                    file.type === 'application/text'
+                    file.type === 'text/plain'
                 ) {
                     const data = JSON.parse(event.target?.result as string);
                     data.entries.forEach((entry: Entry) => {

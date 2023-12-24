@@ -99,12 +99,14 @@ export class ActivityComponent extends LitElement {
     static styles = [
         base,
         css`
+            :host * {
+                user-select: none;
+            }
             :host {
                 display: inline-flex;
                 border: 1px solid transparent;
                 margin: 2px;
                 padding: 4px 6px;
-                user-select: none;
             }
             .activity-container {
                 display: inline-flex;

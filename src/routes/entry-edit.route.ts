@@ -203,7 +203,10 @@ export class EntryEditRoute extends MobxLitElement {
             </section>
             <activity-grid
                 @activityClick=${(e: any) => this.onClick(e.detail.id)}
-                @activityLongClick=${(e: any) => this.onLongClick(e.detail.id)}
+                @activityLongClick=${(e: any) => {
+                    this.onLongClick(e.detail.id);
+                    e.preventDefault();
+                }}
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}
             ></activity-grid>

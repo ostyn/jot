@@ -24,7 +24,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             this.getParamsAndUpdate
         );
         this.getParamsAndUpdate();
-        this.gesture = new TinyGesture(this, {});
+        this.gesture = new TinyGesture(this, {
+            threshold: (_type, _self) => 150,
+            velocityThreshold: 30,
+        });
         this.gesture.on('swiperight', (_event) => {
             this.goToMonth(addMonths(this.currentDate, -1));
         });

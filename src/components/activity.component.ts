@@ -100,6 +100,8 @@ export class ActivityComponent extends LitElement {
         base,
         css`
             :host * {
+                -webkit-user-select: none;
+                -ms-user-select: none;
                 user-select: none;
             }
             :host {
@@ -112,7 +114,6 @@ export class ActivityComponent extends LitElement {
                 display: inline-flex;
                 text-align: center;
                 align-items: flex-start;
-                user-select: none;
             }
             .emoji {
                 display: inline-block;

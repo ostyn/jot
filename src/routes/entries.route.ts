@@ -96,6 +96,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         );
         await this.controller.finished();
         this.isLoading = false;
+        await this.controller.finished();
         this.filteredEntries = [...entries];
     };
     shouldScrollToSelf(entry: Entry) {

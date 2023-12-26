@@ -29,7 +29,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 Math.max(
                     25,
                     Math.floor(
-                        0.4 *
+                        0.3 *
                             (type === 'x'
                                 ? window.innerWidth || document.body.clientWidth
                                 : window.innerHeight ||

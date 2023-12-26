@@ -49,7 +49,7 @@ export class SettingsRoute extends MobxLitElement {
         return html`<article>
             <header>Settings</header>
             <section>
-                <header>Theme</header>
+                <header>General</header>
                 <label class="inline"
                     ><input
                         .checked=${settings.isDark}
@@ -57,7 +57,18 @@ export class SettingsRoute extends MobxLitElement {
                         role="switch"
                         @change=${() => settings.setIsDark(!settings.isDark)}
                     />
-                    ${settings.isDark ? 'Dark' : 'Light'} Mode
+                    Dark Mode
+                </label>
+                <hr />
+                <label class="inline"
+                    ><input
+                        .checked=${settings.showArchived}
+                        type="checkbox"
+                        role="switch"
+                        @change=${() =>
+                            settings.setShowArchived(!settings.showArchived)}
+                    />
+                    Show Archived
                 </label>
             </section>
             <section>

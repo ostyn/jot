@@ -1,6 +1,7 @@
 import { action, makeObservable, observable, runInAction } from 'mobx';
 import { activityDao } from '../dao/ActivityDao';
 import { Activity } from '../interfaces/activity.interface';
+import { settings } from './settings.store';
 
 const activitiesData: Activity[] = await activityDao.getItems();
 const activitiesMap: any = {};
@@ -21,31 +22,25 @@ class ActivityStore {
     @action.bound
     public async updateActivity(updatedActivity: Activity) {
         await activityDao.saveItem(updatedActivity);
-        const updatedActivities = await activityDao.getItems();
-        runInAction(() => {
-            this.all = updatedActivities;
-            this.map = {};
-            this.all.forEach((activity) => {
-                this.map[activity.id] = activity;
-            });
-        });
+        await this.refreshActivities();
     }
     @action.bound
     public async bulkImport(activities: Activity[]) {
         await activityDao.saveItems(activities);
-        const updatedActivities = await activityDao.getItems();
-        runInAction(() => {
-            this.all = updatedActivities;
-            this.map = {};
-            this.all.forEach((activity) => {
-                this.map[activity.id] = activity;
-            });
-        });
+        await this.refreshActivities();
     }
     @action.bound
     public async removeActivity(id: string) {
         await activityDao.deleteItem(id);
-        const updatedActivities = await activityDao.getItems();
+        await this.refreshActivities();
+    }
+    @action.bound
+    public async refreshActivities() {
+        let updatedActivities: Activity[] = await activityDao.getItems();
+        if (!settings.showArchived)
+            updatedActivities = updatedActivities.filter(
+                (activity) => !activity.isArchived
+            );
         runInAction(() => {
             this.all = updatedActivities;
             this.map = {};

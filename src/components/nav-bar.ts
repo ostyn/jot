@@ -2,8 +2,10 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { consume } from '@lit/context';
 import { Router } from '@vaadin/router';
+import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { JotRoute, routerContext } from '../routes/route-config';
+import { settings } from '../stores/settings.store';
 
 @customElement('nav-bar')
 export class NavBar extends LitElement {
@@ -13,6 +15,11 @@ export class NavBar extends LitElement {
     protected firstUpdated(): void {
         window.addEventListener('vaadin-router-location-changed', () => {
             this.currentPath = this.router?.location.pathname;
+        });
+        const gesture = new TinyGesture(this, {});
+
+        gesture.on('longpress', () => {
+            settings.setShowArchived(!settings.showArchived);
         });
     }
     @state()

@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { animate } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';

@@ -1,5 +1,6 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { animate } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
@@ -18,6 +19,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     @state() scrollToDate?: number;
     @state() filteredEntries: Entry[] = [];
     gesture?: TinyGesture<this>;
+    animatingLeft: boolean = true;
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
@@ -117,6 +119,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             month: date.getMonth() + 1,
             year: date.getFullYear(),
         } as any).toString();
+        this.animatingLeft = this.currentDate.getTime() - date.getTime() > 0;
         this.currentDate = date;
         Router.go(`entries?${queryParams}`);
     }
@@ -129,10 +132,27 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             ${this.isLoading
-                ? html`<section class="loader">
-                      <article aria-busy="true"></article>
-                  </section>`
-                : html` <section class="entries">
+                ? nothing
+                : html` <section
+                      class="entries"
+                      ${animate({
+                          in: [
+                              {
+                                  transform: `translateX(${
+                                      this.animatingLeft ? '-' : ''
+                                  }100%)`,
+                              },
+                          ],
+                          out: [
+                              {
+                                  transform: `translateX(${
+                                      this.animatingLeft ? '' : '-'
+                                  }100%)`,
+                              },
+                          ],
+                          skipInitial: true,
+                      })}
+                  >
                       ${this.filteredEntries.length
                           ? this.filteredEntries.map(
                                 (entry: Entry) =>

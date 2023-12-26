@@ -112,7 +112,34 @@ export class ImportRoute extends LitElement {
             />
 
             ${this.entries.length || this.moods.length || this.activities.length
-                ? html` <label
+                ? html` <p>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importEntries}
+                              @change=${() =>
+                                  (this.importEntries = !this.importEntries)}
+                          />Entries: ${this.entries.length}
+                      </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importMoods}
+                              @change=${() =>
+                                  (this.importMoods = !this.importMoods)}
+                          />Moods: ${this.moods.length}
+                      </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importActivities}
+                              @change=${() =>
+                                  (this.importActivities =
+                                      !this.importActivities)}
+                          />Activities: ${this.activities.length}
+                      </label>
+                      <hr />
+                      <label
                           ><input
                               type="checkbox"
                               ?checked=${this.overwriteExistingData}
@@ -121,34 +148,7 @@ export class ImportRoute extends LitElement {
                                       !this.overwriteExistingData)}
                           />Overwrite Existing Data
                       </label>
-                      <p>
-                          <label
-                              ><input
-                                  type="checkbox"
-                                  ?checked=${this.importEntries}
-                                  @change=${() =>
-                                      (this.importEntries =
-                                          !this.importEntries)}
-                              />Entries: ${this.entries.length}
-                          </label>
-                          <label
-                              ><input
-                                  type="checkbox"
-                                  ?checked=${this.importMoods}
-                                  @change=${() =>
-                                      (this.importMoods = !this.importMoods)}
-                              />Moods: ${this.moods.length}
-                          </label>
-                          <label
-                              ><input
-                                  type="checkbox"
-                                  ?checked=${this.importActivities}
-                                  @change=${() =>
-                                      (this.importActivities =
-                                          !this.importActivities)}
-                              />Activities: ${this.activities.length}
-                          </label>
-                      </p>`
+                  </p>`
                 : nothing}
             ${this.isLoading
                 ? html`<span aria-busy="true">Loading...</span>`

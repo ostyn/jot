@@ -1,7 +1,7 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { animate } from '@lit-labs/motion';
+import { animate, AnimateController } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
@@ -15,12 +15,23 @@ import { Entry } from '../interfaces/entry.interface';
 @customElement('entries-route')
 export class EntriesRoute extends LitElement implements AfterEnterObserver {
     @state() isLoading = true;
-    @state() currentDate: Date = new Date();
+    currentDate: Date = new Date();
     public router?: Router;
     @state() scrollToDate?: number;
     @state() filteredEntries: Entry[] = [];
     gesture?: TinyGesture<this>;
-    animatingLeft: boolean = true;
+    @state() animatingLeft: boolean = true;
+    controller: AnimateController;
+    constructor() {
+        super();
+        this.controller = new AnimateController(this, {
+            defaultOptions: {
+                keyframeOptions: {
+                    duration: 400,
+                },
+            },
+        });
+    }
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
@@ -55,9 +66,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         this.getParamsAndUpdate();
         this.gesture?.destroy();
     }
-    updateNum = 0;
     private getParamsAndUpdate = async () => {
         this.isLoading = true;
+        this.filteredEntries = [];
         const urlParams = new URLSearchParams(window.location.search);
         const dayParam = urlParams.get('day');
         const monthParam = urlParams.get('month');
@@ -79,22 +90,13 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             this.scrollToDate = undefined;
         }
 
-        const currentUpdateCycle = this.updateNum++;
-        entryDao
-            .getEntriesFromYearAndMonth(
-                this.currentDate.getFullYear(),
-                this.currentDate.getMonth() + 1
-            )
-            .then((entries) => {
-                // This is kind of a hack but it allows us to ignore updates that
-                // aren't the most recent update. Thus you can spam the next month
-                // button and not be cycled through every month you clicked after
-                // you finish loading
-                if (currentUpdateCycle + 1 === this.updateNum) {
-                    this.filteredEntries = [...entries];
-                    this.isLoading = false;
-                }
-            });
+        const entries = await entryDao.getEntriesFromYearAndMonth(
+            this.currentDate.getFullYear(),
+            this.currentDate.getMonth() + 1
+        );
+        await this.controller.finished();
+        this.filteredEntries = [...entries];
+        this.isLoading = false;
     };
     shouldScrollToSelf(entry: Entry) {
         return parseISO(entry.date).getDate() === this.scrollToDate;
@@ -117,12 +119,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             year: date.getFullYear(),
         } as any).toString();
         this.animatingLeft = this.currentDate.getTime() - date.getTime() > 0;
-        this.currentDate = date;
         Router.go(`entries?${queryParams}`);
     }
     render() {
-        // Add back loading placeholder, make it transition as well
-        // See if we can lock the other animation props: don't animate scale or height
         return html`<section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}
@@ -134,7 +133,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ? html`<section
                       class="loader"
                       ${animate({
-                          keyframeOptions: { duration: 200 },
                           in: [
                               {
                                   transform: `translateX(${
@@ -155,10 +153,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                   >
                       <article aria-busy="true"></article>
                   </section>`
-                : html` <section
+                : html`<section
                       class="entries"
                       ${animate({
-                          keyframeOptions: { duration: 200 },
                           in: [
                               {
                                   transform: `translateX(${

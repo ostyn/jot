@@ -232,6 +232,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     static styles = [
         base,
         css`
+            :host {
+                overflow-x: hidden;
+            }
             .entries {
                 min-height: calc(100vh - 10rem);
             }

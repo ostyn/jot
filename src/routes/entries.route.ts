@@ -150,7 +150,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   }100%)`,
                               },
                           ],
-                          skipInitial: true,
                       })}
                   >
                       ${this.filteredEntries.length

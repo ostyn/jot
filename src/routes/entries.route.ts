@@ -90,7 +90,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 // button and not be cycled through every month you clicked after
                 // you finish loading
                 if (currentUpdateCycle + 1 === this.updateNum) {
-                    this.filteredEntries = entries.slice(0, 5);
+                    this.filteredEntries = entries.slice(0, 3);
                     this.isLoading = false;
                     if (this.filteredEntries.length < entries.length)
                         setTimeout(() => {
@@ -136,6 +136,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 : html` <section
                       class="entries"
                       ${animate({
+                          keyframeOptions: { duration: 200 },
                           in: [
                               {
                                   transform: `translateX(${
@@ -150,6 +151,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   }100%)`,
                               },
                           ],
+                          skipInitial: true,
                       })}
                   >
                       ${this.filteredEntries.length

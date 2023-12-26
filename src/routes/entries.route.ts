@@ -113,6 +113,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         this.goToMonth(date);
     }
     private goToMonth(date: Date) {
+        if (this.isLoading) return;
         window.scrollTo({ top: 0 });
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,

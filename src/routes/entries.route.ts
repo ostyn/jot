@@ -27,7 +27,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         this.controller = new AnimateController(this, {
             defaultOptions: {
                 keyframeOptions: {
-                    duration: 300,
+                    duration: 400,
                 },
             },
         });

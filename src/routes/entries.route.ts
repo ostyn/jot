@@ -95,8 +95,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             this.currentDate.getMonth() + 1
         );
         await this.controller.finished();
-        this.filteredEntries = [...entries];
         this.isLoading = false;
+        this.filteredEntries = [...entries];
     };
     shouldScrollToSelf(entry: Entry) {
         return parseISO(entry.date).getDate() === this.scrollToDate;

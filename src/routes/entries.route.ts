@@ -124,6 +124,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         Router.go(`entries?${queryParams}`);
     }
     render() {
+        // Add back loading placeholder, make it transition as well
+        // See if we can lock the other animation props: don't animate scale or height
         return html`<section class="month-control-bar">
                 <month-control
                     .date=${this.currentDate}
@@ -132,7 +134,29 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             ${this.isLoading
-                ? nothing
+                ? html`<section
+                      class="loader"
+                      ${animate({
+                          keyframeOptions: { duration: 200 },
+                          in: [
+                              {
+                                  transform: `translateX(${
+                                      this.animatingLeft ? '-' : ''
+                                  }100%)`,
+                              },
+                          ],
+                          out: [
+                              {
+                                  transform: `translateX(${
+                                      this.animatingLeft ? '' : '-'
+                                  }100%)`,
+                              },
+                          ],
+                          skipInitial: true,
+                      })}
+                  >
+                      <article aria-busy="true"></article>
+                  </section>`
                 : html` <section
                       class="entries"
                       ${animate({

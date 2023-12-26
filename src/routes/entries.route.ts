@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { animate } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
@@ -90,12 +91,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 // button and not be cycled through every month you clicked after
                 // you finish loading
                 if (currentUpdateCycle + 1 === this.updateNum) {
-                    this.filteredEntries = entries.slice(0, 3);
+                    this.filteredEntries = [...entries];
                     this.isLoading = false;
-                    if (this.filteredEntries.length < entries.length)
-                        setTimeout(() => {
-                            this.filteredEntries = [...entries];
-                        }, 250);
                 }
             });
     };
@@ -152,6 +149,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   }100%)`,
                               },
                           ],
+                          stabilizeOut: true,
                           skipInitial: true,
                       })}
                   >
@@ -175,11 +173,14 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   }100%)`,
                               },
                           ],
+                          stabilizeOut: true,
                           skipInitial: true,
                       })}
                   >
                       ${this.filteredEntries.length
-                          ? this.filteredEntries.map(
+                          ? repeat(
+                                this.filteredEntries,
+                                (entry) => entry.id,
                                 (entry: Entry) =>
                                     html`<entry-component
                                         .scrollToSelf=${this.shouldScrollToSelf(

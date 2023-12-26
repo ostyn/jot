@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { animate, AnimateController } from '@lit-labs/motion';
@@ -131,29 +131,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             ${this.isLoading
-                ? html`<section
-                      class="loader"
-                      ${animate({
-                          in: [
-                              {
-                                  transform: `translateX(${
-                                      this.animatingLeft ? '-' : ''
-                                  }100%)`,
-                              },
-                          ],
-                          out: [
-                              {
-                                  transform: `translateX(${
-                                      this.animatingLeft ? '' : '-'
-                                  }100%)`,
-                              },
-                          ],
-                          stabilizeOut: true,
-                          skipInitial: true,
-                      })}
-                  >
-                      <article aria-busy="true"></article>
-                  </section>`
+                ? nothing
                 : html`<section
                       class="entries"
                       ${animate({

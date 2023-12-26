@@ -147,7 +147,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                   }100%)`,
                               },
                           ],
-                          stabilizeOut: true,
                           skipInitial: true,
                       })}
                   >

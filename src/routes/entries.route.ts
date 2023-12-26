@@ -27,7 +27,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         this.controller = new AnimateController(this, {
             defaultOptions: {
                 keyframeOptions: {
-                    duration: 400,
+                    duration: 200,
                 },
             },
         });
@@ -96,7 +96,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         );
         await this.controller.finished();
         this.isLoading = false;
-        await this.controller.finished();
         this.filteredEntries = [...entries];
     };
     shouldScrollToSelf(entry: Entry) {

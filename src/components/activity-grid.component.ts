@@ -65,16 +65,6 @@ export class ActivityGridComponent extends MobxLitElement {
                 this.categoryToActivityList.set(category, currentCategoryList);
             }
         });
-        this.categoryToActivityList.forEach((val: Activity[]) => {
-            val.sort(
-                (a, b) =>
-                    this.getActivityCount(b.id) - this.getActivityCount(a.id)
-            );
-        });
-    }
-    //TODO StatsService
-    getActivityCount(activityId: string) {
-        return activityId ? 5 : 4;
     }
     toggleShowArchived() {
         this.filterArchived = !this.filterArchived;

@@ -14,9 +14,14 @@ export class ActivityEditSheet extends MobxLitElement {
     @property({ attribute: false })
     activity!: Activity;
     @state()
-    localActivity!: Activity;
+    localActivity: Activity = {
+        isArchived: false,
+        name: '',
+        category: '',
+        emoji: '',
+    } as Activity;
     firstUpdated() {
-        this.localActivity = { ...this.activity };
+        this.localActivity = { ...this.localActivity, ...this.activity };
     }
     @property({ attribute: false })
     isCustom = false;

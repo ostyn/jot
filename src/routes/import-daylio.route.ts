@@ -1,7 +1,9 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivitySheet } from '../components/action-sheets/activity.sheet';
+import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
@@ -58,20 +60,20 @@ export class ImportDaylioRoute extends LitElement {
         return activities.getActivity(activityId);
     }
     private openMoodPrompt(mood: any, original: any): void {
-        ActionSheetController.open({
-            type: 'mood',
+        Sheet.open({
+            type: MoodsSheet,
             data: mood,
-            onSubmit: (data) => {
+            onClose: (data) => {
                 this.moodMappings[original] = data;
                 this.parse();
             },
         });
     }
     private openActivityPrompt(activity: any, original: any): void {
-        ActionSheetController.open({
-            type: 'activity',
+        Sheet.open({
+            type: ActivitySheet,
             data: activity,
-            onSubmit: (data) => {
+            onClose: (data) => {
                 this.activityMappings[original] = data;
                 this.parse();
             },

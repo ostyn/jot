@@ -6,7 +6,9 @@ import { AfterEnterObserver, Router } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
+import { DateSheet } from '../components/action-sheets/date.sheet';
 import '../components/entry.component';
 import '../components/month-control.component';
 import { entryDao } from '../dao/EntryDao';
@@ -102,10 +104,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
         return parseISO(entry.date).getDate() === this.scrollToDate;
     }
     onMonthClick() {
-        ActionSheetController.open({
-            type: 'date',
+        Sheet.open({
+            type: DateSheet,
             data: { date: this.currentDate, type: 'month' },
-            onSubmit: (e) => this.goToMonth(e.date),
+            onClose: (e) => this.goToMonth(e.date),
         });
     }
     async onMonthChange(e: CustomEvent) {
@@ -164,8 +166,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                         )}
                                         .entry="${entry}"
                                         @activityClick=${(e: any) => {
-                                            ActionSheetController.open({
-                                                type: 'activityInfo',
+                                            Sheet.open({
+                                                type: ActivityInfoSheet,
                                                 data: {
                                                     id: e.detail.id,
                                                     date: entry.dateObject,
@@ -173,8 +175,8 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                             });
                                         }}
                                         @activityLongClick=${(e: any) => {
-                                            ActionSheetController.open({
-                                                type: 'activityInfo',
+                                            Sheet.open({
+                                                type: ActivityInfoSheet,
                                                 data: {
                                                     id: e.detail.id,
                                                     date: entry.dateObject,

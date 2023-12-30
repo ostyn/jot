@@ -14,8 +14,7 @@ export class DateSheet extends LitElement {
     public hasDisconnected = false;
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
-        _dismiss: () => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`<header>Select a date</header>
             <date-sheet

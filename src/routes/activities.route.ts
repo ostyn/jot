@@ -1,7 +1,9 @@
 import { html, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivityEditSheet } from '../components/action-sheets/activity-edit.sheet';
+import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import '../components/activity-grid.component';
 import '../components/activity.component';
 import { activities } from '../stores/activities.store';
@@ -11,13 +13,13 @@ export class ActivitiesRoute extends LitElement {
     render() {
         return html`<activity-grid
             @activityClick=${async (e: any) =>
-                ActionSheetController.open({
-                    type: 'activityEdit',
+                Sheet.open({
+                    type: ActivityEditSheet,
                     data: await activities.getActivity(e.detail.id),
                 })}
             @activityLongClick=${(e: any) => {
-                ActionSheetController.open({
-                    type: 'activityInfo',
+                Sheet.open({
+                    type: ActivityInfoSheet,
                     data: {
                         id: e.detail.id,
                         date: new Date(),

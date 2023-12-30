@@ -14,8 +14,7 @@ export class TextSheet extends LitElement {
     public hasDisconnected = false;
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
-        _dismiss: () => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`<header>Notes about your day?</header>
             <text-sheet

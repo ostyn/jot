@@ -33,6 +33,9 @@ section {
 article:not(dialog article, footer article) {
     margin: 0.5rem;
 }
+#sheet article {
+    margin: 0px;
+}
 footer article {
     margin-top: 0px;
     margin-bottom: 0px;

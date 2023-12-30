@@ -28,14 +28,13 @@ export class MoodEditSheet extends LitElement {
     }
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
-        dismiss: () => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`${data.id
                 ? html`<header>Edit Mood</header>`
                 : html`<header>New Mood</header>`}
             <mood-edit-sheet
-                @moodDeleted=${dismiss}
+                @moodDeleted=${submit}
                 @moodSubmitted=${submit}
                 .mood=${data}
             ></mood-edit-sheet>`;

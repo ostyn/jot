@@ -5,7 +5,8 @@ import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
-import { ActionSheetController } from './action-sheets/action-sheet-controller';
+import { Sheet } from './action-sheets/action-sheet';
+import { ActivityEditSheet } from './action-sheets/activity-edit.sheet';
 import './activity.component';
 
 @customElement('activity-grid')
@@ -193,8 +194,8 @@ export class ActivityGridComponent extends MobxLitElement {
         `;
     }
     public createNewActivity(category?: string) {
-        ActionSheetController.open({
-            type: 'activityEdit',
+        Sheet.open({
+            type: ActivityEditSheet,
             data: { category },
         });
     }

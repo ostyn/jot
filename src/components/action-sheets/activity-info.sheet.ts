@@ -7,7 +7,7 @@ import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { activities } from '../../stores/activities.store';
 import { entries } from '../../stores/entries.store';
-import { ActionSheetController } from './action-sheet-controller';
+import { Sheet } from './action-sheet';
 
 @customElement('activity-info-sheet')
 export class ActivityInfoSheet extends LitElement {
@@ -37,8 +37,7 @@ export class ActivityInfoSheet extends LitElement {
 
     static getActionSheet(
         data: any,
-        _submit: (data: any) => void,
-        _dismiss: () => void
+        _submit: (data: any) => void
     ): TemplateResult {
         return html`<header>Activity Info</header>
             <activity-info-sheet
@@ -137,7 +136,7 @@ export class ActivityInfoSheet extends LitElement {
         );
     }
     onDateSelect(date: Date) {
-        ActionSheetController.close();
+        Sheet.close();
         const queryParams = new URLSearchParams({
             month: date.getMonth() + 1,
             year: date.getFullYear(),

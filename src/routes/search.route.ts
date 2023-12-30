@@ -6,7 +6,10 @@ import { AfterEnterObserver, AfterLeaveObserver, Router } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivityDetailSelectSheet } from '../components/action-sheets/activity-detail-select.sheet';
+import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
+import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
@@ -201,17 +204,17 @@ export class SearchRoute
         else this.openDetailPrompt();
     }
     openActivitySelect() {
-        ActionSheetController.open({
-            type: 'activity',
-            onSubmit: (id: string) => {
+        Sheet.open({
+            type: ActivitySheet,
+            onClose: (id: string) => {
                 this.store.setSelectedActivity(id);
             },
         });
     }
     openDetailPrompt() {
-        ActionSheetController.open({
-            type: 'activityDetailSelect',
-            onSubmit: (detail: any) =>
+        Sheet.open({
+            type: ActivityDetailSelectSheet,
+            onClose: (detail: any) =>
                 this.store.setSelectedActivity(
                     this.store.selectedActivityId,
                     detail
@@ -313,8 +316,8 @@ export class SearchRoute
                                 this.store.setSelectedActivity(data.detail.id);
                             }}
                             @activityLongClick=${(e: any) => {
-                                ActionSheetController.open({
-                                    type: 'activityInfo',
+                                Sheet.open({
+                                    type: ActivityInfoSheet,
                                     data: {
                                         id: e.detail.id,
                                         date: entry.dateObject,

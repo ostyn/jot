@@ -5,7 +5,10 @@ import { Router, RouterLocation } from '@vaadin/router';
 import { format } from 'date-fns';
 import { action, makeObservable, observable, toJS } from 'mobx';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
+import { MoodsSheet } from '../components/action-sheets/moods.sheet';
+import { TextSheet } from '../components/action-sheets/text.sheet';
 import {
     ActivityDetail,
     EditTools,
@@ -150,8 +153,8 @@ export class EntryEditRoute extends MobxLitElement {
         this.editActivityDetail(id);
     }
     editActivityDetail(id: string) {
-        ActionSheetController.open({
-            type: 'activityDetailEdit',
+        Sheet.open({
+            type: ActivityDetailEditSheet,
             data: { id, store: this.store, defaultIsArray: true },
         });
     }
@@ -170,10 +173,10 @@ export class EntryEditRoute extends MobxLitElement {
                 <article
                     class="note-preview"
                     @click=${() =>
-                        ActionSheetController.open({
-                            type: 'text',
+                        Sheet.open({
+                            type: TextSheet,
                             data: this.store.note,
-                            onSubmit: (data) => this.store.setNote(data),
+                            onClose: (data) => this.store.setNote(data),
                         })}
                 >
                     <span>${this.store.note || 'enter note here...'}</span>
@@ -192,10 +195,10 @@ export class EntryEditRoute extends MobxLitElement {
                     <span
                         class="mood-icon"
                         @click=${() =>
-                            ActionSheetController.open({
-                                type: 'mood',
+                            Sheet.open({
+                                type: MoodsSheet,
                                 data: this.store.mood || 0,
-                                onSubmit: (data) => this.store.setMood(data),
+                                onClose: (data) => this.store.setMood(data),
                             })}
                         >${moods?.getMood(this.store.mood)?.emoji || ''}
                     </span>

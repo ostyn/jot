@@ -5,7 +5,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
 import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
-import { ActionSheetController } from './action-sheet-controller';
+import { Sheet } from './action-sheet';
 
 @customElement('activity-detail-edit-sheet')
 export class ActivityDetailEditSheet extends MobxLitElement {
@@ -24,8 +24,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     defaultIsArray?: boolean = false;
     static getActionSheet(
         data: any,
-        _submit: (data: any) => void,
-        _dismiss: () => void
+        _submit: (data: any) => void
     ): TemplateResult {
         return html`<header>Add some detail?</header>
             <activity-detail-edit-sheet
@@ -47,7 +46,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     }
     clear() {
         this.store?.clearActivityDetail(this.activityId);
-        ActionSheetController.close();
+        Sheet.close();
     }
     addItemOrSubmit(e: any) {
         e.preventDefault();
@@ -55,7 +54,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
             this.store?.addToArrayActivityDetail(this.activityId, this.newItem);
             this.newItem = '';
         } else {
-            ActionSheetController.close();
+            Sheet.close();
         }
     }
     render() {

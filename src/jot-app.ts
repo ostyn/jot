@@ -4,7 +4,7 @@ import { provide } from '@lit/context';
 import { Router } from '@vaadin/router';
 import { registerSW } from 'virtual:pwa-register';
 import { base } from './baseStyles';
-import './components/action-sheets/action-sheet.component';
+import './components/action-sheets/action-sheet';
 import './components/jot-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';

@@ -13,8 +13,7 @@ export class ActivityDetailSelectSheet extends LitElement {
     details!: string[];
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
-        _dismiss: () => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`<header>Select a Detail</header>
             <activity-detail-select-sheet

@@ -6,7 +6,6 @@ import { base } from '../../baseStyles';
 import { Activity } from '../../interfaces/activity.interface';
 import { activities } from '../../stores/activities.store';
 import { dispatchEvent, Events } from '../../utils/Helpers';
-import { ActionSheetController } from './action-sheet-controller';
 
 @customElement('activity-edit-sheet')
 export class ActivityEditSheet extends MobxLitElement {
@@ -47,22 +46,15 @@ export class ActivityEditSheet extends MobxLitElement {
         this.isCustom = true;
         this.inputRef?.value?.focus();
     }
-    openInfo() {
-        ActionSheetController.open({
-            type: 'activity',
-            data: this.localActivity,
-        });
-    }
     static getActionSheet(
         data: any,
-        submit: (data: any) => void,
-        dismiss: () => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`${data.id
                 ? html`<header>Edit Activity</header>`
                 : html`<header>New Activity</header>`}
             <activity-edit-sheet
-                @activityDeleted=${dismiss}
+                @activityDeleted=${submit}
                 @activitySubmitted=${submit}
                 .activity=${data}
             ></activity-edit-sheet>`;

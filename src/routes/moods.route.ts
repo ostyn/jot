@@ -2,7 +2,8 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
-import { ActionSheetController } from '../components/action-sheets/action-sheet-controller';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { MoodEditSheet } from '../components/action-sheets/mood-edit.sheet';
 import '../components/calendar-wrapper.component';
 import { Mood } from '../interfaces/mood.interface';
 import { moods } from '../stores/moods.store';
@@ -10,8 +11,8 @@ import { moods } from '../stores/moods.store';
 @customElement('moods-route')
 export class MoodsRoute extends MobxLitElement {
     moodSelected(mood?: Mood) {
-        ActionSheetController.open({
-            type: 'moodEdit',
+        Sheet.open({
+            type: MoodEditSheet,
             data: mood || {},
         });
     }

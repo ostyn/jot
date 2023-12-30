@@ -7,6 +7,7 @@ import {
     TemplateResult,
 } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 import { base } from '../../baseStyles';
 
 export let Sheet: ActionSheet;
@@ -39,6 +40,7 @@ export class ActionSheet extends LitElement {
         data?: any;
         onClose?: (data?: any) => void;
     }) {
+        disableBodyScroll(this);
         this.data = options.data;
         this.type = options.type;
         this.onClose = options.onClose;
@@ -122,6 +124,7 @@ export class ActionSheet extends LitElement {
         window.addEventListener('touchend', onDragEnd);
     }
     public close(data?: any, submittingData = false) {
+        enableBodyScroll(this);
         this.setIsSheetShown(false);
         if (submittingData && this.onClose) this.onClose(data);
     }

@@ -245,6 +245,7 @@ export class ActionSheet extends LitElement {
             }
 
             .sheet .draggable-area {
+                height: 1.5rem;
                 width: 3rem;
                 cursor: grab;
             }

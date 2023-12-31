@@ -66,7 +66,14 @@ export class ActionSheet extends LitElement {
     protected firstUpdated(
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
-        const gesture = new TinyGesture(this, {});
+        this.sheet = this.shadowRoot!.querySelector('#sheet') as HTMLElement;
+        this.sheetContents = this.sheet.querySelector(
+            '.contents'
+        ) as HTMLElement;
+        const draggableArea = this.sheet.querySelector(
+            '.draggable-area'
+        ) as HTMLElement;
+        const gesture = new TinyGesture(draggableArea, {});
         gesture.on('swipeup', () => {
             this.setSheetHeight(100);
         });
@@ -77,14 +84,6 @@ export class ActionSheet extends LitElement {
                 this.setSheetHeight(50);
             }
         });
-        this.sheet = this.shadowRoot!.querySelector('#sheet') as HTMLElement;
-        this.sheetContents = this.sheet.querySelector(
-            '.contents'
-        ) as HTMLElement;
-        const draggableArea = this.sheet.querySelector(
-            '.draggable-area'
-        ) as HTMLElement;
-
         window.addEventListener('keyup', (event: any) => {
             if (event.key === 'Escape') {
                 this.close();
@@ -224,7 +223,7 @@ export class ActionSheet extends LitElement {
             .sheet .contents {
                 padding-top: 1rem;
                 border-radius: 1rem 1rem 0 0;
-                background: var(--background-color);
+                background: var(--card-background-color);
 
                 overflow-y: hidden;
 
@@ -273,8 +272,16 @@ export class ActionSheet extends LitElement {
             }
 
             .sheet .body {
+                display: flex;
+                align-items: stretch;
+                flex-direction: column;
                 height: 100%;
                 overflow-y: auto;
+            }
+            .content {
+                overflow-x: hidden;
+                flex: 1;
+                padding-top: 0;
             }
         `,
     ];

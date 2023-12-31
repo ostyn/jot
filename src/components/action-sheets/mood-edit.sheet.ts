@@ -30,14 +30,11 @@ export class MoodEditSheet extends LitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`${data.id
-                ? html`<header>Edit Mood</header>`
-                : html`<header>New Mood</header>`}
-            <mood-edit-sheet
-                @moodDeleted=${submit}
-                @moodSubmitted=${submit}
-                .mood=${data}
-            ></mood-edit-sheet>`;
+        return html`<mood-edit-sheet
+            @moodDeleted=${submit}
+            @moodSubmitted=${submit}
+            .mood=${data}
+        ></mood-edit-sheet>`;
     }
     render() {
         return html`<form action="#">

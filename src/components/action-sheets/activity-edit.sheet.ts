@@ -50,14 +50,11 @@ export class ActivityEditSheet extends MobxLitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`${data.id
-                ? html`<header>Edit Activity</header>`
-                : html`<header>New Activity</header>`}
-            <activity-edit-sheet
-                @activityDeleted=${submit}
-                @activitySubmitted=${submit}
-                .activity=${data}
-            ></activity-edit-sheet>`;
+        return html`<activity-edit-sheet
+            @activityDeleted=${submit}
+            @activitySubmitted=${submit}
+            .activity=${data}
+        ></activity-edit-sheet>`;
     }
     render() {
         return html`<form>
@@ -86,37 +83,8 @@ export class ActivityEditSheet extends MobxLitElement {
                     }}
                     placeholder="emoji"
                 />
-                <button
-                    class="inline"
-                    type="button"
-                    @click=${this.submitActivity}
-                >
-                    submit
-                </button>
-                ${this.localActivity?.id
-                    ? html`<button
-                          class="inline secondary"
-                          type="button"
-                          @click=${this.deleteActivity}
-                      >
-                          delete
-                      </button>`
-                    : nothing}
             </section>
             <section class="lastRow">
-                <label class="inline archiveSwitch"
-                    ><input
-                        type="checkbox"
-                        role="switch"
-                        .checked=${this.localActivity?.isArchived}
-                        @change=${() => {
-                            this.localActivity = {
-                                ...this.localActivity,
-                                isArchived: !this.localActivity.isArchived,
-                            };
-                        }}
-                    />Archived</label
-                >
                 <details class="inline category-control" role="list">
                     <summary aria-haspopup="listbox">
                         ${this.localActivity?.category || 'category'}
@@ -173,6 +141,37 @@ export class ActivityEditSheet extends MobxLitElement {
                         </li>
                     </ul>
                 </details>
+                <label class="inline archiveSwitch"
+                    ><input
+                        type="checkbox"
+                        role="switch"
+                        .checked=${this.localActivity?.isArchived}
+                        @change=${() => {
+                            this.localActivity = {
+                                ...this.localActivity,
+                                isArchived: !this.localActivity.isArchived,
+                            };
+                        }}
+                    />Archived</label
+                >
+            </section>
+            <section>
+                <button
+                    class="inline"
+                    type="button"
+                    @click=${this.submitActivity}
+                >
+                    submit
+                </button>
+                ${this.localActivity?.id
+                    ? html`<button
+                          class="inline secondary"
+                          type="button"
+                          @click=${this.deleteActivity}
+                      >
+                          delete
+                      </button>`
+                    : nothing}
             </section>
         </form>`;
     }
@@ -182,17 +181,12 @@ export class ActivityEditSheet extends MobxLitElement {
             .activity-edit-buttons {
                 text-align: center;
             }
-            .activity-inputs input {
-                width: 33%;
-            }
-            .category-control {
-                width: 33%;
-            }
             activity-edit .category-control .option-list {
                 position: relative;
             }
             .category-control * {
                 z-index: 50;
+                width: fit-content;
             }
             input.custom-category {
                 width: calc(100% - 20px);

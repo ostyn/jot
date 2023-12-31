@@ -15,11 +15,10 @@ export class ActivityDetailSelectSheet extends LitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Select a Detail</header>
-            <activity-detail-select-sheet
-                .activityId=${data}
-                @activityDetailSelected=${(e: any) => submit(e.detail)}
-            ></activity-detail-select-sheet>`;
+        return html`<activity-detail-select-sheet
+            .activityId=${data}
+            @activityDetailSelected=${(e: any) => submit(e.detail)}
+        ></activity-detail-select-sheet>`;
     }
     clickDetail(detail: string) {
         dispatchEvent(this, Events.activityDetailSelected, detail);

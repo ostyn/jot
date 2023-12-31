@@ -39,11 +39,10 @@ export class ActivityInfoSheet extends LitElement {
         data: any,
         _submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Activity Info</header>
-            <activity-info-sheet
-                activityId=${data.id}
-                .date=${data.date}
-            ></activity-info-sheet>`;
+        return html`<activity-info-sheet
+            activityId=${data.id}
+            .date=${data.date}
+        ></activity-info-sheet>`;
     }
     protected firstUpdated(): void {
         this.loadMru();

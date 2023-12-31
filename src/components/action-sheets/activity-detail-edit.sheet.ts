@@ -26,12 +26,11 @@ export class ActivityDetailEditSheet extends MobxLitElement {
         data: any,
         _submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Add some detail?</header>
-            <activity-detail-edit-sheet
-                .defaultIsArray=${data.defaultIsArray}
-                .activityId=${data.id}
-                .store=${data.store}
-            ></activity-detail-edit-sheet>`;
+        return html`<activity-detail-edit-sheet
+            .defaultIsArray=${data.defaultIsArray}
+            .activityId=${data.id}
+            .store=${data.store}
+        ></activity-detail-edit-sheet>`;
     }
     protected firstUpdated(): void {
         let detail = this.store?.getActivityDetail(this.activityId);
@@ -66,29 +65,32 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
-                <button class="inline secondary" @click=${this.clear}>
-                    clear
-                </button>
-                <button
-                    class="inline contrast"
-                    @click=${() => {
-                        const existingDetail = this.store?.getActivityDetail(
-                            this.activityId
-                        );
-                        if (
-                            (Array.isArray(existingDetail) &&
-                                !existingDetail.length) ||
-                            (!Array.isArray(existingDetail) &&
-                                !existingDetail) ||
-                            confirm('Continuing will clear existing detail')
-                        ) {
-                            this.store?.clearActivityDetail(this.activityId);
-                            this.editingArray = !this.editingArray;
-                        }
-                    }}
-                >
-                    ${this.editingArray ? 'use number' : 'use text'}
-                </button>
+                <div>
+                    <button
+                        class="inline contrast"
+                        @click=${() => {
+                            const existingDetail =
+                                this.store?.getActivityDetail(this.activityId);
+                            if (
+                                (Array.isArray(existingDetail) &&
+                                    !existingDetail.length) ||
+                                (!Array.isArray(existingDetail) &&
+                                    !existingDetail) ||
+                                confirm('Continuing will clear existing detail')
+                            ) {
+                                this.store?.clearActivityDetail(
+                                    this.activityId
+                                );
+                                this.editingArray = !this.editingArray;
+                            }
+                        }}
+                    >
+                        ${this.editingArray ? 'use number' : 'use text'}
+                    </button>
+                    <button class="inline secondary" @click=${this.clear}>
+                        clear
+                    </button>
+                </div>
             </header>
             ${this.editingArray
                 ? html`
@@ -219,6 +221,11 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     static styles = [
         base,
         css`
+            header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
             :host,
             .content {
                 display: flex;

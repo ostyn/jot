@@ -179,7 +179,7 @@ export class EntryEditRoute extends MobxLitElement {
                             onClose: (data) => this.store.setNote(data),
                         })}
                 >
-                    <span>${this.store.note || 'enter note here...'}</span>
+                    <span>${this.store.note || 'Notes about your day?'}</span>
                     <jot-icon class="note-icon" name="FileText"></jot-icon>
                 </article>
                 <div class="right-column">

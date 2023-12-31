@@ -14,11 +14,10 @@ export class MoodsSheet extends LitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Select a Mood</header>
-            <moods-sheet
-                .onChange=${(moodId: any) => submit(moodId)}
-                currentMoodId=${data}
-            ></moods-sheet>`;
+        return html`<moods-sheet
+            .onChange=${(moodId: any) => submit(moodId)}
+            currentMoodId=${data}
+        ></moods-sheet>`;
     }
     render() {
         return html`<div class="mood-container">

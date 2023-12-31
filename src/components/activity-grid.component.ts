@@ -205,7 +205,7 @@ export class ActivityGridComponent extends MobxLitElement {
             .grid-controls {
                 text-align: center;
                 position: sticky;
-                top: 0px;
+                top: -1px;
                 background-color: var(--card-background-color);
                 z-index: 90;
                 margin-left: 0.5rem;

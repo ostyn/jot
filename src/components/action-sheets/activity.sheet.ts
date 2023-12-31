@@ -5,7 +5,7 @@ export class ActivitySheet {
         _data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html` <activity-grid
+        return html`<activity-grid
             @activityClick=${(data: any) => submit(data.detail.id)}
         ></activity-grid>`;
     }

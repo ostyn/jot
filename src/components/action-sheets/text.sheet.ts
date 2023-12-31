@@ -16,11 +16,10 @@ export class TextSheet extends LitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Notes about your day?</header>
-            <text-sheet
-                .text=${data}
-                @textSheetDismissed=${(e: any) => submit(e.detail)}
-            ></text-sheet>`;
+        return html`<text-sheet
+            .text=${data}
+            @textSheetDismissed=${(e: any) => submit(e.detail)}
+        ></text-sheet>`;
     }
     protected firstUpdated() {
         this.newText = this.text || '';
@@ -34,7 +33,7 @@ export class TextSheet extends LitElement {
         }
     }
     render() {
-        return html`<span>
+        return html`
             <textarea
                 ${ref(this.inputRef)}
                 name="text"
@@ -43,13 +42,13 @@ export class TextSheet extends LitElement {
                 .value=${this.newText as string}
                 @input=${(e: any) => (this.newText = e.target.value)}
             ></textarea>
-        </span>`;
+        `;
     }
     static styles = [
         base,
         css`
             .text-prompt-input {
-                height: 12rem;
+                height: 100%;
             }
         `,
     ];

@@ -16,16 +16,15 @@ export class DateSheet extends LitElement {
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        return html`<header>Select a date</header>
-            <date-sheet
-                .date=${data.date}
-                .type=${data.type}
-                @monthSelect=${(e: any) =>
-                    data.type === 'month' && submit(e.detail)}
-                @dateSelect=${(e: any) =>
-                    (data.type === 'default' || data.type === undefined) &&
-                    submit(e.detail)}
-            ></date-sheet>`;
+        return html`<date-sheet
+            .date=${data.date}
+            .type=${data.type}
+            @monthSelect=${(e: any) =>
+                data.type === 'month' && submit(e.detail)}
+            @dateSelect=${(e: any) =>
+                (data.type === 'default' || data.type === undefined) &&
+                submit(e.detail)}
+        ></date-sheet>`;
     }
     protected firstUpdated() {
         this.date = this.date || new Date();

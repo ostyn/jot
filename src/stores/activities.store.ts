@@ -53,7 +53,11 @@ class ActivityStore {
         return this.map[id];
     }
     public getCategories() {
-        return [...new Set(this.all.map((a) => a.category || ''))].sort();
+        return [
+            ...new Set(
+                this.all.map((a) => a.category).filter((i) => i !== undefined)
+            ),
+        ].sort();
     }
     constructor() {
         makeObservable(this);

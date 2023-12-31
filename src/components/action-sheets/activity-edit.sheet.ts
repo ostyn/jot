@@ -40,6 +40,9 @@ export class ActivityEditSheet extends MobxLitElement {
         this.isCustom = false;
     }
     changeCategory(category: string) {
+        this.shadowRoot
+            ?.querySelector('.category-control')
+            ?.removeAttribute('open');
         this.localActivity = { ...this.localActivity, category };
     }
     selectCustom() {
@@ -90,6 +93,30 @@ export class ActivityEditSheet extends MobxLitElement {
                         ${this.localActivity?.category || 'category'}
                     </summary>
                     <ul role="listbox" class="option-list">
+                        <li @click=${this.selectCustom}>
+                            <label>
+                                <input
+                                    class="radio-button"
+                                    type="radio"
+                                    name="category"
+                                />
+                                ${this.isCustom
+                                    ? html`<input
+                                          ${ref(this.inputRef)}
+                                          class="custom-category"
+                                          type="text"
+                                          @change=${(e: any) =>
+                                              this.changeCategory(
+                                                  e.target.value
+                                              )}
+                                          .value=${this.localActivity
+                                              .category || ''}
+                                          placeholder="category"
+                                          focus="true"
+                                      />`
+                                    : html`<span>** new category **</span>`}
+                            </label>
+                        </li>
                         ${activities.getCategories().map(
                             (category) => html`
                                 <li
@@ -114,31 +141,6 @@ export class ActivityEditSheet extends MobxLitElement {
                                 </li>
                             `
                         )}
-
-                        <li @click=${this.selectCustom}>
-                            <label>
-                                <input
-                                    class="radio-button"
-                                    type="radio"
-                                    name="category"
-                                />
-                                ${this.isCustom
-                                    ? html`<input
-                                          ${ref(this.inputRef)}
-                                          class="custom-category"
-                                          type="text"
-                                          @change=${(e: any) =>
-                                              this.changeCategory(
-                                                  e.target.value
-                                              )}
-                                          .value=${this.localActivity
-                                              .category || ''}
-                                          placeholder="category"
-                                          focus="true"
-                                      />`
-                                    : html`<span>new category</span>`}
-                            </label>
-                        </li>
                     </ul>
                 </details>
                 <label class="inline archiveSwitch"

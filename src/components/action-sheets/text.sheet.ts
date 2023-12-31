@@ -48,7 +48,7 @@ export class TextSheet extends LitElement {
         base,
         css`
             .text-prompt-input {
-                height: 100%;
+                height: calc(100% - 1.5rem);
             }
         `,
     ];

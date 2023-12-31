@@ -41,7 +41,7 @@ export class ActionSheet extends LitElement {
         data?: any;
         onClose?: (data?: any) => void;
     }) {
-        disableBodyScroll(this);
+        disableBodyScroll(this, { allowTouchMove: () => true });
         this.data = options.data;
         this.type = options.type;
         this.onClose = options.onClose;

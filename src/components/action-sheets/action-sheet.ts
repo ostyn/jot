@@ -8,6 +8,7 @@ import {
 } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
+import TinyGesture from 'tinygesture';
 import { base } from '../../baseStyles';
 
 export let Sheet: ActionSheet;
@@ -65,6 +66,17 @@ export class ActionSheet extends LitElement {
     protected firstUpdated(
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
+        const gesture = new TinyGesture(this, {});
+        gesture.on('swipeup', (e) => {
+            this.setSheetHeight(100);
+        });
+        gesture.on('swipedown', (e) => {
+            if (this.sheetHeight <= 50) {
+                this.close();
+            } else {
+                this.setSheetHeight(50);
+            }
+        });
         this.sheet = this.shadowRoot!.querySelector('#sheet') as HTMLElement;
         this.sheetContents = this.sheet.querySelector(
             '.contents'
@@ -75,7 +87,7 @@ export class ActionSheet extends LitElement {
 
         window.addEventListener('keyup', (event: any) => {
             if (event.key === 'Escape') {
-                this.setIsSheetShown(false);
+                this.close();
             }
         });
 
@@ -106,7 +118,7 @@ export class ActionSheet extends LitElement {
             draggableArea.style.cursor = document.body.style.cursor = '';
 
             if (this.sheetHeight < 25) {
-                this.setIsSheetShown(false);
+                this.close();
             } else if (this.sheetHeight > 75) {
                 this.setSheetHeight(100);
             } else {

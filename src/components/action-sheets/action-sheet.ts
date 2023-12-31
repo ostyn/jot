@@ -71,7 +71,7 @@ export class ActionSheet extends LitElement {
             '.contents'
         ) as HTMLElement;
         const draggableArea = this.sheet.querySelector(
-            '.draggable-area'
+            '.controls'
         ) as HTMLElement;
         const gesture = new TinyGesture(draggableArea, {});
         gesture.on('swipeup', () => {
@@ -221,7 +221,6 @@ export class ActionSheet extends LitElement {
             }
 
             .sheet .contents {
-                padding-top: 1rem;
                 border-radius: 1rem 1rem 0 0;
                 background: var(--card-background-color);
 
@@ -253,13 +252,17 @@ export class ActionSheet extends LitElement {
             }
 
             .sheet .controls {
-                position: fixed;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 1.25rem;
                 top: calc(0.5rem - 0.125rem);
-                left: calc(50% - 27px);
+                width: 100%;
+                text-align: center;
+                text-align: -webkit-center;
             }
 
             .sheet .draggable-area {
-                height: 1.5rem;
                 width: 3rem;
                 cursor: grab;
             }

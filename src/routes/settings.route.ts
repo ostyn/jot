@@ -80,7 +80,7 @@ export class SettingsRoute extends MobxLitElement {
             <section>
                 <header>Data</header>
                 <button @click=${() => Router.go('backup')}>
-                    <jot-icon name="Cloud"></jot-icon>Cloud Backup
+                    <jot-icon name="UploadCloud"></jot-icon>Cloud Backup
                 </button>
 
                 <div class="button-group">

@@ -55,35 +55,39 @@ export class SettingsRoute extends MobxLitElement {
         return html`<article>
             <header>Settings</header>
             <section>
-                <header>General</header>
-                <label class="inline"
-                    ><input
-                        .checked=${settings.isDark}
-                        type="checkbox"
-                        role="switch"
-                        @change=${() => settings.setIsDark(!settings.isDark)}
-                    />
-                    Dark Mode
-                </label>
-                <label class="inline"
-                    ><input
-                        .checked=${settings.showArchived}
-                        type="checkbox"
-                        role="switch"
-                        @change=${() =>
-                            settings.setShowArchived(!settings.showArchived)}
-                    />
-                    Show Archived
-                </label>
+                <h2>General</h2>
+                <div class="settings-column">
+                    <label class="inline"
+                        ><input
+                            .checked=${settings.isDark}
+                            type="checkbox"
+                            role="switch"
+                            @change=${() =>
+                                settings.setIsDark(!settings.isDark)}
+                        />
+                        Dark Mode
+                    </label>
+                    <label class="inline"
+                        ><input
+                            .checked=${settings.showArchived}
+                            type="checkbox"
+                            role="switch"
+                            @change=${() =>
+                                settings.setShowArchived(
+                                    !settings.showArchived
+                                )}
+                        />
+                        Show Archived Activities
+                    </label>
+                </div>
             </section>
-            <hr />
             <section>
-                <header>Data</header>
+                <h2>Data</h2>
                 <button @click=${() => Router.go('backup')}>
                     <jot-icon name="UploadCloud"></jot-icon>Cloud Backup
                 </button>
 
-                <div class="button-group">
+                <div class="settings-row">
                     <button @click=${this.exportBackup}>
                         <jot-icon name="Share"></jot-icon>Export Backup
                     </button>
@@ -120,9 +124,13 @@ export class SettingsRoute extends MobxLitElement {
                 align-items: center;
                 gap: 8px;
             }
-            .button-group {
+            .settings-row,
+            .settings-column {
                 display: flex;
                 gap: 0.75rem;
+            }
+            .settings-column {
+                flex-direction: column;
             }
         `,
     ];

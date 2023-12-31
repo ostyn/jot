@@ -67,10 +67,10 @@ export class ActionSheet extends LitElement {
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
         const gesture = new TinyGesture(this, {});
-        gesture.on('swipeup', (e) => {
+        gesture.on('swipeup', () => {
             this.setSheetHeight(100);
         });
-        gesture.on('swipedown', (e) => {
+        gesture.on('swipedown', () => {
             if (this.sheetHeight <= 50) {
                 this.close();
             } else {

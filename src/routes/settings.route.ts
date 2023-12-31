@@ -2,6 +2,7 @@ import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
+import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
@@ -12,23 +13,28 @@ import { settings } from '../stores/settings.store';
 export class SettingsRoute extends MobxLitElement {
     sub: any;
     exportBackup() {
-        const backupEntries = entries.all.map((entry) => {
-            const newEntry: any = { ...entry };
-            delete newEntry.dateObject;
-            return newEntry;
-        });
-        this.download(
-            `Jot Backup ${new Date().toUTCString()}.json`,
-            JSON.stringify(
-                {
-                    entries: backupEntries,
-                    activities: activities.all,
-                    moods: moods.userCreated,
-                },
-                undefined,
-                2
-            )
-        );
+        if (confirm('Download complete backup file of all personal data?')) {
+            const backupEntries = entries.all.map((entry) => {
+                const newEntry: any = { ...entry };
+                delete newEntry.dateObject;
+                return newEntry;
+            });
+            this.download(
+                `Jot Backup ${format(
+                    new Date(),
+                    'yyyy-dd-MM @ HH.mm.ss'
+                )}.json`,
+                JSON.stringify(
+                    {
+                        entries: backupEntries,
+                        activities: activities.all,
+                        moods: moods.userCreated,
+                    },
+                    undefined,
+                    2
+                )
+            );
+        }
     }
     download(filename: string, text: string) {
         var element = document.createElement('a');
@@ -59,7 +65,6 @@ export class SettingsRoute extends MobxLitElement {
                     />
                     Dark Mode
                 </label>
-                <hr />
                 <label class="inline"
                     ><input
                         .checked=${settings.showArchived}
@@ -71,37 +76,36 @@ export class SettingsRoute extends MobxLitElement {
                     Show Archived
                 </label>
             </section>
+            <hr />
             <section>
-                <header>Backup</header>
+                <header>Data</header>
                 <button @click=${() => Router.go('backup')}>
-                    <jot-icon name="Wrench"></jot-icon>Manage Backup
+                    <jot-icon name="Cloud"></jot-icon>Cloud Backup
                 </button>
-            </section>
-            <section>
-                <header>Import</header>
-                <button @click=${() => Router.go('import')}>
-                    <jot-icon name="Inbox"></jot-icon>Import JSON
-                </button>
+
+                <div class="button-group">
+                    <button @click=${this.exportBackup}>
+                        <jot-icon name="Share"></jot-icon>Export Backup
+                    </button>
+                    <button @click=${() => Router.go('import')}>
+                        <jot-icon name="Import"></jot-icon>Import Backup
+                    </button>
+                </div>
                 <button @click=${() => Router.go('import-daylio')}>
-                    <jot-icon name="Inbox"></jot-icon>Import Daylio
+                    <jot-icon name="SmilePlus"></jot-icon>Import from Daylio
                 </button>
-            </section>
-            <section>
-                <header>Export</header>
-                <button @click=${this.exportBackup}>
-                    <jot-icon name="Archive"></jot-icon>Export JSON
-                </button>
-            </section>
-            <section>
-                <header>Reset</header>
                 <button class="secondary" @click=${this.resetAll}>
-                    <jot-icon name="Trash"></jot-icon>Delete All
+                    <jot-icon name="Trash2"></jot-icon>Wipe Data
                 </button>
             </section>
         </article>`;
     }
     resetAll() {
-        if (confirm('Delete all data?')) {
+        if (
+            confirm(
+                'Are you sure you want to delete all your data? This cannot be reversed without a valid backup.'
+            )
+        ) {
             entries.reset();
             activities.reset();
             moods.reset();
@@ -115,6 +119,10 @@ export class SettingsRoute extends MobxLitElement {
                 place-content: center;
                 align-items: center;
                 gap: 8px;
+            }
+            .button-group {
+                display: flex;
+                gap: 0.75rem;
             }
         `,
     ];

@@ -133,7 +133,7 @@ export class BackupRoute extends LitElement {
                             class="inline iconButton"
                         >
                             ${!this.isDeletingId[backup.id]
-                                ? html`<jot-icon name="Trash"></jot-icon>`
+                                ? html`<jot-icon name="Trash2"></jot-icon>`
                                 : nothing}
                             Delete
                         </button>

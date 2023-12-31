@@ -17,7 +17,7 @@
         "@picocss/pico": "^1.5.10",
         "@uvarov.frontend/vanilla-calendar": "^2.7.2",
         "@vaadin/router": "^1.7.5",
-        "body-scroll-lock": "^4.0.0-beta.0",
+        "body-scroll-lock-upgrade": "^1.1.0",
         "date-fns": "^2.30.0",
         "date-fns-tz": "^2.0.0",
         "dexie": "^3.2.4",

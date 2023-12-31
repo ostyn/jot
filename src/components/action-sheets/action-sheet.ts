@@ -7,7 +7,7 @@ import {
     TemplateResult,
 } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
+import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock-upgrade';
 import TinyGesture from 'tinygesture';
 import { base } from '../../baseStyles';
 

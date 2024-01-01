@@ -13,6 +13,7 @@ export interface Entry {
 export type ActivityDetail = number | string[];
 export enum EditTools {
     'WEB' = 'WEB',
+    'JOT' = 'JOT',
     'DAYLIO_IMPORT' = 'DAYLIO_IMPORT',
     'JSON_IMPORT' = 'JSON_IMPORT',
 }

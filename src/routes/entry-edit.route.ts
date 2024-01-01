@@ -131,8 +131,8 @@ export class EntryEditRoute extends MobxLitElement {
                 date: '',
                 mood: '0',
                 note: '',
-                createdBy: EditTools.WEB,
-                lastUpdatedBy: EditTools.WEB,
+                createdBy: EditTools.JOT,
+                lastUpdatedBy: EditTools.JOT,
             };
         }
         this.store.setEntry(this.originalEntry as Entry);
@@ -230,9 +230,9 @@ export class EntryEditRoute extends MobxLitElement {
                             note: this.store.note,
                             mood: this.store.mood,
                             date: this.store.date,
-                            lastUpdatedBy: EditTools.WEB,
+                            lastUpdatedBy: EditTools.JOT,
                             dateObject: new Date(this.store.date),
-                            createdBy: EditTools.WEB,
+                            createdBy: EditTools.JOT,
                         });
                         Router.go('/');
                     }}

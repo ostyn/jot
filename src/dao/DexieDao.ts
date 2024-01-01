@@ -33,9 +33,9 @@ export class DexieDao implements JotDao {
         if (!passedEntry.created) {
             passedEntry.created = passedEntry.updated;
         }
-        passedEntry.lastUpdatedBy = EditTools.WEB;
+        passedEntry.lastUpdatedBy = EditTools.JOT;
         if (!passedEntry.createdBy) {
-            passedEntry.createdBy = EditTools.WEB;
+            passedEntry.createdBy = EditTools.JOT;
         }
         const newLocal = db.table(this.name).put(passedEntry);
         newLocal.then(() => {

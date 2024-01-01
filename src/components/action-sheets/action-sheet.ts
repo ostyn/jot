@@ -7,6 +7,8 @@ import {
     TemplateResult,
 } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { createRef, ref, Ref } from 'lit/directives/ref.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock-upgrade';
 import TinyGesture from 'tinygesture';
 import { base } from '../../baseStyles';
@@ -15,9 +17,9 @@ export let Sheet: ActionSheet;
 @customElement('action-sheet')
 export class ActionSheet extends LitElement {
     @state() dragPosition: number | undefined;
-    @state() sheetHeight!: number; // in vh
-    sheetContents!: HTMLElement;
-    sheet!: HTMLElement;
+    @state() sheetHeight: number = 0; // in vh
+    sheetContents: Ref<HTMLInputElement> = createRef();
+    controls: Ref<HTMLInputElement> = createRef();
     @state()
     data: any;
     onClose?: (data?: any) => void;
@@ -50,13 +52,12 @@ export class ActionSheet extends LitElement {
     }
     private setSheetHeight = (value: number) => {
         this.sheetHeight = Math.max(0, Math.min(100, value));
-        this.sheetContents.style.height = `${this.sheetHeight}vh`;
-
-        if (this.sheetHeight === 100) {
-            this.sheetContents.classList.add('fullscreen');
-        } else {
-            this.sheetContents.classList.remove('fullscreen');
-        }
+        if (this.sheetContents.value)
+            if (this.sheetHeight === 100) {
+                this.sheetContents.value.classList.add('fullscreen');
+            } else {
+                this.sheetContents.value.classList.remove('fullscreen');
+            }
     };
 
     private setIsSheetShown = (isShown: boolean) => {
@@ -66,24 +67,8 @@ export class ActionSheet extends LitElement {
     protected firstUpdated(
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
-        this.sheet = this.shadowRoot!.querySelector('#sheet') as HTMLElement;
-        this.sheetContents = this.sheet.querySelector(
-            '.contents'
-        ) as HTMLElement;
-        const draggableArea = this.sheet.querySelector(
-            '.controls'
-        ) as HTMLElement;
-        const gesture = new TinyGesture(draggableArea, {});
-        gesture.on('swipeup', () => {
-            this.setSheetHeight(100);
-        });
-        gesture.on('swipedown', () => {
-            if (this.sheetHeight <= 50) {
-                this.close();
-            } else {
-                this.setSheetHeight(50);
-            }
-        });
+        const gesture = new TinyGesture(this.controls.value || this, {});
+
         window.addEventListener('keyup', (event: any) => {
             if (event.key === 'Escape') {
                 this.close();
@@ -95,9 +80,6 @@ export class ActionSheet extends LitElement {
 
         const onDragStart = (event: any) => {
             this.dragPosition = touchPosition(event).pageY;
-            this.sheetContents.classList.add('not-selectable');
-            draggableArea.style.cursor = document.body.style.cursor =
-                'grabbing';
         };
 
         const onDragMove = (event: any) => {
@@ -113,8 +95,6 @@ export class ActionSheet extends LitElement {
 
         const onDragEnd = () => {
             this.dragPosition = undefined;
-            this.sheetContents.classList.remove('not-selectable');
-            draggableArea.style.cursor = document.body.style.cursor = '';
 
             if (this.sheetHeight < 25) {
                 this.close();
@@ -127,6 +107,16 @@ export class ActionSheet extends LitElement {
         gesture.on('panstart', onDragStart);
         gesture.on('panmove', onDragMove);
         gesture.on('panend', onDragEnd);
+        gesture.on('swipeup', () => {
+            this.setSheetHeight(100);
+        });
+        gesture.on('swipedown', () => {
+            if (this.sheetHeight <= 50) {
+                this.close();
+            } else {
+                this.setSheetHeight(50);
+            }
+        });
     }
     public close(data?: any, submittingData = false) {
         enableBodyScroll(this);
@@ -141,16 +131,15 @@ export class ActionSheet extends LitElement {
 
     render() {
         return html`<span>
-            <div
-                id="sheet"
-                class="sheet"
-                aria-hidden=${!this.isShown}
-                role="dialog"
-            >
+            <div class="sheet" aria-hidden=${!this.isShown} role="dialog">
                 <div class="overlay" @click=${this.close}></div>
 
-                <div class="contents">
-                    <header class="controls">
+                <div
+                    class="contents"
+                    ${ref(this.sheetContents)}
+                    style=${styleMap({ height: `${this.sheetHeight}vh` })}
+                >
+                    <header class="controls" ${ref(this.controls)}>
                         <div class="draggable-area">
                             <div class="draggable-thumb"></div>
                         </div>
@@ -231,12 +220,6 @@ export class ActionSheet extends LitElement {
                 height: 30vh;
             }
 
-            .sheet .contents:not(.not-selectable) {
-                transition:
-                    var(--default-transitions),
-                    height 0.3s;
-            }
-
             .sheet .contents.fullscreen {
                 border-radius: 0;
             }
@@ -246,6 +229,7 @@ export class ActionSheet extends LitElement {
             }
 
             .sheet .controls {
+                cursor: grabbing;
                 display: flex;
                 align-items: center;
                 justify-content: center;

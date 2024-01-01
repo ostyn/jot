@@ -249,7 +249,7 @@ export class ActionSheet extends LitElement {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                min-height: 1.25rem;
+                min-height: 2rem;
                 top: calc(0.5rem - 0.125rem);
                 width: 100%;
                 text-align: center;

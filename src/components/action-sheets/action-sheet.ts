@@ -124,15 +124,9 @@ export class ActionSheet extends LitElement {
                 this.setSheetHeight(50);
             }
         };
-
-        draggableArea.addEventListener('mousedown', onDragStart);
-        draggableArea.addEventListener('touchstart', onDragStart);
-
-        window.addEventListener('mousemove', onDragMove);
-        window.addEventListener('touchmove', onDragMove);
-
-        window.addEventListener('mouseup', onDragEnd);
-        window.addEventListener('touchend', onDragEnd);
+        gesture.on('panstart', onDragStart);
+        gesture.on('panmove', onDragMove);
+        gesture.on('panend', onDragEnd);
     }
     public close(data?: any, submittingData = false) {
         enableBodyScroll(this);

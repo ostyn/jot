@@ -43,12 +43,13 @@ export class ActionSheet extends LitElement {
         data?: any;
         onClose?: (data?: any) => void;
     }) {
+        if (this.isShown) this.close();
         disableBodyScroll(this, { allowTouchMove: () => true });
         this.data = options.data;
         this.type = options.type;
         this.onClose = options.onClose;
         this.setSheetHeight(50);
-        this.setIsSheetShown(true);
+        this.isShown = true;
     }
     private setSheetHeight = (value: number) => {
         this.sheetHeight = Math.max(0, Math.min(100, value));
@@ -58,10 +59,6 @@ export class ActionSheet extends LitElement {
             } else {
                 this.sheetContents.value.classList.remove('fullscreen');
             }
-    };
-
-    private setIsSheetShown = (isShown: boolean) => {
-        this.isShown = isShown;
     };
 
     protected firstUpdated(
@@ -120,7 +117,7 @@ export class ActionSheet extends LitElement {
     }
     public close(data?: any, submittingData = false) {
         enableBodyScroll(this);
-        this.setIsSheetShown(false);
+        this.isShown = false;
         if (submittingData && this.onClose) this.onClose(data);
     }
     private getActionSheet() {

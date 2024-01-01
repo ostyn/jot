@@ -113,83 +113,90 @@ export class ImportDaylioRoute extends LitElement {
                     import
                 </button>
             </article>
-            <article>
-                <hgroup>
-                    <h2>Moods</h2>
-                    <h3>
-                        ${this.unassignedMoods
-                            ? html`${this.unassignedMoods} remaining`
-                            : nothing}
-                    </h3>
-                </hgroup>
-                ${this.moodsToMap.map(
-                    (mood) =>
-                        html`<span
-                            class=${'mood-mappings ' +
-                            (this.moodMappings[mood] ? 'mapped' : '')}
-                            @click=${() =>
-                                this.openMoodPrompt(
-                                    this.moodMappings[mood],
-                                    mood
-                                )}
-                        >
-                            ${mood}
-                            <jot-icon name="ArrowRight"></jot-icon>
-                            ${this.moodMappings[mood]
-                                ? html`
-                                      ${this.getMood(this.moodMappings[mood])
-                                          ?.emoji}
-                                  `
-                                : html`<jot-icon
-                                      name="AlertTriangle"
-                                  ></jot-icon>`}
-                        </span>`
-                )}
-            </article>
-            <article>
-                <hgroup>
-                    <h2>Activities</h2>
-                    <h3>
-                        ${this.unassignedActivities
-                            ? `${this.unassignedActivities} remaining`
-                            : nothing}
-                    </h3>
-                </hgroup>
-                ${this.activitiesToMap.map(
-                    (activity) =>
-                        html`<span
-                            class=${'activity-mappings ' +
-                            (this.activityMappings[activity] ? 'mapped' : '')}
-                            @click=${() =>
-                                this.openActivityPrompt(
-                                    this.activityMappings[activity],
-                                    activity
-                                )}
-                        >
-                            ${activity}
-                            <jot-icon name="ArrowRight"></jot-icon>
-                            ${this.activityMappings[activity]
-                                ? html`
-                                      ${this.getActivity(
-                                          this.activityMappings[activity]
-                                      )?.emoji}
-                                  `
-                                : html`<jot-icon
-                                      name="AlertTriangle"
-                                  ></jot-icon>`}
-                        </span>`
-                )}
-            </article>
-            <article>
-                <header>Preview</header>
-                ${this.entries.map(
-                    (e) =>
-                        html`<entry-component
-                            class="import-entry"
-                            .entry=${e}
-                        ></entry-component>`
-                )}
-            </article>`;
+            ${this.csv
+                ? html`<article>
+                          <hgroup>
+                              <h2>Moods</h2>
+                              <h3>
+                                  ${this.unassignedMoods
+                                      ? html`${this.unassignedMoods} remaining`
+                                      : nothing}
+                              </h3>
+                          </hgroup>
+                          ${this.moodsToMap.map(
+                              (mood) =>
+                                  html`<span
+                                      class=${'mood-mappings ' +
+                                      (this.moodMappings[mood] ? 'mapped' : '')}
+                                      @click=${() =>
+                                          this.openMoodPrompt(
+                                              this.moodMappings[mood],
+                                              mood
+                                          )}
+                                  >
+                                      ${mood}
+                                      <jot-icon name="ArrowRight"></jot-icon>
+                                      ${this.moodMappings[mood]
+                                          ? html`
+                                                ${this.getMood(
+                                                    this.moodMappings[mood]
+                                                )?.emoji}
+                                            `
+                                          : html`<jot-icon
+                                                name="AlertTriangle"
+                                            ></jot-icon>`}
+                                  </span>`
+                          )}
+                      </article>
+                      <article>
+                          <hgroup>
+                              <h2>Activities</h2>
+                              <h3>
+                                  ${this.unassignedActivities
+                                      ? `${this.unassignedActivities} remaining`
+                                      : nothing}
+                              </h3>
+                          </hgroup>
+                          ${this.activitiesToMap.map(
+                              (activity) =>
+                                  html`<span
+                                      class=${'activity-mappings ' +
+                                      (this.activityMappings[activity]
+                                          ? 'mapped'
+                                          : '')}
+                                      @click=${() =>
+                                          this.openActivityPrompt(
+                                              this.activityMappings[activity],
+                                              activity
+                                          )}
+                                  >
+                                      ${activity}
+                                      <jot-icon name="ArrowRight"></jot-icon>
+                                      ${this.activityMappings[activity]
+                                          ? html`
+                                                ${this.getActivity(
+                                                    this.activityMappings[
+                                                        activity
+                                                    ]
+                                                )?.emoji}
+                                            `
+                                          : html`<jot-icon
+                                                name="AlertTriangle"
+                                            ></jot-icon>`}
+                                  </span>`
+                          )}
+                      </article>
+                      <article>
+                          <header>Preview</header>
+                          ${this.entries.map(
+                              (e) =>
+                                  html`<entry-component
+                                      class="import-entry"
+                                      .entry=${e}
+                                  ></entry-component>`
+                          )}
+                      </article>`
+                : nothing} `;
     }
     static styles = [
         base,

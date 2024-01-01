@@ -10,12 +10,15 @@ activitiesData.forEach((activity) => {
 });
 class ActivityStore {
     @observable
+    public allVisibleActivities: Activity[] = activitiesData;
+    @observable
     public all: Activity[] = activitiesData;
     @observable
     map: any = activitiesMap;
     @action.bound
     public async reset() {
         this.all = [];
+        this.allVisibleActivities = [];
         this.map = {};
         activityDao.reset();
     }
@@ -36,15 +39,17 @@ class ActivityStore {
     }
     @action.bound
     public async refreshActivities() {
-        let updatedActivities: Activity[] = await activityDao.getItems();
+        let allActivities: Activity[] = await activityDao.getItems();
+        let allVisibleActivities = [...allActivities];
         if (!settings.showArchived)
-            updatedActivities = updatedActivities.filter(
+            allVisibleActivities = allVisibleActivities.filter(
                 (activity) => !activity.isArchived
             );
         runInAction(() => {
-            this.all = updatedActivities;
+            this.allVisibleActivities = allVisibleActivities;
+            this.all = allActivities;
             this.map = {};
-            this.all.forEach((activity) => {
+            this.allVisibleActivities.forEach((activity) => {
                 this.map[activity.id] = activity;
             });
         });
@@ -55,7 +60,9 @@ class ActivityStore {
     public getCategories() {
         return [
             ...new Set(
-                this.all.map((a) => a.category).filter((i) => i !== undefined)
+                this.allVisibleActivities
+                    .map((a) => a.category)
+                    .filter((i) => i !== undefined)
             ),
         ].sort();
     }

@@ -31,7 +31,7 @@ export class ActivityGridComponent extends MobxLitElement {
     }
     activitiesChanged() {
         this.categoryToActivityList = new Map();
-        activities.all.forEach((activity: Activity) => {
+        activities.allVisibleActivities.forEach((activity: Activity) => {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&

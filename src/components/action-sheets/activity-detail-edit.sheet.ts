@@ -168,6 +168,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                   e.detail.text
                               )}
                           .activityId=${this.activityId}
+                          .filter=${this.newItem}
                       ></activity-detail-stats>
                   `
                 : html`<h2>Amount</h2>

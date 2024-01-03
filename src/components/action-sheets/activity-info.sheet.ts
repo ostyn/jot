@@ -27,6 +27,8 @@ export class ActivityInfoSheet extends LitElement {
     year?: number;
     @state()
     dateValues: any = {};
+    @state()
+    filter = '';
     static getActionSheet(
         data: any,
         _submit: (data: any) => void
@@ -152,10 +154,18 @@ export class ActivityInfoSheet extends LitElement {
                         </li>`
                 )}
             </ul>
-
+            <input
+                type="search"
+                @input=${(e: any) => {
+                    this.filter = e.target.value;
+                }}
+                placeholder="search..."
+            />
             <activity-detail-stats
-                @activityDetailClick=${console.log}
+                @activityDetailClick=${(e: any) =>
+                    this.onDateSelect(e.detail.dates[0].entry.dateObject)}
                 .activityId=${this.activityId}
+                .filter=${this.filter}
             ></activity-detail-stats>
         `;
     }

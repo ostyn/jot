@@ -13,7 +13,7 @@ export class ActivityDetailStatsComponent extends LitElement {
     mfuDetails?: StatsDetailEntry[];
     @state()
     mruDetails?: StatsDetailEntry[];
-    @state()
+    @property()
     filter: string = '';
     showLists: boolean = true;
     setupDetailLists() {
@@ -30,55 +30,46 @@ export class ActivityDetailStatsComponent extends LitElement {
     }
     render() {
         this.setupDetailLists();
-        return html` <input
-                type="search"
-                @input=${(e: any) => {
-                    this.filter = e.target.value;
-                }}
-                placeholder="search..."
-            />
-            <div class="stats-block">
-                <div class="stats-column">
-                    ${this.mfuDetails?.map(
-                        (detail) =>
-                            html`<div
-                                @click=${() =>
-                                    dispatchEvent(
-                                        this,
-                                        Events.activityDetailClick,
-                                        detail
-                                    )}
-                                class="stats-entry"
-                            >
-                                <span class="stats-entry-datapoint"
-                                    >${detail.count}</span
-                                ><activity-detail
-                                    >${detail.text}</activity-detail
-                                >
-                            </div>`
-                    )}
-                </div>
-                <div class="stats-column">
-                    ${this.mruDetails?.map(
-                        (detail) =>
-                            html` <div
-                                @click=${() =>
-                                    dispatchEvent(
-                                        this,
-                                        Events.activityDetailClick,
-                                        detail
-                                    )}
-                                class="stats-entry"
-                            >
-                                <span class="stats-entry-datapoint"
-                                    >${detail.dates[0].date}</span
-                                ><activity-detail
-                                    >${detail.text}</activity-detail
-                                >
-                            </div>`
-                    )}
-                </div>
-            </div>`;
+        return html` <div class="stats-block">
+            <div class="stats-column">
+                ${this.mfuDetails?.map(
+                    (detail) =>
+                        html`<div
+                            @click=${() =>
+                                dispatchEvent(
+                                    this,
+                                    Events.activityDetailClick,
+                                    detail
+                                )}
+                            class="stats-entry"
+                        >
+                            <span class="stats-entry-datapoint">
+                                ${detail.count}
+                            </span>
+                            <activity-detail>${detail.text}</activity-detail>
+                        </div>`
+                )}
+            </div>
+            <div class="stats-column">
+                ${this.mruDetails?.map(
+                    (detail) =>
+                        html` <div
+                            @click=${() =>
+                                dispatchEvent(
+                                    this,
+                                    Events.activityDetailClick,
+                                    detail
+                                )}
+                            class="stats-entry"
+                        >
+                            <span class="stats-entry-datapoint">
+                                ${detail.dates[0].date}
+                            </span>
+                            <activity-detail>${detail.text}</activity-detail>
+                        </div>`
+                )}
+            </div>
+        </div>`;
     }
     static styles = [
         base,

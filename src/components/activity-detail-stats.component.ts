@@ -15,12 +15,7 @@ export class ActivityDetailStatsComponent extends LitElement {
     mruDetails?: StatsDetailEntry[];
     @property()
     filter: string = '';
-    showLists: boolean = true;
     setupDetailLists() {
-        if (!activities.stats.get(this.activityId)?.detailsUsed) {
-            this.showLists = false;
-            return;
-        }
         let detailStats = activities.getActivityDetailStats(
             this.activityId,
             this.filter

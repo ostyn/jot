@@ -1,4 +1,4 @@
-import { css, html, LitElement, TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { getDaysInMonth } from 'date-fns';
@@ -100,6 +100,7 @@ export class ActivityInfoSheet extends LitElement {
         return html`
             <header class="activity-info-header">
                 <activity-component
+                    .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component
                 ><span>
@@ -154,19 +155,23 @@ export class ActivityInfoSheet extends LitElement {
                         </li>`
                 )}
             </ul>
-            <input
-                type="search"
-                @input=${(e: any) => {
-                    this.filter = e.target.value;
-                }}
-                placeholder="search..."
-            />
-            <activity-detail-stats
-                @activityDetailClick=${(e: any) =>
-                    this.onDateSelect(e.detail.dates[0].entry.dateObject)}
-                .activityId=${this.activityId}
-                .filter=${this.filter}
-            ></activity-detail-stats>
+            ${activities.stats.get(this.activityId)?.detailsUsed
+                ? html`<input
+                          type="search"
+                          @input=${(e: any) => {
+                              this.filter = e.target.value;
+                          }}
+                          placeholder="search..."
+                      />
+                      <activity-detail-stats
+                          @activityDetailClick=${(e: any) =>
+                              this.onDateSelect(
+                                  e.detail.dates[0].entry.dateObject
+                              )}
+                          .activityId=${this.activityId}
+                          .filter=${this.filter}
+                      ></activity-detail-stats>`
+                : nothing}
         `;
     }
     static styles = [

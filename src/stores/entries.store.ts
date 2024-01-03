@@ -1,55 +1,11 @@
-import {
-    action,
-    computed,
-    makeObservable,
-    observable,
-    runInAction,
-} from 'mobx';
+import { action, makeObservable, observable, runInAction } from 'mobx';
 import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
-import { StatsActivityEntry } from '../interfaces/stats.interface';
 
 const entriesData: Entry[] = await entryDao.getItems();
 class EntriesStore {
     @observable
     public all: Entry[] = entriesData;
-    @computed
-    public get stats() {
-        const activityStats = new Map<string, StatsActivityEntry>();
-        let dates: { date: string; entry: Entry }[] = [];
-        this.all.forEach((entry: Entry) => {
-            dates.push({ date: entry.date, entry });
-            for (let [activityId, detail] of Object.entries(entry.activities)) {
-                if (!activityStats.has(activityId)) {
-                    activityStats.set(activityId, { count: 0, dates: [] });
-                }
-                let activity: any = activityStats.get(activityId);
-                activity.dates.push({ date: entry.date, entry });
-                if (Array.isArray(detail)) {
-                    if (!activity.detailsUsed) {
-                        activity.detailsUsed = new Map();
-                    }
-                    let currentActivityDetails = activity.detailsUsed;
-                    detail.forEach((detailItem) => {
-                        if (!currentActivityDetails.has(detailItem))
-                            currentActivityDetails.set(detailItem, {
-                                count: 0,
-                                text: detailItem,
-                                dates: [],
-                            });
-                        let currentDetailItem =
-                            currentActivityDetails.get(detailItem);
-                        currentDetailItem.count++;
-                        currentDetailItem.dates.push({
-                            date: entry.date,
-                            entry,
-                        });
-                    });
-                }
-            }
-        });
-        return activityStats;
-    }
     @action.bound
     public async reset() {
         this.all = [];

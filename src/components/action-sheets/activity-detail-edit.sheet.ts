@@ -161,6 +161,14 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                   : nothing}
                           </form>
                       </div>
+                      <activity-detail-stats
+                          @activityDetailClick=${(e: any) =>
+                              this.store?.addToArrayActivityDetail(
+                                  this.activityId,
+                                  e.detail.text
+                              )}
+                          .activityId=${this.activityId}
+                      ></activity-detail-stats>
                   `
                 : html`<h2>Amount</h2>
                       <section class="content">

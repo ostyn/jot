@@ -1,6 +1,18 @@
-import { action, makeObservable, observable, runInAction } from 'mobx';
+import {
+    action,
+    computed,
+    makeObservable,
+    observable,
+    runInAction,
+} from 'mobx';
 import { activityDao } from '../dao/ActivityDao';
 import { Activity } from '../interfaces/activity.interface';
+import { Entry } from '../interfaces/entry.interface';
+import {
+    StatsActivityEntry,
+    StatsDetailEntry,
+} from '../interfaces/stats.interface';
+import { entries } from './entries.store';
 import { settings } from './settings.store';
 
 const activitiesData: Activity[] = await activityDao.getItems();
@@ -53,6 +65,96 @@ class ActivityStore {
                 this.map[activity.id] = activity;
             });
         });
+    }
+    getActivityDetailStats(
+        activityId: string,
+        filter: string
+    ): {
+        mfuDetails: StatsDetailEntry[];
+        mruDetails: StatsDetailEntry[];
+    } {
+        let activityDetailStats: {
+            mfuDetails: StatsDetailEntry[];
+            mruDetails: StatsDetailEntry[];
+        } = {
+            mfuDetails: [],
+            mruDetails: [],
+        };
+
+        const map: Map<string, StatsDetailEntry> =
+            activities.stats.get(activityId)?.detailsUsed || new Map();
+        activityDetailStats.mfuDetails = Array.from(map.values()).filter(
+            (frequentlyUsedDetail) =>
+                frequentlyUsedDetail.text
+                    .toLowerCase()
+                    .includes(filter.toLowerCase())
+        );
+        activityDetailStats.mfuDetails = activityDetailStats.mfuDetails.sort(
+            (a, b) => {
+                return b.count - a.count;
+            }
+        );
+        activityDetailStats.mfuDetails = activityDetailStats.mfuDetails.slice(
+            0,
+            Math.min(7, activityDetailStats.mfuDetails.length)
+        );
+
+        activityDetailStats.mruDetails = Array.from(map.values()).filter(
+            (recentlyUsedDetail: StatsDetailEntry) =>
+                recentlyUsedDetail.text
+                    .toLowerCase()
+                    .includes(filter.toLowerCase())
+        );
+        activityDetailStats.mruDetails = activityDetailStats.mruDetails.sort(
+            (a: StatsDetailEntry, b: StatsDetailEntry) => {
+                return (
+                    b.dates[0].date.localeCompare(a.dates[0].date) ||
+                    b.count - a.count
+                );
+            }
+        );
+        activityDetailStats.mruDetails = activityDetailStats.mruDetails.slice(
+            0,
+            Math.min(7, activityDetailStats.mruDetails.length)
+        );
+        return activityDetailStats;
+    }
+    @computed
+    public get stats() {
+        const activityStats = new Map<string, StatsActivityEntry>();
+        let dates: { date: string; entry: Entry }[] = [];
+        entries.all.forEach((entry: Entry) => {
+            dates.push({ date: entry.date, entry });
+            for (let [activityId, detail] of Object.entries(entry.activities)) {
+                if (!activityStats.has(activityId)) {
+                    activityStats.set(activityId, { count: 0, dates: [] });
+                }
+                let activity: any = activityStats.get(activityId);
+                activity.dates.push({ date: entry.date, entry });
+                if (Array.isArray(detail)) {
+                    if (!activity.detailsUsed) {
+                        activity.detailsUsed = new Map();
+                    }
+                    let currentActivityDetails = activity.detailsUsed;
+                    detail.forEach((detailItem) => {
+                        if (!currentActivityDetails.has(detailItem))
+                            currentActivityDetails.set(detailItem, {
+                                count: 0,
+                                text: detailItem,
+                                dates: [],
+                            });
+                        let currentDetailItem =
+                            currentActivityDetails.get(detailItem);
+                        currentDetailItem.count++;
+                        currentDetailItem.dates.push({
+                            date: entry.date,
+                            entry,
+                        });
+                    });
+                }
+            }
+        });
+        return activityStats;
     }
     public getActivity(id: string): Activity | undefined {
         return this.map[id];

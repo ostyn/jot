@@ -1,12 +1,11 @@
-import { css, html, LitElement, nothing, TemplateResult } from 'lit';
+import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
-import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { activities } from '../../stores/activities.store';
-import { entries } from '../../stores/entries.store';
+import '../activity-detail-stats.component';
 import { Sheet } from './action-sheet';
 
 @customElement('activity-info-sheet')
@@ -28,13 +27,6 @@ export class ActivityInfoSheet extends LitElement {
     year?: number;
     @state()
     dateValues: any = {};
-    @state()
-    mfuDetails?: StatsDetailEntry[];
-    @state()
-    mruDetails?: StatsDetailEntry[];
-    showLists: boolean = true;
-    filter: string = '';
-
     static getActionSheet(
         data: any,
         _submit: (data: any) => void
@@ -45,14 +37,13 @@ export class ActivityInfoSheet extends LitElement {
         ></activity-info-sheet>`;
     }
     protected firstUpdated(): void {
-        this.loadMru();
         this.onMonthChange(this.date.getMonth(), this.date.getFullYear());
     }
     public onMonthChange = (month: number, year: number) => {
         this.dateValues = {};
         this.month = month;
         this.year = year;
-        let activityStats = entries.stats.get(this.activityId);
+        let activityStats = activities.stats.get(this.activityId);
         let affectedDates = activityStats?.dates;
 
         if (activityStats && activityStats.detailsUsed && this.selectedTextItem)
@@ -93,46 +84,6 @@ export class ActivityInfoSheet extends LitElement {
         )
             return currentDate.getDate();
         else return getDaysInMonth(new Date(year, month, 1));
-    }
-    loadMru() {
-        if (!entries.stats.get(this.activityId)?.detailsUsed) {
-            this.showLists = false;
-            return;
-        }
-        const map: Map<string, StatsDetailEntry> =
-            entries.stats.get(this.activityId)?.detailsUsed || new Map();
-        this.mfuDetails = Array.from(map.values()).filter(
-            (frequentlyUsedDetail) =>
-                frequentlyUsedDetail.text
-                    .toLowerCase()
-                    .includes(this.filter.toLowerCase())
-        );
-        this.mfuDetails = this.mfuDetails.sort((a, b) => {
-            return b.count - a.count;
-        });
-        this.mfuDetails = this.mfuDetails.slice(
-            0,
-            Math.min(7, this.mfuDetails.length)
-        );
-
-        this.mruDetails = Array.from(map.values()).filter(
-            (recentlyUsedDetail: StatsDetailEntry) =>
-                recentlyUsedDetail.text
-                    .toLowerCase()
-                    .includes(this.filter.toLowerCase())
-        );
-        this.mruDetails = this.mruDetails.sort(
-            (a: StatsDetailEntry, b: StatsDetailEntry) => {
-                return (
-                    b.dates[0].date.localeCompare(a.dates[0].date) ||
-                    b.count - a.count
-                );
-            }
-        );
-        this.mruDetails = this.mruDetails.slice(
-            0,
-            Math.min(7, this.mruDetails.length)
-        );
     }
     onDateSelect(date: Date) {
         Sheet.close();
@@ -202,55 +153,10 @@ export class ActivityInfoSheet extends LitElement {
                 )}
             </ul>
 
-            ${this.showLists
-                ? html` <input
-                          type="search"
-                          @input=${(e: any) => {
-                              this.filter = e.target.value;
-                              this.loadMru();
-                          }}
-                          placeholder="search..."
-                      />
-                      <div class="stats-block">
-                          <div class="stats-column">
-                              ${this.mfuDetails?.map(
-                                  (detail) =>
-                                      html`<div
-                                          @click=${() =>
-                                              this.onDateSelect(
-                                                  new Date(detail.dates[0].date)
-                                              )}
-                                          class="stats-entry"
-                                      >
-                                          <span class="stats-entry-datapoint"
-                                              >${detail.count}</span
-                                          ><activity-detail
-                                              >${detail.text}</activity-detail
-                                          >
-                                      </div>`
-                              )}
-                          </div>
-                          <div class="stats-column">
-                              ${this.mruDetails?.map(
-                                  (detail) =>
-                                      html` <div
-                                          @click=${() =>
-                                              this.onDateSelect(
-                                                  detail.dates[0].entry
-                                                      .dateObject
-                                              )}
-                                          class="stats-entry"
-                                      >
-                                          <span class="stats-entry-datapoint"
-                                              >${detail.dates[0].date}</span
-                                          ><activity-detail
-                                              >${detail.text}</activity-detail
-                                          >
-                                      </div>`
-                              )}
-                          </div>
-                      </div>`
-                : nothing}
+            <activity-detail-stats
+                @activityDetailClick=${console.log}
+                .activityId=${this.activityId}
+            ></activity-detail-stats>
         `;
     }
     static styles = [
@@ -266,35 +172,6 @@ export class ActivityInfoSheet extends LitElement {
                 list-style: none;
             }
             .activity-info-recent-date {
-                display: inline-flex;
-                padding-top: 0;
-                padding-bottom: 0;
-                padding-left: 0.5rem;
-                padding-right: 0.5rem;
-                margin-right: 0.5rem;
-                color: var(--background-color);
-                background-color: var(--color);
-                font-size: 0.75rem;
-                line-height: 1rem;
-                justify-content: center;
-                align-items: center;
-                border-radius: 9999px;
-                border-color: #000000;
-            }
-            .stats-block {
-                display: flex;
-            }
-            .stats-column {
-                display: inline-block;
-                width: 50%;
-                user-select: none;
-            }
-            .stats-entry {
-                margin-top: 0.5rem;
-                margin-bottom: 0.5rem;
-                cursor: pointer;
-            }
-            .stats-entry-datapoint {
                 display: inline-flex;
                 padding-top: 0;
                 padding-bottom: 0;

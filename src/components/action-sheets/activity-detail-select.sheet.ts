@@ -2,7 +2,7 @@ import { html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
-import { entries } from '../../stores/entries.store';
+import { activities } from '../../stores/activities.store';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 
 @customElement('activity-detail-select-sheet')
@@ -26,10 +26,8 @@ export class ActivityDetailSelectSheet extends LitElement {
     protected firstUpdated() {
         this.details = Array.from(
             (
-                (entries.stats.get(this.activityId) as any).detailsUsed as Map<
-                    string,
-                    StatsDetailEntry
-                >
+                (activities.stats.get(this.activityId) as any)
+                    .detailsUsed as Map<string, StatsDetailEntry>
             ).keys()
         );
     }

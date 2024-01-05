@@ -83,7 +83,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             this.currentDate.getFullYear(),
             this.currentDate.getMonth() + 1
         );
-        await this.controller.finished();
         this.isLoading = false;
         this.filteredEntries = [...entries];
     };

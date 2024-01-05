@@ -118,7 +118,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 ></month-control>
             </section>
             ${this.isLoading
-                ? nothing
+                ? html`<article aria-busy="true"></article>`
                 : html`<section class="entries">
                       ${this.filteredEntries.length
                           ? repeat(

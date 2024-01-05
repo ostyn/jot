@@ -1,7 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { animate, AnimateController } from '@lit-labs/motion';
 import { AfterEnterObserver, Router } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
@@ -22,18 +21,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     @state() scrollToDate?: number;
     @state() filteredEntries: Entry[] = [];
     gesture?: TinyGesture<this>;
-    @state() animatingLeft: boolean = true;
-    controller: AnimateController;
-    constructor() {
-        super();
-        this.controller = new AnimateController(this, {
-            defaultOptions: {
-                keyframeOptions: {
-                    duration: 400,
-                },
-            },
-        });
-    }
     onAfterEnter() {
         window.addEventListener(
             'vaadin-router-location-changed',
@@ -121,7 +108,6 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             month: date.getMonth() + 1,
             year: date.getFullYear(),
         } as any).toString();
-        this.animatingLeft = this.currentDate.getTime() - date.getTime() > 0;
         Router.go(`entries?${queryParams}`);
     }
     render() {
@@ -134,27 +120,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
             </section>
             ${this.isLoading
                 ? nothing
-                : html`<section
-                      class="entries"
-                      ${animate({
-                          in: [
-                              {
-                                  transform: `translateX(${
-                                      this.animatingLeft ? '-' : ''
-                                  }100%)`,
-                              },
-                          ],
-                          out: [
-                              {
-                                  transform: `translateX(${
-                                      this.animatingLeft ? '' : '-'
-                                  }100%)`,
-                              },
-                          ],
-                          stabilizeOut: true,
-                          skipInitial: true,
-                      })}
-                  >
+                : html`<section class="entries">
                       ${this.filteredEntries.length
                           ? repeat(
                                 this.filteredEntries,

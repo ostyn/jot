@@ -166,10 +166,7 @@ export class EntryEditRoute extends MobxLitElement {
     }
     render() {
         return html`
-            <section
-                class="entry-editor-buttons"
-                if.bind="activityService.isLoaded && !isLoadingEntry"
-            >
+            <section class="entry-editor-buttons">
                 <article
                     class="note-preview"
                     @click=${() =>
@@ -189,7 +186,6 @@ export class EntryEditRoute extends MobxLitElement {
                         @change=${(e: any) =>
                             this.store.setDate(e.target.value)}
                         .value=${this.store.date}
-                        max.bind="date"
                         name=""
                     />
                     <span

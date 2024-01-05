@@ -116,7 +116,6 @@ export class ActivityInfoSheet extends LitElement {
                 </span>
             </header>
             <calendar-wrapper
-                if.bind="!loading"
                 class="inline"
                 .startingDate=${this.date}
                 .dateValues=${this.dateValues}

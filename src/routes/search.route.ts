@@ -274,7 +274,6 @@ export class SearchRoute
                     this.store.selectedActivityId ||
                     this.store.selectedActivityDetail
                         ? html`<jot-icon
-                              if.bind="searchBoxValue || selectedActivity || selectedDetail"
                               @click=${this.clearSelection}
                               name="XCircle"
                           ></jot-icon>`

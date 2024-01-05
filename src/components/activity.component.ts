@@ -43,7 +43,7 @@ export class ActivityComponent extends LitElement {
             }}
         >
             <span title=${this.activity.name}>
-                <span title.bind="activity.name" class="emoji">
+                <span class="emoji">
                     ${this.activity.emoji}
                     ${(Helpers.isNumeric(this.detail) && this.detail != 1) ||
                     (Array.isArray(this.detail) && this.detail.length > 1)

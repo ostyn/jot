@@ -87,7 +87,7 @@ export class EntryComponent extends MobxLitElement {
                 })}
             </section>
             ${this.entry.note != ''
-                ? html`<section if.bind="entry.note != ''">
+                ? html`<section>
                       <p class="entry-note">${this.entry.note}</p>
                   </section>`
                 : nothing}
@@ -101,7 +101,7 @@ export class EntryComponent extends MobxLitElement {
                 </button>
                 <div class="entry-footer-dates">
                     ${this.entry.created
-                        ? html`<span if.bind="showCreatedDate">
+                        ? html`<span>
                               Entered
                               ${DateHelpers.dateToStringDate(
                                   this.entry.created

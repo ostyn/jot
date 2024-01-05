@@ -1,6 +1,6 @@
 import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { TypesCalendar } from '@uvarov.frontend/vanilla-calendar/src/types';
+import { TypesCalendar } from '@uvarov.frontend/vanilla-calendar/types';
 import { base } from '../../baseStyles';
 
 @customElement('date-sheet')

@@ -16,6 +16,7 @@ export default defineConfig({
             manifest: {
                 name: 'Jot',
                 short_name: 'Jot',
+                start_url: '/entries',
                 shortcuts: [
                     {
                         name: 'New Entry',

@@ -68,7 +68,7 @@ class ActivityStore {
     }
     getActivityDetailStats(
         activityId: string,
-        filter: string
+        filter: (detail: StatsDetailEntry) => boolean = (_) => true
     ): {
         mfuDetails: StatsDetailEntry[];
         mruDetails: StatsDetailEntry[];
@@ -84,10 +84,7 @@ class ActivityStore {
         const map: Map<string, StatsDetailEntry> =
             activities.stats.get(activityId)?.detailsUsed || new Map();
         activityDetailStats.mfuDetails = Array.from(map.values()).filter(
-            (frequentlyUsedDetail) =>
-                frequentlyUsedDetail.text
-                    .toLowerCase()
-                    .includes(filter.toLowerCase())
+            filter as any
         );
         activityDetailStats.mfuDetails = activityDetailStats.mfuDetails.sort(
             (a, b) => {
@@ -100,10 +97,7 @@ class ActivityStore {
         );
 
         activityDetailStats.mruDetails = Array.from(map.values()).filter(
-            (recentlyUsedDetail: StatsDetailEntry) =>
-                recentlyUsedDetail.text
-                    .toLowerCase()
-                    .includes(filter.toLowerCase())
+            filter as any
         );
         activityDetailStats.mruDetails = activityDetailStats.mruDetails.sort(
             (a: StatsDetailEntry, b: StatsDetailEntry) => {

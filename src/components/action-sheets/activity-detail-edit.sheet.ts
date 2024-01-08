@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
+import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
 import { Sheet } from './action-sheet';
@@ -58,6 +59,14 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     }
     render() {
         const detail = this.store?.getActivityDetail(this.activityId) || [];
+
+        const lowerCaseDetails = (Array.isArray(detail) ? detail : []).map(
+            (str) => str.toLowerCase()
+        );
+        const filter = (detail: StatsDetailEntry) =>
+            !lowerCaseDetails.includes(detail.text.toLowerCase()) &&
+            detail.text.toLowerCase().includes(this.newItem.toLowerCase());
+
         return html`
             <header>
                 <activity-component
@@ -170,7 +179,7 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                               this.newItem = '';
                           }}
                           .activityId=${this.activityId}
-                          .filter=${this.newItem}
+                          .filter=${filter}
                       ></activity-detail-stats>
                   `
                 : html`<h2>Amount</h2>

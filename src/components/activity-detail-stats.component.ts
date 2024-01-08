@@ -14,7 +14,7 @@ export class ActivityDetailStatsComponent extends LitElement {
     @state()
     mruDetails?: StatsDetailEntry[];
     @property()
-    filter: string = '';
+    filter: (detail: StatsDetailEntry) => boolean = (_) => true;
     setupDetailLists() {
         let detailStats = activities.getActivityDetailStats(
             this.activityId,

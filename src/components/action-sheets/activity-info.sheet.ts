@@ -4,6 +4,7 @@ import { Router } from '@vaadin/router';
 import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
+import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { activities } from '../../stores/activities.store';
 import '../activity-detail-stats.component';
 import { Sheet } from './action-sheet';
@@ -168,7 +169,10 @@ export class ActivityInfoSheet extends LitElement {
                                   e.detail.dates[0].entry.dateObject
                               )}
                           .activityId=${this.activityId}
-                          .filter=${this.filter}
+                          .filter=${(detail: StatsDetailEntry) =>
+                              detail.text
+                                  .toLowerCase()
+                                  .includes(this.filter.toLowerCase())}
                       ></activity-detail-stats>`
                 : nothing}
         `;

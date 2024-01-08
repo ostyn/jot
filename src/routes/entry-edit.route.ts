@@ -89,7 +89,7 @@ export class EntryEditStore {
     public addToArrayActivityDetail(activityId: string, newDetail: string) {
         let details = this.getActivityDetail(activityId) || [];
         if (Array.isArray(details)) {
-            this.setActivityDetail(activityId, [...details, newDetail]);
+            this.setActivityDetail(activityId, [...details, newDetail.trim()]);
         }
     }
     @action.bound
@@ -101,7 +101,7 @@ export class EntryEditStore {
         let details = this.getActivityDetail(activityId);
         if (Array.isArray(details)) {
             const newDetails = [...details];
-            newDetails[index] = updatedDetail;
+            newDetails[index] = updatedDetail.trim();
             this.setActivityDetail(activityId, newDetails);
         }
     }

@@ -92,6 +92,7 @@ class SearchStore {
             let regex = new RegExp(escapeRegExp(this?.searchTerm || ''), 'i');
             let containsSearchQuery =
                 regex.test(entry.note) ||
+                regex.test(entry.id || '') ||
                 regex.test(entry.createdBy) ||
                 regex.test(entry.lastUpdatedBy || '') ||
                 Array.from(Object.values(entry.activities))

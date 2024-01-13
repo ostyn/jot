@@ -143,9 +143,7 @@ export class ActionSheet extends LitElement {
                     </header>
 
                     <main class="body">
-                        <article class="content">
-                            ${this.isShown ? this.getActionSheet() : nothing}
-                        </article>
+                        ${this.isShown ? this.getActionSheet() : nothing}
                     </main>
                 </div>
             </div>
@@ -253,13 +251,9 @@ export class ActionSheet extends LitElement {
                 display: flex;
                 align-items: stretch;
                 flex-direction: column;
-                height: 100%;
+                height: calc(100% - 2rem);
                 overflow-y: auto;
-            }
-            .content {
-                overflow-x: hidden;
-                flex: 1;
-                padding-top: 0;
+                padding: 0 1.5rem;
             }
         `,
     ];

@@ -46,6 +46,9 @@ export class MoodsSheet extends LitElement {
     static styles = [
         base,
         css`
+            :host {
+                height: 100%;
+            }
             .input {
                 display: none;
             }

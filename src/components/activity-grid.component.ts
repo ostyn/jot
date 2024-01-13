@@ -162,8 +162,10 @@ export class ActivityGridComponent extends MobxLitElement {
                 (header) => html`
                     <article>
                         <header class="group-header">${header}</header>
-                        ${(this.categoryToActivityList.get(header) || []).map(
-                            (activity) => {
+                        <span class="activities">
+                            ${(
+                                this.categoryToActivityList.get(header) || []
+                            ).map((activity) => {
                                 return html`<activity-component
                                     .activity=${activity}
                                     .showName=${true}
@@ -179,14 +181,15 @@ export class ActivityGridComponent extends MobxLitElement {
                                         ? 'selected-item'
                                         : ''}"
                                 ></activity-component>`;
-                            }
-                        )}
-                        <span
-                            title="add activity"
-                            class="newButton"
-                            @click=${() => this.createNewActivity(header)}
-                        >
-                            <jot-icon name="PlusCircle"></jot-icon>
+                            })}
+
+                            <span
+                                title="add activity"
+                                class="newButton"
+                                @click=${() => this.createNewActivity(header)}
+                            >
+                                <jot-icon name="PlusCircle"></jot-icon>
+                            </span>
                         </span>
                     </article>
                 `
@@ -203,7 +206,6 @@ export class ActivityGridComponent extends MobxLitElement {
         base,
         css`
             .grid-controls {
-                text-align: center;
                 position: sticky;
                 top: -1px;
                 background-color: var(--card-background-color);
@@ -211,8 +213,9 @@ export class ActivityGridComponent extends MobxLitElement {
                 margin-left: 0.5rem;
                 margin-right: 0.5rem;
                 display: flex;
-                align-items: center;
                 justify-content: center;
+                gap: 1rem;
+                padding: 0.5rem;
             }
             .group-header {
                 text-transform: uppercase;
@@ -229,20 +232,21 @@ export class ActivityGridComponent extends MobxLitElement {
                 cursor: pointer;
             }
             .grid-button {
-                padding: 0.5rem;
-                display: inline-flex;
                 line-height: 0;
                 cursor: pointer;
+            }
+            .activities {
+                display: flex;
+                flex-wrap: wrap;
                 align-items: center;
-                gap: 8px;
+                gap: 4px;
             }
             activity-component.selected-item {
                 border: var(--primary) 1px solid;
                 border-radius: 12px;
             }
             .newButton {
-                vertical-align: middle;
-                vertical-align: -webkit-baseline-middle;
+                line-height: 0;
                 cursor: pointer;
             }
         `,

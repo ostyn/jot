@@ -107,7 +107,6 @@ export class ActivityComponent extends LitElement {
             :host {
                 display: inline-flex;
                 border: 1px solid transparent;
-                margin: 2px;
                 padding: 4px 6px;
             }
             .activity-container {

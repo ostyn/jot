@@ -153,6 +153,7 @@ export class EntryComponent extends MobxLitElement {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
+                gap: 4px;
             }
             .entry-activity {
                 align-items: center;

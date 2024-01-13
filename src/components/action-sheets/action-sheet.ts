@@ -253,7 +253,7 @@ export class ActionSheet extends LitElement {
                 flex-direction: column;
                 height: calc(100% - 2rem);
                 overflow-y: auto;
-                padding: 0 1.5rem;
+                padding: 0 1rem;
             }
         `,
     ];

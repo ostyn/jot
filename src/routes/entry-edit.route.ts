@@ -198,9 +198,9 @@ export class EntryEditRoute extends MobxLitElement {
                         .value=${this.store.date}
                         name=""
                     />
-                    <span>
+                    <span class="icons">
                         <span
-                            class="mood-icon"
+                            class="icon"
                             @click=${() =>
                                 Sheet.open({
                                     type: MoodsSheet,
@@ -210,7 +210,7 @@ export class EntryEditRoute extends MobxLitElement {
                             >${moods?.getMood(this.store.mood)?.emoji || ''}
                         </span>
                         <span
-                            class="mood-icon"
+                            class="icon"
                             @click=${() =>
                                 Sheet.open({
                                     type: MapSheet,
@@ -304,7 +304,12 @@ export class EntryEditRoute extends MobxLitElement {
             .date-control {
                 width: 170px;
             }
-            .mood-icon {
+            .icons {
+                width: 100%;
+                display: flex;
+                justify-content: space-around;
+            }
+            .icon {
                 font-size: 1.875rem;
                 line-height: 2.25rem;
                 cursor: pointer;

@@ -8,7 +8,14 @@ import {
     unsafeCSS,
 } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { circle, map as createMap, Map as MapType, tileLayer } from 'leaflet';
+import {
+    Circle,
+    circle,
+    map as createMap,
+    Map as MapType,
+    tileLayer,
+} from 'leaflet';
+import { base } from '../../baseStyles';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 import leaflet from '/node_modules/leaflet/dist/leaflet.css?inline';
 
@@ -22,11 +29,12 @@ export class MapSheet extends LitElement {
     public updatable?: boolean = false;
     hasDisconnected = false;
     map!: MapType;
+    circle2!: Circle;
+    circle3!: Circle;
     static getActionSheet(
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
-        console.log(data);
         return html`<map-sheet
             @mapSheetDismissed=${(e: any) => submit(e.detail)}
             lat=${data?.lat || nothing}
@@ -50,15 +58,17 @@ export class MapSheet extends LitElement {
     private setupMap(lat: number, lon: number) {
         const mapEl = (this.shadowRoot?.querySelector('#map') ||
             this) as HTMLElement;
-        this.map = createMap(mapEl).setView([lat, lon], 16);
-        let circle2 = circle(this.map.getCenter(), {
+        this.map = createMap(mapEl, {
+            attributionControl: false,
+        }).setView([lat, lon], 16);
+        this.circle2 = circle(this.map.getCenter(), {
             color: 'blue',
             opacity: 0.1,
             fillColor: 'blue',
             fillOpacity: 0.3,
             radius: 1,
         }).addTo(this.map);
-        let circle3 = circle(this.map.getCenter(), {
+        this.circle3 = circle(this.map.getCenter(), {
             color: 'blue',
             opacity: 0.1,
             fillColor: 'blue',
@@ -68,13 +78,11 @@ export class MapSheet extends LitElement {
         tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(
             this.map
         );
-        console.log(this.updatable);
         if (this.updatable) {
             this.map.on('click', (e) => {
-                circle2.setLatLng(e.latlng);
-                circle3.setLatLng(e.latlng);
                 this.lat = e.latlng.lat;
                 this.lon = e.latlng.lng;
+                this.updateMarker();
             });
         }
         const resizeObserver = new ResizeObserver(() => {
@@ -87,11 +95,13 @@ export class MapSheet extends LitElement {
         // Was getting multiple of these
         if (!this.hasDisconnected) {
             this.hasDisconnected = true;
-            let resp = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${this.lat}&lon=${this.lon}&format=json`
-            );
-            let data = await resp.json();
-            console.log(data);
+            // if (this.updatable) {
+            //     let resp = await fetch(
+            //         `https://nominatim.openstreetmap.org/reverse?lat=${this.lat}&lon=${this.lon}&format=json`
+            //     );
+            //     let data = await resp.json();
+            //     console.log(data);
+            // }
             dispatchEvent(this, Events.mapSheetDismissed, {
                 lat: this.lat,
                 lon: this.lon,
@@ -99,10 +109,42 @@ export class MapSheet extends LitElement {
         }
     }
     render() {
-        return html` <div id="map"></div> `;
+        return html`
+            ${this.updatable
+                ? html`<span class="buttons">
+                      <button
+                          class="inline button"
+                          @click=${() =>
+                              navigator.geolocation.getCurrentPosition(
+                                  (location) => {
+                                      this.lat = location.coords.latitude;
+                                      this.lon = location.coords.longitude;
+                                      this.updateMarker();
+                                  }
+                              )}
+                      >
+                          <jot-icon name="Locate"></jot-icon>
+                      </button>
+                      <button
+                          class="inline button secondary"
+                          @click=${() => {
+                              this.lat = undefined;
+                              this.lon = undefined;
+                              dispatchEvent(this, Events.mapSheetDismissed);
+                          }}
+                      >
+                          <jot-icon name="Trash2"></jot-icon>
+                      </button>
+                  </span>`
+                : nothing}
+
+            <div id="map"></div>
+        `;
     }
     static styles = [
         unsafeCSS(leaflet),
+
+        base,
         css`
             :host {
                 height: 100%;
@@ -111,6 +153,30 @@ export class MapSheet extends LitElement {
                 height: 100%;
                 width: 100%;
             }
+            .buttons {
+                position: absolute;
+                top: 2.5rem;
+                right: 1.5rem;
+                z-index: 500;
+            }
+            .buttons button {
+                line-height: 0;
+            }
+            .leaflet-control-zoom a {
+                height: 3rem !important;
+                width: 3rem !important;
+                display: inline-flex;
+                align-items: center;
+                place-content: center;
+                padding: unset;
+            }
         `,
     ];
+
+    private updateMarker() {
+        const location = { lat: this.lat, lng: this.lon };
+        this.circle2.setLatLng(location as any);
+        this.circle3.setLatLng(location as any);
+        this.map.panTo(location as any);
+    }
 }

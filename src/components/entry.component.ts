@@ -72,7 +72,7 @@ export class EntryComponent extends MobxLitElement {
                     </h2>
 
                     <h3>${DateHelpers.stringDateToWeekDay(this.entry.date)}</h3>
-                    ${this.entry.location
+                    ${this.entry.location?.lat
                         ? html`<jot-icon
                               name="MapPin"
                               @click=${() => {

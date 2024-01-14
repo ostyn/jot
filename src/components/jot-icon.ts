@@ -15,6 +15,7 @@ import {
     FileText,
     Import,
     Info,
+    Locate,
     MapPin,
     MapPinOff,
     Maximize2,
@@ -73,6 +74,7 @@ const mapping = {
     SmilePlus,
     MapPin,
     MapPinOff,
+    Locate,
 };
 export type JotIconName = keyof typeof mapping;
 

@@ -40,6 +40,7 @@ export enum Events {
     activitySubmitted = 'activitySubmitted',
     activityDetailSelected = 'activityDetailSelected',
     textSheetDismissed = 'textSheetDismissed',
+    mapSheetDismissed = 'mapSheetDismissed',
     activityClick = 'activityClick',
     activityDetailClick = 'activityDetailClick',
     activityLongClick = 'activityLongClick',

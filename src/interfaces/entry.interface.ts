@@ -2,6 +2,7 @@ export interface Entry {
     id?: string;
     date: string;
     mood: string;
+    location?: { lat: number; lon: number };
     activities: { [key: string]: ActivityDetail };
     note: string;
     lastUpdatedBy: EditTools;

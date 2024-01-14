@@ -15,6 +15,8 @@ import {
     FileText,
     Import,
     Info,
+    MapPin,
+    MapPinOff,
     Maximize2,
     Menu,
     Minimize2,
@@ -29,6 +31,7 @@ import {
     Share,
     Smile,
     SmilePlus,
+    TableProperties,
     Trash2,
     TrendingUp,
     UploadCloud,
@@ -37,6 +40,7 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    TableProperties,
     AlertTriangle,
     AlignJustify,
     ArrowRight,
@@ -67,6 +71,8 @@ const mapping = {
     Share,
     Import,
     SmilePlus,
+    MapPin,
+    MapPinOff,
 };
 export type JotIconName = keyof typeof mapping;
 

@@ -2059,6 +2059,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/geojson@npm:*":
+  version: 7946.0.13
+  resolution: "@types/geojson@npm:7946.0.13"
+  checksum: 4450d070f2591500bd3ce13a898d8e4b53a6b75dfb08c002c2553a1bb135cdde9980dee6193d9fe2179c7b5fb6c52470acd116a3db91b33d8c6ba9ae3ae44e11
+  languageName: node
+  linkType: hard
+
 "@types/html-minifier@npm:^3.5.3":
   version: 3.5.3
   resolution: "@types/html-minifier@npm:3.5.3"
@@ -2067,6 +2074,15 @@ __metadata:
     "@types/relateurl": "npm:*"
     "@types/uglify-js": "npm:*"
   checksum: 094574ca1e0818d35b5c494f30dbb94c8b9962011058ac54417f3544a21e6290d65890a3cec28d9bdb85ad8a4799de44a8ac4f864b3b78e72cfe67d5e75e25aa
+  languageName: node
+  linkType: hard
+
+"@types/leaflet@npm:^1":
+  version: 1.9.8
+  resolution: "@types/leaflet@npm:1.9.8"
+  dependencies:
+    "@types/geojson": "npm:*"
+  checksum: 9a635d8ced35da27d8dfe972954bd5b4c91354beef710d7cfcca0e7bff3d189eb4cfd36ff68dac2bdc4b002d50f9ed5036c2e659683131e50d227a2050c72895
   languageName: node
   linkType: hard
 
@@ -3680,6 +3696,7 @@ __metadata:
     "@picocss/pico": "npm:^1.5.11"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
     "@types/body-scroll-lock": "npm:^3.1.2"
+    "@types/leaflet": "npm:^1"
     "@types/papaparse": "npm:^5.3.14"
     "@types/uuid": "npm:^9.0.7"
     "@uvarov.frontend/vanilla-calendar": "npm:^2.8.6"
@@ -3689,6 +3706,7 @@ __metadata:
     date-fns-tz: "npm:^2.0.0"
     dexie: "npm:^3.2.4"
     escape-string-regexp: "npm:^5.0.0"
+    leaflet: "npm:^1.9.4"
     lit: "npm:^3.1.0"
     lucide: "npm:^0.306.0"
     mobx: "npm:^6.12.0"
@@ -3771,6 +3789,13 @@ __metadata:
   version: 5.0.1
   resolution: "jsonpointer@npm:5.0.1"
   checksum: 89929e58b400fcb96928c0504fcf4fc3f919d81e9543ceb055df125538470ee25290bb4984251e172e6ef8fcc55761eb998c118da763a82051ad89d4cb073fe7
+  languageName: node
+  linkType: hard
+
+"leaflet@npm:^1.9.4":
+  version: 1.9.4
+  resolution: "leaflet@npm:1.9.4"
+  checksum: f639441dbb7eb9ae3fcd29ffd7d3508f6c6106892441634b0232fafb9ffb1588b05a8244ec7085de2c98b5ed703894df246898477836cfd0ce5b96d4717b5ca1
   languageName: node
   linkType: hard
 

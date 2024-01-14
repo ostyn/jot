@@ -7,6 +7,7 @@ import { action, makeObservable, observable, toJS } from 'mobx';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
+import { MapSheet } from '../components/action-sheets/map.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import {
@@ -28,6 +29,8 @@ export class EntryEditStore {
     @observable
     mood: string = '';
     @observable
+    location: { coords?: { lat: number; lon: number } } = {};
+    @observable
     date: string = '';
     @observable
     pendingChanges = false;
@@ -38,6 +41,7 @@ export class EntryEditStore {
         this.setDate(entry?.date);
         this.setMood(entry?.mood);
         this.setNote(entry?.note);
+        this.setLocation(entry?.location);
         this.initialized = true;
     }
     @action.bound
@@ -47,6 +51,7 @@ export class EntryEditStore {
     @action.bound
     public setNote(note?: string) {
         this.note = note || '';
+        //TODO: Smell
         this.pendingChanges = true && this.initialized;
     }
     @action.bound
@@ -57,6 +62,11 @@ export class EntryEditStore {
     @action.bound
     public setMood(mood?: string) {
         this.mood = mood || '0';
+        this.pendingChanges = true && this.initialized;
+    }
+    @action.bound
+    public setLocation(location?: { lat: number; lon: number }) {
+        this.location.coords = location;
         this.pendingChanges = true && this.initialized;
     }
     @action.bound
@@ -188,15 +198,36 @@ export class EntryEditRoute extends MobxLitElement {
                         .value=${this.store.date}
                         name=""
                     />
-                    <span
-                        class="mood-icon"
-                        @click=${() =>
-                            Sheet.open({
-                                type: MoodsSheet,
-                                data: this.store.mood || 0,
-                                onClose: (data) => this.store.setMood(data),
-                            })}
-                        >${moods?.getMood(this.store.mood)?.emoji || ''}
+                    <span>
+                        <span
+                            class="mood-icon"
+                            @click=${() =>
+                                Sheet.open({
+                                    type: MoodsSheet,
+                                    data: this.store.mood || 0,
+                                    onClose: (data) => this.store.setMood(data),
+                                })}
+                            >${moods?.getMood(this.store.mood)?.emoji || ''}
+                        </span>
+                        <span
+                            class="mood-icon"
+                            @click=${() =>
+                                Sheet.open({
+                                    type: MapSheet,
+                                    data: {
+                                        ...this.store.location.coords,
+                                        updatable: true,
+                                    },
+                                    onClose: (data) => {
+                                        this.store.setLocation(data);
+                                    },
+                                })}
+                            ><jot-icon
+                                .name=${this.store.location.coords?.lat
+                                    ? 'MapPin'
+                                    : 'MapPinOff'}
+                            ></jot-icon>
+                        </span>
                     </span>
                 </div>
             </section>
@@ -226,6 +257,7 @@ export class EntryEditRoute extends MobxLitElement {
                             note: this.store.note,
                             mood: this.store.mood,
                             date: this.store.date,
+                            location: toJS(this.store.location.coords),
                             lastUpdatedBy: EditTools.JOT,
                             dateObject: new Date(this.store.date),
                             createdBy: EditTools.JOT,

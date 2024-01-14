@@ -7,6 +7,8 @@ import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
+import { Sheet } from './action-sheets/action-sheet';
+import { MapSheet } from './action-sheets/map.sheet';
 import './activity.component';
 
 @customElement('entry-component')
@@ -68,7 +70,22 @@ export class EntryComponent extends MobxLitElement {
                     <h2 class="entry-header-text" @click=${this.goToSelf}>
                         ${DateHelpers.stringDateToDate(this.entry.date)}
                     </h2>
+
                     <h3>${DateHelpers.stringDateToWeekDay(this.entry.date)}</h3>
+                    ${this.entry.location
+                        ? html`<jot-icon
+                              name="MapPin"
+                              @click=${() => {
+                                  Sheet.open({
+                                      type: MapSheet,
+                                      data: {
+                                          lat: this.entry.location?.lat,
+                                          lon: this.entry.location?.lon,
+                                      },
+                                  });
+                              }}
+                          ></jot-icon>`
+                        : nothing}
                 </hgroup>
                 <span
                     class="entry-header-emoji"

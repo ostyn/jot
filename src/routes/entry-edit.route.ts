@@ -209,25 +209,25 @@ export class EntryEditRoute extends MobxLitElement {
                                 })}
                             >${moods?.getMood(this.store.mood)?.emoji || ''}
                         </span>
-                        <span
+                        <!-- TODO: removing feature for now <span
                             class="icon"
-                            @click=${() =>
-                                Sheet.open({
-                                    type: MapSheet,
-                                    data: {
-                                        ...this.store.location.coords,
-                                        updatable: true,
-                                    },
-                                    onClose: (data) => {
-                                        this.store.setLocation(data);
-                                    },
-                                })}
+                            @click=\${() =>
+                            Sheet.open({
+                                type: MapSheet,
+                                data: {
+                                    ...this.store.location.coords,
+                                    updatable: true,
+                                },
+                                onClose: (data) => {
+                                    this.store.setLocation(data);
+                                },
+                            })}
                             ><jot-icon
-                                .name=${this.store.location.coords?.lat
-                                    ? 'MapPin'
-                                    : 'MapPinOff'}
+                                .name=\${this.store.location.coords?.lat
+                            ? 'MapPin'
+                            : 'MapPinOff'}
                             ></jot-icon>
-                        </span>
+                        </span> -->
                     </span>
                 </div>
             </section>

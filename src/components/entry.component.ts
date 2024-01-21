@@ -95,13 +95,15 @@ export class EntryComponent extends MobxLitElement {
                 </span>
             </section>
             <section class="entry-activities">
-                ${activityOrder.map((activityId) => {
-                    return html`<activity-component
-                        .activity=${activities.getActivity(activityId)}
-                        .detail=${this.entry.activities[activityId]}
-                        class="entry-activity"
-                    ></activity-component>`;
-                })}
+                ${activityOrder.map((activityId) =>
+                    activities.getActivity(activityId)
+                        ? html`<activity-component
+                              .activity=${activities.getActivity(activityId)}
+                              .detail=${this.entry.activities[activityId]}
+                              class="entry-activity"
+                          ></activity-component>`
+                        : nothing
+                )}
             </section>
             ${this.entry.note != ''
                 ? html`<section>

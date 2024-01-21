@@ -15,9 +15,13 @@ class SettingsStore {
     }
     @action.bound
     public setShowArchived(showArchived: boolean) {
-        activities.refreshActivities();
         this.showArchived = showArchived;
         localStorage.setItem('showArchived', `${this.showArchived}`);
+        activities.refreshActivities();
+    }
+    @action.bound
+    public setShowArchivedFromStorage() {
+        this.setShowArchived(localStorage.getItem('showArchived') == 'true');
     }
     constructor() {
         makeObservable(this);

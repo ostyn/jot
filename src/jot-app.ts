@@ -8,6 +8,7 @@ import './components/action-sheets/action-sheet';
 import './components/jot-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
+import { settings } from './stores/settings.store';
 
 @customElement('jot-app')
 export class JotApp extends LitElement {
@@ -24,6 +25,7 @@ export class JotApp extends LitElement {
             },
             onOfflineReady() {},
         });
+        settings.setShowArchivedFromStorage();
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
     }

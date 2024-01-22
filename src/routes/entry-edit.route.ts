@@ -131,6 +131,7 @@ export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
     originalEntry?: Partial<Entry>;
     async onAfterEnter(location: RouterLocation) {
+        window.scrollTo({ top: 0 });
         if (location.params.id) {
             this.originalEntry = await entries.getEntry(
                 location.params.id as string

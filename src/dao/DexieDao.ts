@@ -4,14 +4,9 @@ import { JotDao } from './JotDao';
 
 export class DexieDao implements JotDao {
     name: string;
-    notify: any = () => {};
 
     constructor(name: string) {
         this.name = name;
-    }
-    setupCacheAndUpdateListener(notify: any): void {
-        this.notify = notify;
-        notify();
     }
     reset() {
         db.table(this.name).clear();
@@ -38,9 +33,6 @@ export class DexieDao implements JotDao {
             passedEntry.createdBy = EditTools.JOT;
         }
         const newLocal = db.table(this.name).put(passedEntry);
-        newLocal.then(() => {
-            this.notify();
-        });
         return newLocal;
     }
     async saveItems(
@@ -60,11 +52,9 @@ export class DexieDao implements JotDao {
         });
 
         await db.table(this.name).bulkAdd(itemsToSave);
-        this.notify();
     }
     async deleteItem(id: any): Promise<void> {
         await db.table(this.name).delete(id);
-        this.notify();
     }
     sortItems(items: any[]): any[] {
         return items;

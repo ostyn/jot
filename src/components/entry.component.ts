@@ -1,9 +1,9 @@
 import { css, html, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { Router } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { Entry } from '../interfaces/entry.interface';
+import { go } from '../routes/route-config';
 import { activities } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
@@ -29,15 +29,16 @@ export class EntryComponent extends MobxLitElement {
         }
     }
     private goToSelf() {
-        const queryParams = new URLSearchParams({
-            month: this.entry.dateObject.getMonth() + 1,
-            year: this.entry.dateObject.getFullYear(),
-            day: this.entry.dateObject.getDate(),
-        } as any).toString();
-        Router.go(`entries?${queryParams}`);
+        go('entries', {
+            queryParams: {
+                month: this.entry.dateObject.getMonth() + 1,
+                year: this.entry.dateObject.getFullYear(),
+                day: this.entry.dateObject.getDate(),
+            },
+        });
     }
     editEntry() {
-        Router.go(`entry/${this.entry.id}`);
+        go('entry', { pathParams: [this.entry.id as string] });
     }
     render() {
         if (!this.entry) return nothing;

@@ -1,13 +1,13 @@
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { Router } from '@vaadin/router';
 import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { settings } from '../stores/settings.store';
+import { go } from './route-config';
 
 @customElement('settings-route')
 export class SettingsRoute extends MobxLitElement {
@@ -83,7 +83,7 @@ export class SettingsRoute extends MobxLitElement {
             </section>
             <section>
                 <h2>Data</h2>
-                <button @click=${() => Router.go('backup')}>
+                <button @click=${() => go('backup')}>
                     <jot-icon name="UploadCloud"></jot-icon>Cloud Backup
                 </button>
 
@@ -91,11 +91,11 @@ export class SettingsRoute extends MobxLitElement {
                     <button @click=${this.exportBackup}>
                         <jot-icon name="Share"></jot-icon>Export Backup
                     </button>
-                    <button @click=${() => Router.go('import')}>
+                    <button @click=${() => go('import')}>
                         <jot-icon name="Import"></jot-icon>Import Backup
                     </button>
                 </div>
-                <button @click=${() => Router.go('import-daylio')}>
+                <button @click=${() => go('import-daylio')}>
                     <jot-icon name="SmilePlus"></jot-icon>Import from Daylio
                 </button>
                 <button class="secondary" @click=${this.resetAll}>

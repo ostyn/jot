@@ -1,10 +1,10 @@
 import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { Router } from '@vaadin/router';
 import { getDaysInMonth } from 'date-fns';
 import { base } from '../../baseStyles';
 import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
+import { go } from '../../routes/route-config';
 import { activities } from '../../stores/activities.store';
 import '../activity-detail-stats.component';
 import { Sheet } from './action-sheet';
@@ -90,12 +90,13 @@ export class ActivityInfoSheet extends LitElement {
     }
     onDateSelect(date: Date) {
         Sheet.close();
-        const queryParams = new URLSearchParams({
-            month: date.getMonth() + 1,
-            year: date.getFullYear(),
-            day: date.getDate(),
-        } as any).toString();
-        Router.go(`entries?${queryParams}`);
+        go('entries', {
+            queryParams: {
+                month: date.getMonth() + 1,
+                year: date.getFullYear(),
+                day: date.getDate(),
+            },
+        });
     }
     render() {
         return html`

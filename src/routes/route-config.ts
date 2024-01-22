@@ -12,7 +12,7 @@ import './search.route';
 import './settings.route';
 
 export const routerContext = createContext<Router>('router');
-export const routes: JotRoute[] = [
+export const routes = [
     {
         path: '/entries',
         component: 'entries-route',
@@ -68,7 +68,22 @@ export const routes: JotRoute[] = [
         component: 'backup-route',
         name: 'backup',
     },
-];
+] as const satisfies JotRoute[];
+type RouteName = (typeof routes)[number]['name'];
 export type JotRoute = Route & {
     options?: { iconName?: JotIconName; menuItem?: boolean };
 };
+export function go(
+    route: RouteName,
+    options?: { pathParams?: string[]; queryParams?: any }
+) {
+    let pathParamsText = '';
+    if (options?.pathParams?.length)
+        pathParamsText = `/${options.pathParams.join('/')}`;
+    if (options?.queryParams) {
+        const queryParams = new URLSearchParams(options.queryParams).toString();
+        Router.go(`${route}${pathParamsText}?${queryParams}`);
+    } else {
+        Router.go(`${route}${pathParamsText}`);
+    }
+}

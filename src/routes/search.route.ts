@@ -2,7 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { AfterEnterObserver, AfterLeaveObserver, Router } from '@vaadin/router';
+import { AfterEnterObserver, AfterLeaveObserver } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
@@ -13,6 +13,7 @@ import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
+import { go } from './route-config';
 
 class SearchStore {
     constructor() {
@@ -158,15 +159,17 @@ export class SearchRoute
                 // Avoids redirecting from `/search` to /search?a=&detail=&p=&q=
                 if (data.selectedActivityId || data.searchTerm) {
                     window.scrollTo({ top: 0 });
-                    const queryParams = new URLSearchParams({
-                        a: data.selectedActivityId,
-                        detail: data.selectedActivityDetail,
-                        p: data.currentPage,
-                        q: data.searchTerm,
-                    } as any).toString();
-                    Router.go(`search?${queryParams}`);
+
+                    go('search', {
+                        queryParams: {
+                            a: data.selectedActivityId,
+                            detail: data.selectedActivityDetail,
+                            p: data.currentPage,
+                            q: data.searchTerm,
+                        },
+                    });
                 } else {
-                    Router.go(`search`);
+                    go(`search`);
                 }
             }
         );

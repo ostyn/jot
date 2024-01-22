@@ -1,13 +1,12 @@
 import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { Router, RouterLocation } from '@vaadin/router';
+import { RouterLocation } from '@vaadin/router';
 import { format } from 'date-fns';
 import { action, makeObservable, observable, toJS } from 'mobx';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
-import { MapSheet } from '../components/action-sheets/map.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import {
@@ -17,6 +16,7 @@ import {
 } from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { go } from './route-config';
 
 export class EntryEditStore {
     constructor() {
@@ -171,7 +171,7 @@ export class EntryEditRoute extends MobxLitElement {
     deleteEntry(): void {
         if (confirm('Sure you want to delete?')) {
             entries.removeEntry(this.originalEntry?.id);
-            Router.go('/');
+            go('entries');
         }
     }
     render() {
@@ -247,24 +247,7 @@ export class EntryEditRoute extends MobxLitElement {
                       </button>`
                     : nothing}
 
-                <button
-                    class="inline"
-                    @click=${() => {
-                        this.store.unmarkPendingChanges();
-                        entries.upsertEntry({
-                            ...this.originalEntry,
-                            activities: toJS(this.store.activities),
-                            note: this.store.note,
-                            mood: this.store.mood,
-                            date: this.store.date,
-                            location: toJS(this.store.location.coords),
-                            lastUpdatedBy: EditTools.JOT,
-                            dateObject: new Date(this.store.date),
-                            createdBy: EditTools.JOT,
-                        });
-                        Router.go('/');
-                    }}
-                >
+                <button class="inline" @click=${this.saveEntry}>
                     <jot-icon name="Save"></jot-icon>
                 </button>
             </div>
@@ -323,4 +306,26 @@ export class EntryEditRoute extends MobxLitElement {
             }
         `,
     ];
+
+    private saveEntry() {
+        this.store.unmarkPendingChanges();
+        entries.upsertEntry({
+            ...this.originalEntry,
+            activities: toJS(this.store.activities),
+            note: this.store.note,
+            mood: this.store.mood,
+            date: this.store.date,
+            location: toJS(this.store.location.coords),
+            lastUpdatedBy: EditTools.JOT,
+            dateObject: new Date(this.store.date),
+            createdBy: EditTools.JOT,
+        });
+        let parts = this.store.date.split('-');
+        let dateFields = {
+            year: Number.parseInt(parts[0]),
+            month: Number.parseInt(parts[1]),
+            day: Number.parseInt(parts[2]),
+        };
+        go('entries', { queryParams: { ...dateFields } });
+    }
 }

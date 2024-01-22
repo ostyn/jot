@@ -12,6 +12,7 @@ import '../components/entry.component';
 import '../components/month-control.component';
 import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
+import { go } from './route-config';
 
 @customElement('entries-route')
 export class EntriesRoute extends LitElement implements AfterEnterObserver {
@@ -103,11 +104,12 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
     private goToMonth(date: Date) {
         if (this.isLoading) return;
         window.scrollTo({ top: 0 });
-        const queryParams = new URLSearchParams({
-            month: date.getMonth() + 1,
-            year: date.getFullYear(),
-        } as any).toString();
-        Router.go(`entries?${queryParams}`);
+        go('entries', {
+            queryParams: {
+                month: date.getMonth() + 1,
+                year: date.getFullYear(),
+            },
+        });
     }
     render() {
         return html`<section class="month-control-bar">
@@ -154,7 +156,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                 <h2>No Entries</h2>
                                 <button
                                     class="newButton"
-                                    @click=${() => Router.go('entry')}
+                                    @click=${() => go('entry')}
                                 >
                                     <jot-icon name="Plus"></jot-icon>
 
@@ -163,13 +165,10 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                             </article>`}
                   </section>`}
             <div class="sticky-buttons">
-                <button
-                    class="inline contrast"
-                    @click=${() => Router.go('search')}
-                >
+                <button class="inline contrast" @click=${() => go('search')}>
                     <jot-icon name="Search"></jot-icon>
                 </button>
-                <button class="inline" @click=${() => Router.go('entry')}>
+                <button class="inline" @click=${() => go('entry')}>
                     <jot-icon name="PenLine"></jot-icon>
                 </button>
             </div>`;

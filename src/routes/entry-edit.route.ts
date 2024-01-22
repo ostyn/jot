@@ -51,38 +51,37 @@ export class EntryEditStore {
     @action.bound
     public setNote(note?: string) {
         this.note = note || '';
-        //TODO: Smell
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public setActivities(activities?: { [key: string]: ActivityDetail }) {
         this.activities = activities || {};
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public setMood(mood?: string) {
         this.mood = mood || '0';
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public setLocation(location?: { lat: number; lon: number }) {
         this.location.coords = location;
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public setDate(date?: string) {
         this.date = date || format(new Date(), 'yyyy-MM-dd');
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public setActivityDetail(activityId: string, detail: ActivityDetail) {
         this.activities[activityId] = detail;
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     @action.bound
     public clearActivityDetail(activityId: string) {
         if (this.activities[activityId]) delete this.activities[activityId];
-        this.pendingChanges = true && this.initialized;
+        this.pendingChanges = this.initialized;
     }
     public getActivityDetail(activityId: string): ActivityDetail {
         return this.activities[activityId];

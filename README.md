@@ -8,8 +8,8 @@ Try it out! https://jot.regretless.life/
 
 - **Flexible Activity and Mood Tracking**: Keep track of your daily activities and moods with ease and however you find useful
 - **Quick and Easy Searching**: Looking for more details about something? Use full text search to find what you're looking for
-- **A fully offline PWA**: Installable on any device with offline support
-- **Fully Data Privacy** Your data stays your data, staying fully on your device. Need a backup? It can be easily exported and backed up to JSON file or your own personal Google Drive
+- **A fully offline PWA**: Offline and installable on any device
+- **Full Data Privacy** Your data stays your data, staying on your device. Need a backup? It can be easily exported and backed up to JSON file or your own personal Google Drive
 - **Daylio Import**: Coming from Daylio? Get a jumpstart with your existing Daylio data
 
 ## Tech Stack

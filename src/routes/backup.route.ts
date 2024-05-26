@@ -158,7 +158,6 @@ export class BackupRoute extends LitElement {
             newEntries.forEach((entry: Entry) => {
                 entry.created = parseISO(entry.created as unknown as string);
                 entry.updated = parseISO(entry.updated as unknown as string);
-                entry.dateObject = new Date(entry.date);
             });
             newMoods.forEach((mood: Mood) => {
                 mood.created = parseISO(mood.created as unknown as string);

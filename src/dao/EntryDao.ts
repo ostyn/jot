@@ -8,19 +8,15 @@ export class EntryDao extends DexieDao {
     async getEntriesFromYearAndMonth(year: number, month: number) {
         let x = await db
             .table('entries')
-            .where('dateObject')
-            .between(new Date(year, month - 1, 1), new Date(year, month, 1))
+            .where('date')
+            .startsWith(`${year}-${month < 10 ? `0${month}` : month}`)
             .reverse()
             .toArray();
 
         return x;
     }
     async getItems(): Promise<any> {
-        return await db
-            .table(this.name)
-            .orderBy('dateObject')
-            .reverse()
-            .toArray();
+        return await db.table(this.name).orderBy('date').reverse().toArray();
     }
 }
 export const entryDao = new EntryDao();

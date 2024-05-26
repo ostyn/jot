@@ -9,7 +9,6 @@ export interface Entry {
     updated: Date;
     created: Date;
     createdBy: EditTools;
-    dateObject: Date;
 }
 export type ActivityDetail = number | string[];
 export enum EditTools {

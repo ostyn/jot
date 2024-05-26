@@ -1,8 +1,8 @@
 import Dexie from 'dexie';
 
 export const db = new Dexie('jot');
-db.version(1).stores({
+db.version(3).stores({
     moods: 'id',
     activities: 'id',
-    entries: 'id, dateObject',
+    entries: 'id, date',
 });

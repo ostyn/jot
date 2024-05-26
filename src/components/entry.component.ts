@@ -30,11 +30,7 @@ export class EntryComponent extends MobxLitElement {
     }
     private goToSelf() {
         go('entries', {
-            queryParams: {
-                month: this.entry.dateObject.getMonth() + 1,
-                year: this.entry.dateObject.getFullYear(),
-                day: this.entry.dateObject.getDate(),
-            },
+            queryParams: DateHelpers.getDateStringParts(this.entry.date),
         });
     }
     editEntry() {

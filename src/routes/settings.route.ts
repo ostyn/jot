@@ -16,7 +16,6 @@ export class SettingsRoute extends MobxLitElement {
         if (confirm('Download complete backup file of all personal data?')) {
             const backupEntries = entries.all.map((entry) => {
                 const newEntry: any = { ...entry };
-                delete newEntry.dateObject;
                 return newEntry;
             });
             this.download(

@@ -46,7 +46,6 @@ export class ImportRoute extends LitElement {
                         entry.updated = parseISO(
                             entry.updated as unknown as string
                         );
-                        entry.dateObject = new Date(entry.date);
                     });
                     data.moods.forEach((mood: Mood) => {
                         mood.created = parseISO(
@@ -153,8 +152,8 @@ export class ImportRoute extends LitElement {
             ${this.isLoading
                 ? html`<span aria-busy="true">Loading...</span>`
                 : this.entries.length
-                ? html`<button @click=${this.import}>Import</button>`
-                : nothing}
+                  ? html`<button @click=${this.import}>Import</button>`
+                  : nothing}
         </article>`;
     }
     static styles = [base];

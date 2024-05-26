@@ -6,6 +6,7 @@ import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { go } from '../../routes/route-config';
 import { activities } from '../../stores/activities.store';
+import { DateHelpers } from '../../utils/DateHelpers';
 import '../activity-detail-stats.component';
 import { Sheet } from './action-sheet';
 
@@ -50,13 +51,15 @@ export class ActivityInfoSheet extends LitElement {
         let affectedDates = activityStats?.dates;
 
         if (activityStats && activityStats.detailsUsed && this.selectedTextItem)
-            affectedDates = activityStats.detailsUsed.get(this.selectedTextItem)
-                ?.dates;
-        const entryDates = affectedDates?.filter(
-            (date) =>
-                date.entry.dateObject.getMonth() === month &&
-                date.entry.dateObject.getFullYear() === year
-        );
+            affectedDates = activityStats.detailsUsed.get(
+                this.selectedTextItem
+            )?.dates;
+        const entryDates = affectedDates?.filter((date) => {
+            return (
+                Number.parseInt(date.entry.date.split('-')[1]) == month + 1 &&
+                Number.parseInt(date.entry.date.split('-')[0]) == year
+            );
+        });
         this.relatedEntryMap = new Map();
         this.totalActivity = 0;
         for (let entryDate of entryDates || []) {
@@ -88,14 +91,10 @@ export class ActivityInfoSheet extends LitElement {
             return currentDate.getDate();
         else return getDaysInMonth(new Date(year, month, 1));
     }
-    onDateSelect(date: Date) {
+    onDateSelect(date: string) {
         Sheet.close();
         go('entries', {
-            queryParams: {
-                month: date.getMonth() + 1,
-                year: date.getFullYear(),
-                day: date.getDate(),
-            },
+            queryParams: DateHelpers.getDateStringParts(date),
         });
     }
     render() {
@@ -123,7 +122,8 @@ export class ActivityInfoSheet extends LitElement {
                 .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}
-                @dateSelect=${(e: any) => this.onDateSelect(e.detail.date)}
+                @dateSelect=${(e: any) =>
+                    this.onDateSelect(DateHelpers.getDateString(e.detail.date))}
             ></calendar-wrapper>
 
             <ul>
@@ -131,7 +131,7 @@ export class ActivityInfoSheet extends LitElement {
                     ([key, value]) =>
                         html`<li
                             class="activity-info-recent"
-                            @click=${() => this.onDateSelect(value.dateObject)}
+                            @click=${() => this.onDateSelect(value.date)}
                         >
                             <span class="activity-info-recent-date"
                                 >${key}</span
@@ -166,9 +166,7 @@ export class ActivityInfoSheet extends LitElement {
                       />
                       <activity-detail-stats
                           @activityDetailClick=${(e: any) =>
-                              this.onDateSelect(
-                                  e.detail.dates[0].entry.dateObject
-                              )}
+                              this.onDateSelect(e.detail.dates[0].entry.date)}
                           .activityId=${this.activityId}
                           .filter=${(detail: StatsDetailEntry) =>
                               detail.text

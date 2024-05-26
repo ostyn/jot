@@ -323,7 +323,9 @@ export class SearchRoute
                                     type: ActivityInfoSheet,
                                     data: {
                                         id: e.detail.id,
-                                        date: entry.dateObject,
+                                        date: new Date(
+                                            entry.date + 'T00:00:00'
+                                        ),
                                     },
                                 });
                             }}

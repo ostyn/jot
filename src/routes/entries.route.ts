@@ -137,7 +137,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                                 type: ActivityInfoSheet,
                                                 data: {
                                                     id: e.detail.id,
-                                                    date: entry.dateObject,
+                                                    date: new Date(
+                                                        entry.date + 'T00:00:00'
+                                                    ),
                                                 },
                                             });
                                         }}
@@ -146,7 +148,9 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                                                 type: ActivityInfoSheet,
                                                 data: {
                                                     id: e.detail.id,
-                                                    date: entry.dateObject,
+                                                    date: new Date(
+                                                        entry.date + 'T00:00:00'
+                                                    ),
                                                 },
                                             });
                                         }}

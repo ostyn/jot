@@ -16,6 +16,7 @@ import {
 } from '../interfaces/entry.interface';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { DateHelpers } from '../utils/DateHelpers';
 import { go } from './route-config';
 
 export class EntryEditStore {
@@ -317,15 +318,10 @@ export class EntryEditRoute extends MobxLitElement {
             date: this.store.date,
             location: toJS(this.store.location.coords),
             lastUpdatedBy: EditTools.JOT,
-            dateObject: new Date(this.store.date),
             createdBy: EditTools.JOT,
         });
-        let parts = this.store.date.split('-');
-        let dateFields = {
-            year: Number.parseInt(parts[0]),
-            month: Number.parseInt(parts[1]),
-            day: Number.parseInt(parts[2]),
-        };
-        go('entries', { queryParams: { ...dateFields } });
+        go('entries', {
+            queryParams: DateHelpers.getDateStringParts(this.store.date),
+        });
     }
 }

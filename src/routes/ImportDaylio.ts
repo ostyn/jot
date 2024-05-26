@@ -47,7 +47,6 @@ export class ImportDaylio {
             const entry: Entry = {
                 activities: mappedActivities,
                 date: full_date,
-                dateObject: full_date,
                 mood: moodMappings[row.mood],
                 note: row.note_title
                     ? row.note_title + '\n\n' + row.note

@@ -41,7 +41,7 @@ export class QuickSet extends LitElement {
         this.buttons = this.shadowRoot?.querySelectorAll('.amount-button');
 
         const numberOfButtons = this.buttons?.length || 0;
-        const radius = 80; // Adjust as needed
+        const radius = 100; // Adjust as needed
         const angleIncrement = 180 / (numberOfButtons - 1);
 
         const updateButtonPositions = () => {
@@ -81,22 +81,6 @@ export class QuickSet extends LitElement {
     }
     render() {
         return html`
-            <span
-                class="plus"
-                @click=${(e: Event) => {
-                    this.add(1);
-                    e.stopPropagation();
-                }}
-                >➕</span
-            >
-            <span
-                class="minus"
-                @click=${(e: Event) => {
-                    this.add(-1);
-                    e.stopPropagation();
-                }}
-                >➖</span
-            >
             <button
                 class="amount-button"
                 @click=${(e: Event) => {
@@ -126,6 +110,25 @@ export class QuickSet extends LitElement {
             >
                 -¼
             </button>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(-1);
+                    e.stopPropagation();
+                }}
+            >
+                ➖
+            </button>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(1);
+                    e.stopPropagation();
+                }}
+            >
+                ➕
+            </button>
+
             <button
                 class="amount-button"
                 @click=${(e: Event) => {
@@ -174,18 +177,10 @@ export class QuickSet extends LitElement {
         base,
         css`
             :host {
-                display: flex;
-                flex-direction: column;
+                display: block;
                 z-index: 100000;
                 position: absolute;
-                left: -21px;
-                top: -25px;
             }
-            .plus,
-            .minus {
-                padding: 8px;
-            }
-
             .amount-button {
                 position: absolute;
                 transform-origin: center;
@@ -194,13 +189,17 @@ export class QuickSet extends LitElement {
                 z-index: 99999;
                 animation: moveOutward 0.2s forwards;
                 border-radius: 100px;
-                padding: 20px;
+                padding: 16px;
             }
 
             @keyframes moveOutward {
                 0% {
                     opacity: 0;
                     transform: scale(0);
+                }
+                60% {
+                    opacity: 1;
+                    transform: scale(1.2);
                 }
                 100% {
                     opacity: 1;

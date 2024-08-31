@@ -81,8 +81,22 @@ export class QuickSet extends LitElement {
     }
     render() {
         return html`
-            <span class="plus" @click=${() => this.add(1)}>➕</span>
-            <span class="minus" @click=${() => this.add(-1)}>➖</span>
+            <span
+                class="plus"
+                @click=${(e: Event) => {
+                    this.add(1);
+                    e.stopPropagation();
+                }}
+                >➕</span
+            >
+            <span
+                class="minus"
+                @click=${(e: Event) => {
+                    this.add(-1);
+                    e.stopPropagation();
+                }}
+                >➖</span
+            >
             <button
                 class="amount-button"
                 @click=${(e: Event) => {
@@ -94,16 +108,40 @@ export class QuickSet extends LitElement {
                 🧹
             </button>
 
-            <button class="amount-button" @click=${() => this.add(-10)}>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(-10);
+                    e.stopPropagation();
+                }}
+            >
                 -❿
             </button>
-            <button class="amount-button" @click=${() => this.add(-0.25)}>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(-0.25);
+                    e.stopPropagation();
+                }}
+            >
                 -¼
             </button>
-            <button class="amount-button" @click=${() => this.add(0.25)}>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(0.25);
+                    e.stopPropagation();
+                }}
+            >
                 +¼
             </button>
-            <button class="amount-button" @click=${() => this.add(10)}>
+            <button
+                class="amount-button"
+                @click=${(e: Event) => {
+                    this.add(10);
+                    e.stopPropagation();
+                }}
+            >
                 +❿
             </button>
             <button

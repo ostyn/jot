@@ -154,11 +154,14 @@ export class EntryEditRoute extends MobxLitElement {
             return commands.prevent();
         }
     }
-    onClick(id: string) {
+    onClick(e: CustomEvent) {
+        const { id, element } = e.detail;
         if (navigator.vibrate) navigator?.vibrate(50);
         if (Array.isArray(this.store.getActivityDetail(id)))
             this.onLongClick(id);
-        else this.store.addToNumericActivityDetail(id, 1);
+        else {
+            element.appendChild(new QuickSet(this.store, id));
+        }
     }
     onLongClick(id: string) {
         if (navigator.vibrate) navigator?.vibrate(100);
@@ -234,16 +237,7 @@ export class EntryEditRoute extends MobxLitElement {
                 </div>
             </section>
             <activity-grid
-                @activityClick=${(e: any) => {
-                    console.log(e);
-                    if (QuickSet.latestValue?.activityId !== e.detail.id) {
-                        const textnode = new QuickSet(this.store, e.detail.id);
-                        e.detail.element.appendChild(textnode);
-                        setTimeout(() => {
-                            textnode.remove();
-                        }, 1000000);
-                    }
-                }}
+                @activityClick=${this.onClick}
                 @activityLongClick=${(e: any) => this.onLongClick(e.detail.id)}
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}

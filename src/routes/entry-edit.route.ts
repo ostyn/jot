@@ -9,6 +9,7 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
+import { QuickSet } from '../components/quick-set.component';
 import {
     ActivityDetail,
     EditTools,
@@ -233,7 +234,16 @@ export class EntryEditRoute extends MobxLitElement {
                 </div>
             </section>
             <activity-grid
-                @activityClick=${(e: any) => this.onClick(e.detail.id)}
+                @activityClick=${(e: any) => {
+                    console.log(e);
+                    if (QuickSet.latestValue?.activityId !== e.detail.id) {
+                        const textnode = new QuickSet(this.store, e.detail.id);
+                        e.detail.element.appendChild(textnode);
+                        setTimeout(() => {
+                            textnode.remove();
+                        }, 1000000);
+                    }
+                }}
                 @activityLongClick=${(e: any) => this.onLongClick(e.detail.id)}
                 .selectedActivityInfo=${this.store.activities}
                 .showFilterUnused=${true}

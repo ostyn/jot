@@ -23,7 +23,7 @@ export class QuickSet extends LitElement {
         QuickSet.latestValue = undefined;
         this.remove();
     }
-    buttons = [];
+    buttons?: NodeListOf<Element>;
     add(amount: number) {
         this.store?.addToNumericActivityDetail(this.activityId, amount);
     }
@@ -37,16 +37,16 @@ export class QuickSet extends LitElement {
             return 1; // Element is on the right side
         }
     }
-    placeButtonsInArc(target: Element) {
+    placeButtonsInArc(target: HTMLElement) {
         this.buttons = this.shadowRoot?.querySelectorAll('.amount-button');
 
-        const numberOfButtons = this.buttons.length;
+        const numberOfButtons = this.buttons?.length || 0;
         const radius = 80; // Adjust as needed
         const angleIncrement = 180 / (numberOfButtons - 1);
 
         const updateButtonPositions = () => {
             const buttons = this.buttons;
-            buttons.forEach((button, index) => {
+            buttons?.forEach((button, index) => {
                 const angle =
                     (angleIncrement * index +
                         90 * this.checkElementPosition(this)) *
@@ -56,16 +56,16 @@ export class QuickSet extends LitElement {
                     target.offsetLeft +
                     target.offsetWidth / 2 +
                     radius * Math.cos(angle) -
-                    button.offsetWidth / 2 -
+                    (button as HTMLElement).offsetWidth / 2 -
                     this.offsetLeft;
                 const y =
                     target.offsetTop +
                     target.offsetHeight / 2 +
                     radius * Math.sin(angle) -
-                    button.offsetHeight / 2 -
+                    (button as HTMLElement).offsetHeight / 2 -
                     this.offsetTop;
-                button.style.left = `${x}px`;
-                button.style.top = `${y}px`;
+                (button as HTMLElement).style.left = `${x}px`;
+                (button as HTMLElement).style.top = `${y}px`;
             });
         };
 
@@ -120,7 +120,7 @@ export class QuickSet extends LitElement {
             </button>
             <button
                 class="amount-button"
-                @click=${(e) => {
+                @click=${(e: Event) => {
                     e.stopPropagation();
                     this.disconnectedCallback();
                     Sheet.open({

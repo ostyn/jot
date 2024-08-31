@@ -159,7 +159,10 @@ export class EntryEditRoute extends MobxLitElement {
         if (navigator.vibrate) navigator?.vibrate(50);
         if (Array.isArray(this.store.getActivityDetail(id)))
             this.onLongClick(id);
-        else {
+        else if (this.store.getActivityDetail(id) === undefined) {
+            this.store.addToNumericActivityDetail(id, 1);
+            element.appendChild(new QuickSet(this.store, id));
+        } else {
             element.appendChild(new QuickSet(this.store, id));
         }
     }

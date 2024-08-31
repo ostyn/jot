@@ -81,27 +81,15 @@ export class QuickSet extends LitElement {
     }
     render() {
         return html`
-            <span
-                @click=${(e: Event) => {
-                    this.add(1);
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-                >➕</span
-            >
-            <span
-                @click=${(e: Event) => {
-                    this.add(-1);
-
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}
-                >➖</span
-            >
+            <span class="plus" @click=${() => this.add(1)}>➕</span>
+            <span class="minus" @click=${() => this.add(-1)}>➖</span>
             <button
                 class="amount-button"
-                @click=${() => this.store.clearActivityDetail(this.activityId)}
+                @click=${(e: Event) => {
+                    this.store.clearActivityDetail(this.activityId);
+                    this.disconnectedCallback();
+                    e.stopPropagation();
+                }}
             >
                 🧹
             </button>
@@ -121,8 +109,6 @@ export class QuickSet extends LitElement {
             <button
                 class="amount-button"
                 @click=${(e: Event) => {
-                    e.stopPropagation();
-                    this.disconnectedCallback();
                     Sheet.open({
                         type: ActivityDetailEditSheet,
                         data: {
@@ -131,6 +117,8 @@ export class QuickSet extends LitElement {
                             defaultIsArray: true,
                         },
                     });
+                    this.disconnectedCallback();
+                    e.stopPropagation();
                 }}
             >
                 💬
@@ -138,8 +126,8 @@ export class QuickSet extends LitElement {
             <span
                 class="overlay"
                 @click=${(e: Event) => {
-                    e.stopPropagation();
                     this.disconnectedCallback();
+                    e.stopPropagation();
                 }}
             ></span>
         `;
@@ -150,12 +138,16 @@ export class QuickSet extends LitElement {
             :host {
                 display: flex;
                 flex-direction: column;
-                gap: 32px;
                 z-index: 100000;
                 position: absolute;
-                left: -13px;
+                left: -21px;
                 top: -25px;
             }
+            .plus,
+            .minus {
+                padding: 8px;
+            }
+
             .amount-button {
                 position: absolute;
                 transform-origin: center;

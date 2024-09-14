@@ -9,7 +9,7 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
-import { QuickSet } from '../components/quick-set.component';
+import { QuickSet2 } from '../components/quick-set2.component';
 import {
     ActivityDetail,
     EditTools,
@@ -159,11 +159,9 @@ export class EntryEditRoute extends MobxLitElement {
         if (navigator.vibrate) navigator?.vibrate(50);
         if (Array.isArray(this.store.getActivityDetail(id)))
             this.onLongClick(id);
-        else if (this.store.getActivityDetail(id) === undefined) {
+        else {
             this.store.addToNumericActivityDetail(id, 1);
-            element.appendChild(new QuickSet(this.store, id));
-        } else {
-            element.appendChild(new QuickSet(this.store, id));
+            element.appendChild(new QuickSet2(this.store, id));
         }
     }
     onLongClick(id: string) {

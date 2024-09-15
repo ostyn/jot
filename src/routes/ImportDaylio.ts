@@ -1,5 +1,5 @@
 import { parse } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import Papa from 'papaparse';
 import { Entry } from '../interfaces/entry.interface';
 
@@ -42,7 +42,7 @@ export class ImportDaylio {
                 new Date()
             );
             const timeZone = 'America/Denver';
-            const zonedDate = utcToZonedTime(parsedDate, timeZone);
+            const zonedDate = toZonedTime(parsedDate, timeZone);
 
             const entry: Entry = {
                 activities: mappedActivities,

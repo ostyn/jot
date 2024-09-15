@@ -206,16 +206,16 @@ export class ImportDaylioRoute extends LitElement {
                 padding: 0.25rem;
                 margin: 0.25rem;
                 cursor: pointer;
-                border: var(--del-color) 1px solid;
+                border: var(--pico-del-color) 1px solid;
                 border-radius: 12px;
                 display: inline-flex;
                 align-content: center;
                 gap: 4px;
             }
             .mapped {
-                border-color: var(--ins-color);
-                background-color: var(--ins-color);
-                color: var(--contrast);
+                border-color: var(--pico-ins-color);
+                background-color: var(--pico-ins-color);
+                color: var(--pico-contrast);
             }
         `,
     ];

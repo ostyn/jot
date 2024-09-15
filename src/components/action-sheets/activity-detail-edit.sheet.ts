@@ -6,37 +6,40 @@ import { base } from '../../baseStyles';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
+import { QuickSet2 } from '../quick-set2.component';
 import { Sheet } from './action-sheet';
 
 @customElement('activity-detail-edit-sheet')
 export class ActivityDetailEditSheet extends MobxLitElement {
     inputRef: Ref<HTMLElement> = createRef();
     @property()
-    public store?: EntryEditStore;
+    public store!: EntryEditStore;
     @property()
     public activityId!: string;
     @state()
     newItem: string = '';
     @state()
     currentlySelectedIndex?: number = undefined;
-    @state()
-    editingArray?: boolean;
-    @property()
-    defaultIsArray?: boolean = false;
     static getActionSheet(
         data: any,
         _submit: (data: any) => void
     ): TemplateResult {
         return html`<activity-detail-edit-sheet
-            .defaultIsArray=${data.defaultIsArray}
             .activityId=${data.id}
             .store=${data.store}
         ></activity-detail-edit-sheet>`;
     }
     protected firstUpdated(): void {
         let detail = this.store?.getActivityDetail(this.activityId);
-        if (detail) this.editingArray = Array.isArray(detail);
-        else this.editingArray = this.defaultIsArray;
+        if (!Array.isArray(detail)) {
+            this.store?.clearActivityDetail(this.activityId);
+            if (detail && detail !== 1) {
+                this.store?.addToArrayActivityDetail(
+                    this.activityId,
+                    `${detail}`
+                );
+            }
+        }
         setTimeout(() => {
             this.inputRef?.value?.focus();
         }, 1);
@@ -46,7 +49,6 @@ export class ActivityDetailEditSheet extends MobxLitElement {
     }
     clear() {
         this.store?.clearActivityDetail(this.activityId);
-        Sheet.close();
     }
     addItemOrSubmit(e: any) {
         e.preventDefault();
@@ -83,159 +85,99 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                             if (
                                 (Array.isArray(existingDetail) &&
                                     !existingDetail.length) ||
-                                (!Array.isArray(existingDetail) &&
-                                    !existingDetail) ||
                                 confirm('Continuing will clear existing detail')
                             ) {
                                 this.store?.clearActivityDetail(
                                     this.activityId
                                 );
-                                this.editingArray = !this.editingArray;
+                                Sheet.close();
+                                QuickSet2.open(this.store, this.activityId);
                             }
                         }}
                     >
-                        ${this.editingArray ? 'use number' : 'use text'}
+                        ${'use number'}
                     </button>
                     <button class="inline secondary" @click=${this.clear}>
                         clear
                     </button>
                 </div>
             </header>
-            ${this.editingArray
-                ? html`
-                      <h2>Details</h2>
-                      <div class="activity-details">
-                          ${(Array.isArray(detail) ? detail : []).map(
-                              (item, index) =>
-                                  html`<div>
-                                      ${this.currentlySelectedIndex !== index
-                                          ? html`<activity-detail
-                                                @click=${() => {
-                                                    this.currentlySelectedIndex =
-                                                        index;
-                                                }}
-                                                >${item}</activity-detail
-                                            >`
-                                          : html`<input
-                                                    class="inline"
-                                                    type="text"
-                                                    .value=${Array.isArray(
-                                                        detail
-                                                    )
-                                                        ? detail[index]
-                                                        : ''}
-                                                    @input=${(e: any) =>
-                                                        this.store?.updateArrayActivityDetail(
-                                                            this.activityId,
-                                                            index,
-                                                            e.target.value
-                                                        )}
-                                                /><button
-                                                    class="inline"
-                                                    @click=${() => {
-                                                        this.store?.removeArrayActivityDetail(
-                                                            this.activityId,
-                                                            this
-                                                                .currentlySelectedIndex as number
-                                                        );
-                                                        this.currentlySelectedIndex =
-                                                            undefined;
-                                                    }}
-                                                >
-                                                    ❌
-                                                </button>`}
-                                  </div>`
-                          )}
-                      </div>
-                      <hr />
-                      <div>
-                          <form @submit=${this.addItemOrSubmit}>
-                              <input
-                                  class="width-64 inline"
-                                  ref="inputBox"
-                                  ${ref(this.inputRef)}
-                                  type="text"
-                                  .value=${this.newItem}
-                                  @input=${(e: any) =>
-                                      (this.newItem = e.target.value)}
-                                  placeholder="add item"
-                              />
-                              ${this.newItem
-                                  ? html`<button
-                                        class="inline"
-                                        @click=${this.addItemOrSubmit}
-                                    >
-                                        <jot-icon name="Play"></jot-icon>
-                                    </button>`
-                                  : nothing}
-                          </form>
-                      </div>
-                      <activity-detail-stats
-                          @activityDetailClick=${(e: any) => {
-                              this.store?.addToArrayActivityDetail(
-                                  this.activityId,
-                                  e.detail.text
-                              );
-                              this.newItem = '';
-                          }}
-                          .activityId=${this.activityId}
-                          .filter=${filter}
-                      ></activity-detail-stats>
-                  `
-                : html`<h2>Amount</h2>
-                      <section class="content">
-                          <section>
-                              <button
+            ${html`
+                <h2>Details</h2>
+                <div class="activity-details">
+                    ${(Array.isArray(detail) ? detail : []).map(
+                        (item, index) => html`
+                            ${this.currentlySelectedIndex !== index
+                                ? html`<activity-detail
+                                      @click=${() => {
+                                          this.currentlySelectedIndex = index;
+                                      }}
+                                      >${item}</activity-detail
+                                  >`
+                                : html`<input
+                                          class="inline"
+                                          type="text"
+                                          .value=${Array.isArray(detail)
+                                              ? detail[index]
+                                              : ''}
+                                          @input=${(e: any) =>
+                                              this.store?.updateArrayActivityDetail(
+                                                  this.activityId,
+                                                  index,
+                                                  e.target.value
+                                              )}
+                                      /><button
+                                          class="inline"
+                                          @click=${() => {
+                                              this.store?.removeArrayActivityDetail(
+                                                  this.activityId,
+                                                  this
+                                                      .currentlySelectedIndex as number
+                                              );
+                                              this.currentlySelectedIndex =
+                                                  undefined;
+                                          }}
+                                      >
+                                          ❌
+                                      </button>`}
+                        `
+                    )}
+                </div>
+                <hr />
+                <div>
+                    <form @submit=${this.addItemOrSubmit}>
+                        <input
+                            class="width-64 inline"
+                            ref="inputBox"
+                            ${ref(this.inputRef)}
+                            type="text"
+                            .value=${this.newItem}
+                            @input=${(e: any) =>
+                                (this.newItem = e.target.value)}
+                            placeholder="add item"
+                        />
+                        ${this.newItem
+                            ? html`<button
                                   class="inline"
-                                  @click=${() => this.add(-10)}
+                                  @click=${this.addItemOrSubmit}
                               >
-                                  -10
-                              </button>
-                              <button
-                                  class="inline"
-                                  @click=${() => this.add(-1)}
-                              >
-                                  -1
-                              </button>
-                              <button
-                                  class="inline"
-                                  @click=${() => this.add(-0.25)}
-                              >
-                                  -0.25
-                              </button>
-                              <button
-                                  class="inline"
-                                  @click=${() => this.add(0.25)}
-                              >
-                                  +0.25
-                              </button>
-                              <button
-                                  class="inline"
-                                  @click=${() => this.add(1)}
-                              >
-                                  +1
-                              </button>
-                              <button
-                                  class="inline"
-                                  @click=${() => this.add(10)}
-                              >
-                                  +10
-                              </button>
-                          </section>
-                          <input
-                              class="inline number-input"
-                              ref="inputBox"
-                              focus="true"
-                              type="number"
-                              .value=${`${detail}`}
-                              @input=${(e: any) =>
-                                  this.store?.setActivityDetail(
-                                      this.activityId,
-                                      e.target.value
-                                  )}
-                              placeholder="enter number"
-                          />
-                      </section>`}
+                                  <jot-icon name="Play"></jot-icon>
+                              </button>`
+                            : nothing}
+                    </form>
+                </div>
+                <activity-detail-stats
+                    @activityDetailClick=${(e: any) => {
+                        this.store?.addToArrayActivityDetail(
+                            this.activityId,
+                            e.detail.text
+                        );
+                        this.newItem = '';
+                    }}
+                    .activityId=${this.activityId}
+                    .filter=${filter}
+                ></activity-detail-stats>
+            `}
         `;
     }
     static styles = [
@@ -274,8 +216,8 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
                 margin-right: 0.5rem;
-                color: var(--background-color);
-                background-color: var(--color);
+                color: var(--pico-background-color);
+                background-color: var(--pico-color);
                 font-size: 0.75rem;
                 line-height: 1rem;
                 justify-content: center;

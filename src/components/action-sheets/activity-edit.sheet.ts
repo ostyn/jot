@@ -194,8 +194,8 @@ export class ActivityEditSheet extends MobxLitElement {
                 width: calc(100% - 20px);
             }
             .selected-category {
-                background-color: var(--contrast);
-                color: var(--contrast-inverse);
+                background-color: var(--pico-contrast);
+                color: var(--pico-contrast-inverse);
             }
             .radio-button {
                 position: absolute;

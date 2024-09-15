@@ -82,11 +82,16 @@ export class SettingsRoute extends MobxLitElement {
             </section>
             <section>
                 <h2>Data</h2>
-                <button @click=${() => go('backup')}>
-                    <jot-icon name="UploadCloud"></jot-icon>Cloud Backup
-                </button>
+                <div role="group">
+                    <button
+                        class="full-width-button"
+                        @click=${() => go('backup')}
+                    >
+                        <jot-icon name="UploadCloud"></jot-icon>Cloud Backup
+                    </button>
+                </div>
 
-                <div class="settings-row">
+                <div role="group">
                     <button @click=${this.exportBackup}>
                         <jot-icon name="Share"></jot-icon>Export Backup
                     </button>
@@ -94,12 +99,23 @@ export class SettingsRoute extends MobxLitElement {
                         <jot-icon name="Import"></jot-icon>Import Backup
                     </button>
                 </div>
-                <button @click=${() => go('import-daylio')}>
-                    <jot-icon name="SmilePlus"></jot-icon>Import from Daylio
-                </button>
-                <button class="secondary" @click=${this.resetAll}>
-                    <jot-icon name="Trash2"></jot-icon>Wipe Data
-                </button>
+                <div role="group">
+                    <button
+                        class="full-width-button"
+                        @click=${() => go('import-daylio')}
+                    >
+                        <jot-icon name="SmilePlus"></jot-icon>Import from Daylio
+                    </button>
+                </div>
+                <div role="group">
+                    <button
+                        class="full-width-button"
+                        class="secondary"
+                        @click=${this.resetAll}
+                    >
+                        <jot-icon name="Trash2"></jot-icon>Wipe Data
+                    </button>
+                </div>
             </section>
         </article>`;
     }
@@ -130,6 +146,9 @@ export class SettingsRoute extends MobxLitElement {
             }
             .settings-column {
                 flex-direction: column;
+            }
+            .full-width-button {
+                width: 100%;
             }
         `,
     ];

@@ -344,7 +344,7 @@ export class SearchRoute
                 left: 0;
                 z-index: 50;
                 padding: 0.5rem;
-                background-color: var(--background-color);
+                background-color: var(--pico-background-color);
                 display: flex;
                 gap: 0.25rem;
                 align-items: center;

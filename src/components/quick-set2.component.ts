@@ -71,7 +71,7 @@ export class QuickSet2 extends MobxLitElement {
                 ></activity-component>
                 <span
                     class="clear-button"
-                    @click=${(e: Event) => {
+                    @click=${() => {
                         this.store.clearActivityDetail(this.activityId);
                         this.disconnectedCallback();
                     }}

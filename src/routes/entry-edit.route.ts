@@ -157,8 +157,11 @@ export class EntryEditRoute extends MobxLitElement {
     onClick(e: CustomEvent) {
         const { id } = e.detail;
         if (navigator.vibrate) navigator?.vibrate(50);
-        if (Array.isArray(this.store.getActivityDetail(id)))
-            this.onLongClick(id);
+        if (
+            Array.isArray(this.store.getActivityDetail(id)) ||
+            QuickSet2.latestValue?.activityId !== id
+        )
+            QuickSet2.open(this.store, id);
         else {
             this.store.addToNumericActivityDetail(id, 1);
             QuickSet2.open(this.store, id);

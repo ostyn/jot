@@ -57,10 +57,15 @@ export class QuickSet2 extends MobxLitElement {
         this.setupDetailLists();
 
         return html`
+            <jot-icon
+                class="close-button"
+                name="XCircle"
+                @click=${QuickSet2.close}
+            ></jot-icon>
             <div class="menu">
                 <activity-component
                     class="activity"
-                    .detail=${Array.isArray(detail) ? undefined : detail}
+                    .detail=${detail}
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
@@ -126,8 +131,9 @@ export class QuickSet2 extends MobxLitElement {
                     </span>
                 </span>
 
-                <span
+                <jot-icon
                     class="text-button"
+                    name="PenLine"
                     @click=${() => {
                         Sheet.open({
                             type: ActivityDetailEditSheet,
@@ -138,15 +144,20 @@ export class QuickSet2 extends MobxLitElement {
                         });
                         this.disconnectedCallback();
                     }}
-                >
-                    Text
-                </span>
+                ></jot-icon>
             </div>
         `;
     }
     static styles = [
         base,
         css`
+            .close-button {
+                cursor: pointer;
+                position: fixed;
+                bottom: 16px;
+                z-index: 999;
+                right: 16px;
+            }
             .activities {
                 grid-area: activities;
                 display: flex;
@@ -162,25 +173,35 @@ export class QuickSet2 extends MobxLitElement {
                 align-items: center;
             }
             .text-button {
+                cursor: pointer;
                 grid-area: text-button;
+                justify-content: center;
+                display: flex;
             }
             .negative-buttons {
                 grid-area: negative-buttons;
+                justify-content: center;
                 display: flex;
                 width: 100%;
                 gap: 32px;
             }
             .positive-buttons {
                 grid-area: positive-buttons;
+                justify-content: center;
                 display: flex;
                 width: 100%;
                 gap: 32px;
             }
             .clear-button {
+                cursor: pointer;
                 grid-area: clear-button;
+                justify-content: center;
+                display: flex;
             }
             .activity {
                 grid-area: activity;
+                justify-content: center;
+                display: flex;
             }
             .menu {
                 display: grid;
@@ -192,7 +213,7 @@ export class QuickSet2 extends MobxLitElement {
                 padding: 8px;
                 position: fixed;
                 align-items: center;
-                bottom: 64px;
+                bottom: 62px;
                 width: 100%;
                 left: 0;
                 z-index: 99;

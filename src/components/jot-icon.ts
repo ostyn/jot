@@ -91,9 +91,6 @@ export class JotIcon extends LitElement {
     }
     static styles = [
         css`
-            :host {
-                height: 1.5rem;
-            }
             .small {
             }
             .medium {

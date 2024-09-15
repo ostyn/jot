@@ -125,7 +125,7 @@ export class QuickSet2 extends MobxLitElement {
         base,
         css`
             .amount-button {
-                font-size: 16px;
+                font-size: 1.5rem;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -137,11 +137,13 @@ export class QuickSet2 extends MobxLitElement {
                 align-items: center;
                 bottom: 47px;
                 width: 100%;
+                max-width: 36rem;
                 left: 0;
                 z-index: 99;
                 border-radius: 1rem 1rem 0 0;
-                background: var(--pico-card-background-color);
-                border-top: var(--pico-contrast) 1px solid;
+                background: var(--card-background-color);
+                border-top: var(--contrast) 1px solid;
+                justify-content: space-between;
             }
         `,
     ];

@@ -35,7 +35,7 @@ export class QuickSet2 extends MobxLitElement {
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
-                <button
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.store.clearActivityDetail(this.activityId);
@@ -43,19 +43,19 @@ export class QuickSet2 extends MobxLitElement {
                         e.stopPropagation();
                     }}
                 >
-                    🧹
-                </button>
+                    <jot-icon name="Trash2"></jot-icon>
+                </span>
 
-                <button
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(-10);
                         e.stopPropagation();
                     }}
                 >
-                    -❿
-                </button>
-                <button
+                    -10
+                </span>
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(-0.25);
@@ -63,27 +63,27 @@ export class QuickSet2 extends MobxLitElement {
                     }}
                 >
                     -¼
-                </button>
-                <button
+                </span>
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(-1);
                         e.stopPropagation();
                     }}
                 >
-                    ➖
-                </button>
-                <button
+                    -1
+                </span>
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(1);
                         e.stopPropagation();
                     }}
                 >
-                    ➕
-                </button>
+                    +1
+                </span>
 
-                <button
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(0.25);
@@ -91,17 +91,17 @@ export class QuickSet2 extends MobxLitElement {
                     }}
                 >
                     +¼
-                </button>
-                <button
+                </span>
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         this.add(10);
                         e.stopPropagation();
                     }}
                 >
-                    +❿
-                </button>
-                <button
+                    +10
+                </span>
+                <span
                     class="amount-button"
                     @click=${(e: Event) => {
                         Sheet.open({
@@ -116,24 +116,32 @@ export class QuickSet2 extends MobxLitElement {
                         e.stopPropagation();
                     }}
                 >
-                    💬
-                </button>
+                    Text
+                </span>
             </div>
         `;
     }
     static styles = [
         base,
         css`
-            .menu {
-                position: fixed;
-                bottom: 48px;
-                width: 100%;
+            .amount-button {
+                font-size: 16px;
                 display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .menu {
+                padding: 8px;
+                position: fixed;
+                display: flex;
+                align-items: center;
+                bottom: 47px;
+                width: 100%;
                 left: 0;
                 z-index: 99;
-                gap: 16px;
                 border-radius: 1rem 1rem 0 0;
-                background: var(--card-background-color);
+                background: var(--pico-card-background-color);
+                border-top: var(--pico-contrast) 1px solid;
             }
         `,
     ];

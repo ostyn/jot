@@ -155,23 +155,24 @@ export class EntryEditRoute extends MobxLitElement {
         }
     }
     onClick(e: CustomEvent) {
-        const { id, element } = e.detail;
+        const { id } = e.detail;
         if (navigator.vibrate) navigator?.vibrate(50);
         if (Array.isArray(this.store.getActivityDetail(id)))
             this.onLongClick(id);
         else {
             this.store.addToNumericActivityDetail(id, 1);
-            element.appendChild(new QuickSet2(this.store, id));
+            QuickSet2.open(this.store, id);
         }
     }
     onLongClick(id: string) {
+        QuickSet2.close();
         if (navigator.vibrate) navigator?.vibrate(100);
         this.editActivityDetail(id);
     }
     editActivityDetail(id: string) {
         Sheet.open({
             type: ActivityDetailEditSheet,
-            data: { id, store: this.store, defaultIsArray: true },
+            data: { id, store: this.store },
         });
     }
     deleteEntry(): void {

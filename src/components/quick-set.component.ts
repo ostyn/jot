@@ -155,7 +155,6 @@ export class QuickSet extends LitElement {
                         data: {
                             id: this.activityId,
                             store: this.store,
-                            defaultIsArray: true,
                         },
                     });
                     this.disconnectedCallback();

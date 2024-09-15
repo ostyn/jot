@@ -39,7 +39,6 @@ export class ActivityComponent extends LitElement {
                 dispatchEvent(this, Events.activityClick, {
                     event: e,
                     id: this.activity?.id,
-                    element: this,
                 });
             }}
         >

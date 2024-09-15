@@ -13,9 +13,9 @@
 }
 
 :root {
-    --spacing: 0.25rem;
-    --line-height: 1.25;
-    --text-decoration: none;
+    --pico-spacing: 0.25rem;
+    --pico-line-height: 1.25;
+    --pico-text-decoration: none !important;
 }
 .inline,
 input.inline {
@@ -25,7 +25,7 @@ input.inline {
 }
 button {
     user-select: none;
-    --line-height: 1;
+    --pico-line-height: 1;
 }
 section {
     margin-bottom: 0.75rem;
@@ -49,8 +49,6 @@ article > header {
 article {
     margin-left: auto;
     margin-right: auto;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
 }
 form {
     margin-bottom: 0;
@@ -61,15 +59,15 @@ h3,
 h4,
 h5,
 h6 {
-    --font-weight: 600;
-    --font-size: 1rem;
-    --typography-spacing-vertical: 1rem;
+    --pico-font-weight: 600;
+    --pico-font-size: 1rem;
+    --pico-typography-spacing-vertical: 1rem;
 }
 section:last-child {
     margin-bottom: 0px;
 }
 body {
-    margin-top: var(--spacing);
+    margin-top: var(--pico-spacing);
     overscroll-behavior-y: contain;
 }
 a,

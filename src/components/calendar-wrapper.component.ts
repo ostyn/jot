@@ -106,11 +106,11 @@ export class CalendarWrapperComponent extends MobxLitElement {
                 margin: 1px;
             }
             .vanilla-calendar-day__btn:has(.date-detail) {
-                border: var(--primary) 1px solid;
+                border: var(--pico-primary) 1px solid;
                 border-radius: 12px;
             }
             .date-detail {
-                color: var(--contrast);
+                color: var(--pico-contrast);
             }
         `,
     ];

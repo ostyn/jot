@@ -130,8 +130,8 @@ export class ActivityComponent extends LitElement {
                 padding-bottom: 0;
                 padding-left: 0.375rem;
                 padding-right: 0.375rem;
-                color: var(--background-color);
-                background-color: var(--color);
+                color: var(--pico-background-color);
+                background-color: var(--pico-color);
                 font-size: 0.75rem;
                 line-height: 1rem;
                 justify-content: center;

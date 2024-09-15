@@ -200,7 +200,7 @@ export class ActionSheet extends LitElement {
 
             .sheet .contents {
                 border-radius: 1rem 1rem 0 0;
-                background: var(--card-background-color);
+                background: var(--pico-card-background-color);
 
                 overflow-y: hidden;
 

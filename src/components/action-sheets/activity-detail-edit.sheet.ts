@@ -274,8 +274,8 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
                 margin-right: 0.5rem;
-                color: var(--background-color);
-                background-color: var(--color);
+                color: var(--pico-background-color);
+                background-color: var(--pico-color);
                 font-size: 0.75rem;
                 line-height: 1rem;
                 justify-content: center;

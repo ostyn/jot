@@ -208,7 +208,7 @@ export class ActivityGridComponent extends MobxLitElement {
             .grid-controls {
                 position: sticky;
                 top: -1px;
-                background-color: var(--card-background-color);
+                background-color: var(--pico-card-background-color);
                 z-index: 90;
                 margin-left: 0.5rem;
                 margin-right: 0.5rem;
@@ -223,7 +223,7 @@ export class ActivityGridComponent extends MobxLitElement {
             }
             .disabled {
                 background-image: radial-gradient(
-                    var(--contrast),
+                    var(--pico-contrast),
                     rgba(0, 0, 0, 0),
                     rgba(0, 0, 0, 0)
                 );
@@ -242,7 +242,7 @@ export class ActivityGridComponent extends MobxLitElement {
                 gap: 4px;
             }
             activity-component.selected-item {
-                border: var(--primary) 1px solid;
+                border: var(--pico-primary) 1px solid;
                 border-radius: 12px;
             }
             .newButton {

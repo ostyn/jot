@@ -190,7 +190,7 @@ export class EntriesRoute extends LitElement implements AfterEnterObserver {
                 position: sticky;
                 z-index: 50;
                 top: -0.1px;
-                background-color: var(--background-color);
+                background-color: var(--pico-background-color);
                 padding-top: 0.375rem;
                 padding-bottom: 0.375rem;
                 margin: 0.5rem;

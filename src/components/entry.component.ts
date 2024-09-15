@@ -61,8 +61,8 @@ export class EntryComponent extends MobxLitElement {
             }
         );
 
-        return html`<article>
-            <section class="entry-header">
+        return html`<article class="entry">
+            <header class="entry-header">
                 <hgroup>
                     <h2 class="entry-header-text" @click=${this.goToSelf}>
                         ${DateHelpers.stringDateToDate(this.entry.date)}
@@ -90,7 +90,7 @@ export class EntryComponent extends MobxLitElement {
                 >
                     ${moods.getMood(this.entry.mood)?.emoji || ''}
                 </span>
-            </section>
+            </header>
             <section class="entry-activities">
                 ${activityOrder.map((activityId) =>
                     activities.getActivity(activityId)
@@ -103,11 +103,8 @@ export class EntryComponent extends MobxLitElement {
                 )}
             </section>
             ${this.entry.note != ''
-                ? html`<section>
-                      <p class="entry-note">${this.entry.note}</p>
-                  </section>`
+                ? html`<section class="entry-note">${this.entry.note}</section>`
                 : nothing}
-
             <section class="entry-footer">
                 <button
                     class="inline outline contrast"
@@ -149,10 +146,19 @@ export class EntryComponent extends MobxLitElement {
     static styles = [
         base,
         css`
+            .entry {
+                display: flex;
+                gap: 16px;
+                flex-direction: column;
+            }
+            .entry > * {
+                margin-bottom: 0px;
+            }
+
             .entry-header {
+                padding: 16px;
                 display: flex;
                 vertical-align: middle;
-                margin-bottom: 0px;
             }
             .entry-header hgroup {
                 margin-bottom: 0px;
@@ -194,7 +200,7 @@ export class EntryComponent extends MobxLitElement {
             .entry-footer-dates {
                 font-size: 0.75rem;
                 line-height: 1rem;
-                color: var(--secondary);
+                color: var(--pico-secondary);
             }
         `,
     ];

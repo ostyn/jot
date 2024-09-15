@@ -73,8 +73,8 @@ export class NavBar extends LitElement {
                 width: 100%;
                 position: fixed;
                 bottom: -1px;
-                background-color: var(--card-background-color);
-                box-shadow: var(--card-box-shadow);
+                background-color: var(--pico-card-background-color);
+                box-shadow: var(--pico-card-box-shadow);
                 z-index: 100;
             }
 
@@ -111,15 +111,15 @@ export class NavBar extends LitElement {
                 opacity: 0.6;
             }
             svg {
-                --color: var(--contrast);
+                --color: var(--pico-contrast);
                 height: 1.5rem;
                 width: 1.5rem;
             }
             .menu-bar-item-active jot-icon {
                 line-height: 0px;
                 transition: all 0.2s;
-                background: var(--secondary);
-                color: var(--primary-inverse);
+                background: var(--pico-secondary);
+                color: var(--pico-primary-inverse);
                 border-radius: 20px;
                 padding: 4px 20px;
             }

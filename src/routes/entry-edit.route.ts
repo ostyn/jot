@@ -272,8 +272,8 @@ export class EntryEditRoute extends MobxLitElement {
                 max-height: 6rem;
                 margin: 0;
                 width: 100%;
-                padding: var(--form-element-spacing-vertical)
-                    var(--form-element-spacing-horizontal);
+                padding: var(--pico-form-element-spacing-vertical)
+                    var(--pico-form-element-spacing-horizontal);
                 min-height: 100px;
             }
             .note-preview span {

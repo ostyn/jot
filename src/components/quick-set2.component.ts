@@ -57,12 +57,12 @@ export class QuickSet2 extends MobxLitElement {
         this.setupDetailLists();
 
         return html`
-            <jot-icon
-                class="close-button"
-                name="XCircle"
-                @click=${QuickSet2.close}
-            ></jot-icon>
             <div class="menu">
+                <jot-icon
+                    class="close-button"
+                    name="XCircle"
+                    @click=${QuickSet2.close}
+                ></jot-icon>
                 <activity-component
                     class="activity"
                     .detail=${detail}
@@ -152,11 +152,9 @@ export class QuickSet2 extends MobxLitElement {
         base,
         css`
             .close-button {
+                grid-area: close=button;
                 cursor: pointer;
-                position: fixed;
-                bottom: 16px;
-                z-index: 999;
-                right: 16px;
+                text-align: right;
             }
             .activities {
                 grid-area: activities;
@@ -206,7 +204,7 @@ export class QuickSet2 extends MobxLitElement {
             .menu {
                 display: grid;
                 grid-template-areas:
-                    'activity clear-button positive-buttons text-button'
+                    'activity clear-button positive-buttons close-button'
                     'activity clear-button  negative-buttons text-button'
                     'activities activities activities activities';
                 place-content: center space-around;
@@ -216,6 +214,7 @@ export class QuickSet2 extends MobxLitElement {
                 bottom: 62px;
                 width: 100%;
                 max-width: 36rem;
+                justify-self: anchor-center;
                 left: 0;
                 z-index: 99;
                 border-radius: 1rem 1rem 0 0;

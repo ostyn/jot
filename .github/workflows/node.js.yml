@@ -27,8 +27,7 @@ jobs:
     - run: corepack enable
     - run: yarn set version stable
     - run: yarn config set nodeLinker node-modules
-    - run: rm yarn.lock
-    - run: yarn install
+    - run: yarn install --immutable
     - run: yarn build
       env:
         VITE_GCLIENT_ID: ${{ secrets.VITE_GCLIENT_ID }}

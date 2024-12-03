@@ -1,7 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { WebComponentInterface } from '@vaadin/router';
+import { Router, WebComponentInterface } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';

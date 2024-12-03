@@ -2,7 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { AfterEnterObserver, AfterLeaveObserver } from '@vaadin/router';
+import { WebComponentInterface  } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
@@ -136,7 +136,7 @@ class SearchStore {
 @customElement('search-route')
 export class SearchRoute
     extends MobxLitElement
-    implements AfterEnterObserver, AfterLeaveObserver
+    implements WebComponentInterface
 {
     inputRef: Ref<HTMLElement> = createRef();
     store = new SearchStore();

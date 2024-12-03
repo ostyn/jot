@@ -1,7 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
-import { AfterEnterObserver, Router } from '@vaadin/router';
+import { WebComponentInterface } from '@vaadin/router';
 import { addMonths, lastDayOfMonth, parseISO } from 'date-fns';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
@@ -15,7 +15,7 @@ import { Entry } from '../interfaces/entry.interface';
 import { go } from './route-config';
 
 @customElement('entries-route')
-export class EntriesRoute extends LitElement implements AfterEnterObserver {
+export class EntriesRoute extends LitElement implements WebComponentInterface {
     @state() isLoading = true;
     currentDate: Date = new Date();
     public router?: Router;

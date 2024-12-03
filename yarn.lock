@@ -2439,13 +2439,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vaadin/router@npm:^1.7.5":
-  version: 1.7.5
-  resolution: "@vaadin/router@npm:1.7.5"
+"@vaadin/router@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@vaadin/router@npm:2.0.0"
   dependencies:
-    "@vaadin/vaadin-usage-statistics": "npm:^2.1.0"
-    path-to-regexp: "npm:2.4.0"
-  checksum: 10c0/98931a8b31aed52afc7e1405936c7f329ee8c61d4994292d2cd765015161026bd45c1f1469d95ecfc7d93fa2a635257047eb106d115ee7ab239246277983a49d
+    "@vaadin/vaadin-usage-statistics": "npm:^2.1.2"
+    path-to-regexp: "npm:^6.3.0"
+    type-fest: "npm:^4.26.1"
+  checksum: 10c0/7355f2959ecfbbc3f2139cdb1f99f6a04fd375fbac02baf2e8876a43ab26bb9aa8fe09c47d61fae4192fac8ff7dc547bfbb6f3f8023943a42a5f60da2ec693cd
   languageName: node
   linkType: hard
 
@@ -2456,12 +2457,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vaadin/vaadin-usage-statistics@npm:^2.1.0":
-  version: 2.1.2
-  resolution: "@vaadin/vaadin-usage-statistics@npm:2.1.2"
+"@vaadin/vaadin-usage-statistics@npm:^2.1.2":
+  version: 2.1.3
+  resolution: "@vaadin/vaadin-usage-statistics@npm:2.1.3"
   dependencies:
     "@vaadin/vaadin-development-mode-detector": "npm:^2.0.0"
-  checksum: 10c0/84973a47d4e03db51a5e059008811edb793adbc1aa4fac6e9ec83d7d0a40235224b8e21fcd17a1a3d6ad81fc79edf362fbf69b3c3a1417510a118135a0498101
+  checksum: 10c0/b1f1182cd7d4c03ba99371f70b446c69fda7fd259550de8ed8576df429030ac9c5ab78707ae5dc23cb3d5cab06ae2e74acfaa4a28010d1d50d18c5577e4712fb
   languageName: node
   linkType: hard
 
@@ -4055,7 +4056,7 @@ __metadata:
     "@types/papaparse": "npm:^5.3.15"
     "@types/uuid": "npm:^10.0.0"
     "@uvarov.frontend/vanilla-calendar": "npm:^2.8.6"
-    "@vaadin/router": "npm:^1.7.5"
+    "@vaadin/router": "npm:^2.0.0"
     body-scroll-lock-upgrade: "npm:^1.1.0"
     date-fns: "npm:^3.6.0"
     date-fns-tz: "npm:^3.2.0"
@@ -4658,10 +4659,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"path-to-regexp@npm:2.4.0":
-  version: 2.4.0
-  resolution: "path-to-regexp@npm:2.4.0"
-  checksum: 10c0/286e3f2ea633ae9447d9c6beb2974db67801ffd64927e70129604e1fb987d94c9b38fa70cc494cd088c78d521914edec87de7f11928848c9ac265632c8644fc8
+"path-to-regexp@npm:^6.3.0":
+  version: 6.3.0
+  resolution: "path-to-regexp@npm:6.3.0"
+  checksum: 10c0/73b67f4638b41cde56254e6354e46ae3a2ebc08279583f6af3d96fe4664fc75788f74ed0d18ca44fa4a98491b69434f9eee73b97bb5314bd1b5adb700f5c18d6
   languageName: node
   linkType: hard
 
@@ -5496,6 +5497,13 @@ __metadata:
   version: 0.16.0
   resolution: "type-fest@npm:0.16.0"
   checksum: 10c0/6b4d846534e7bcb49a6160b068ffaed2b62570d989d909ac3f29df5ef1e993859f890a4242eebe023c9e923f96adbcb3b3e88a198c35a1ee9a731e147a6839c3
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:^4.26.1":
+  version: 4.30.0
+  resolution: "type-fest@npm:4.30.0"
+  checksum: 10c0/9441fbbc971f92a53d7dfdb0db3f9c71a5a33ac3e021ca605cba8ad0b5c0a1e191cc778b4980c534b098ccb4e3322809100baf763be125510c993c9b8361f60e
   languageName: node
   linkType: hard
 

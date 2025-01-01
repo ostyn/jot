@@ -80,7 +80,7 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
             );
             this.scrollToDate = undefined;
         }
-        // Wait at least 500ms
+        // Wait at least 500ms for spinner
         const [_, entries] = await Promise.all([
             timer(500),
             entryDao.getEntriesFromYearAndMonth(

@@ -12,6 +12,7 @@ import '../components/entry.component';
 import '../components/month-control.component';
 import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
+import { timer } from '../utils/Helpers';
 import { go } from './route-config';
 
 @customElement('entries-route')
@@ -79,11 +80,15 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
             );
             this.scrollToDate = undefined;
         }
+        // Wait at least 500ms
+        const [_, entries] = await Promise.all([
+            timer(500),
+            entryDao.getEntriesFromYearAndMonth(
+                this.currentDate.getFullYear(),
+                this.currentDate.getMonth() + 1
+            ),
+        ]);
 
-        const entries = await entryDao.getEntriesFromYearAndMonth(
-            this.currentDate.getFullYear(),
-            this.currentDate.getMonth() + 1
-        );
         this.isLoading = false;
         this.filteredEntries = [...entries];
     };

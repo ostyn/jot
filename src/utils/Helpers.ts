@@ -49,3 +49,6 @@ export enum Events {
     monthSelect = 'monthSelect',
     viewChange = 'viewChange',
 }
+export function timer(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}

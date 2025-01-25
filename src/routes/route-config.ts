@@ -5,6 +5,7 @@ import './activities.route';
 import './backup.route';
 import './entries.route';
 import './entry-edit.route';
+import './game.route';
 import './import-daylio.route';
 import './import.route';
 import './moods.route';
@@ -67,6 +68,11 @@ export const routes = [
         path: '/backup',
         component: 'backup-route',
         name: 'backup',
+    },
+    {
+        path: '/game',
+        component: 'game-route',
+        name: 'game',
     },
 ] as const satisfies JotRoute[];
 type RouteName = (typeof routes)[number]['name'];

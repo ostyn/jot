@@ -28,6 +28,11 @@ export default defineConfig({
                         url: '/backup',
                         description: 'Backup entries, activities, and moods',
                     },
+                    {
+                        name: '2048',
+                        url: '/game',
+                        description: 'Play a quick round of 2048',
+                    },
                 ],
                 theme_color: '#000000',
                 background_color: '#000000',

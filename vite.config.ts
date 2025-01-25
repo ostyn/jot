@@ -24,11 +24,6 @@ export default defineConfig({
                         description: 'Log a new entry',
                     },
                     {
-                        name: 'Backup',
-                        url: '/backup',
-                        description: 'Backup entries, activities, and moods',
-                    },
-                    {
                         name: '2048',
                         url: '/game',
                         description: 'Play a quick round of 2048',

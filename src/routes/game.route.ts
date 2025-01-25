@@ -243,7 +243,6 @@ export class GameRoute extends MobxLitElement {
             .game-container {
                 width: 100%;
                 max-width: 500px;
-                height: 100%;
                 max-height: 500px;
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
@@ -252,109 +251,80 @@ export class GameRoute extends MobxLitElement {
                 background-color: #bbada0;
                 border-radius: 6px;
                 padding: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
                 margin: auto;
                 position: relative;
             }
             .tile {
-                width: 100%;
-                height: 100%;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 font-size: 36px;
                 font-weight: bold;
                 border-radius: 6px;
-                color: #776e65;
+                color: white;
                 background-color: #cdc1b4;
-                transition:
-                    transform 0.2s,
-                    background-color 0.2s;
-                animation: tileAppear 0.2s;
+                transition: background-color 0.2s;
                 aspect-ratio: 1 / 1;
             }
 
             .tile[data-value='2'] {
                 background-color: #eee4da;
+                color: #776e65;
             }
             .tile[data-value='4'] {
                 background-color: #ede0c8;
+                color: #776e65;
             }
             .tile[data-value='8'] {
                 background-color: #f2b179;
-                color: white;
             }
             .tile[data-value='16'] {
                 background-color: #f59563;
-                color: white;
             }
             .tile[data-value='32'] {
                 background-color: #f67c5f;
-                color: white;
             }
             .tile[data-value='64'] {
                 background-color: #f65e3b;
-                color: white;
             }
             .tile[data-value='128'] {
                 background-color: #edcf72;
-                color: white;
             }
             .tile[data-value='256'] {
                 background-color: #edcc61;
-                color: white;
             }
             .tile[data-value='512'] {
                 background-color: #edc850;
-                color: white;
             }
             .tile[data-value='1024'] {
                 background-color: #edc53f;
-                color: white;
             }
             .tile[data-value='2048'] {
                 background-color: #edc22e;
-                color: white;
             }
             .tile[data-value='4096'] {
                 background-color: #3c3a32;
-                color: white;
             }
             .tile[data-value='8192'] {
                 background-color: #3c3a32;
-                color: white;
             }
             .defeat-overlay {
                 position: absolute;
-                top: 0;
-                left: 0;
                 width: 100%;
                 height: 100%;
                 display: flex;
-                flex-direction: column;
                 justify-content: center;
                 align-items: center;
                 background: rgba(0, 0, 0, 0.5);
                 z-index: 2;
             }
             .defeat-screen {
-                font-size: 48px;
+                font-size: 3rem;
                 font-weight: bold;
                 color: #f65e3b;
-                background: rgba(255, 255, 255, 0.8);
-                padding: 20px;
+                background: white;
+                padding: 1.5rem;
                 border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            @keyframes tileAppear {
-                from {
-                    transform: scale(0);
-                }
-                to {
-                    transform: scale(1);
-                }
             }
         `,
     ];

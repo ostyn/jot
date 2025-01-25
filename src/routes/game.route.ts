@@ -7,7 +7,7 @@ import { base } from '../baseStyles';
 @customElement('game-route')
 export class GameRoute extends MobxLitElement {
     board: any;
-    gesture;
+    gesture!: TinyGesture;
     defeated = false;
     score = 0;
     highScore = 0;
@@ -15,7 +15,6 @@ export class GameRoute extends MobxLitElement {
     constructor() {
         super();
         this.loadGameState();
-        this.gesture = new TinyGesture(this);
     }
 
     createEmptyBoard() {
@@ -189,21 +188,12 @@ export class GameRoute extends MobxLitElement {
             <button
                 @click="${() => {
                     this.newGame();
+                    this.newGame();
                 }}"
             >
                 New Game
             </button>
         `;
-    }
-
-    connectedCallback() {
-        super.connectedCallback();
-        this.gesture = new TinyGesture(this);
-        this.gesture.on('swipedown', this.swipeHandler);
-        this.gesture.on('swipeup', this.swipeHandler);
-        this.gesture.on('swipeleft', this.swipeHandler);
-        this.gesture.on('swiperight', this.swipeHandler);
-        window.addEventListener('keydown', this.keyDownHandler);
     }
 
     keyDownHandler = (event: any) => {
@@ -213,8 +203,14 @@ export class GameRoute extends MobxLitElement {
         }
     };
 
-    swipeHandler(event: any) {
-        this.handleDirection(event.detail.direction);
+    connectedCallback() {
+        super.connectedCallback();
+        this.gesture = new TinyGesture(this);
+        this.gesture.on('swipeup', () => this.handleDirection('up'));
+        this.gesture.on('swipedown', () => this.handleDirection('down'));
+        this.gesture.on('swipeleft', () => this.handleDirection('left'));
+        this.gesture.on('swiperight', () => this.handleDirection('right'));
+        window.addEventListener('keydown', this.keyDownHandler);
     }
 
     disconnectedCallback() {
@@ -342,19 +338,6 @@ export class GameRoute extends MobxLitElement {
                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
                 text-align: center;
                 margin-bottom: 20px;
-            }
-            button {
-                padding: 10px 20px;
-                font-size: 18px;
-                background-color: #f65e3b;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            }
-            button:hover {
-                background-color: #e53c2e;
             }
             @keyframes tileAppear {
                 from {

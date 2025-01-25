@@ -163,10 +163,19 @@ export class GameRoute extends MobxLitElement {
 
     render() {
         return html`
+            <h1 class="title">2048</h1>
             <div class="scoreboard">
                 <div>Score: ${this.score}</div>
                 <div>High Score: ${this.highScore}</div>
             </div>
+            <button
+                @click="${() => {
+                    this.newGame();
+                    this.newGame();
+                }}"
+            >
+                New Game
+            </button>
             <div class="game-container">
                 ${this.defeated
                     ? html`
@@ -185,14 +194,6 @@ export class GameRoute extends MobxLitElement {
                     )
                 )}
             </div>
-            <button
-                @click="${() => {
-                    this.newGame();
-                    this.newGame();
-                }}"
-            >
-                New Game
-            </button>
         `;
     }
 
@@ -222,14 +223,22 @@ export class GameRoute extends MobxLitElement {
         base,
         css`
             :host {
-                display: block;
+                margin: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: start;
+            }
+            .title {
+                text-align: center;
+                width: 100%;
+                font-size: 3rem;
             }
             .scoreboard {
                 display: flex;
                 justify-content: space-between;
-                margin-bottom: 10px;
-                font-size: 24px;
-                font-weight: bold;
+                font-size: 1.5rem;
+                width: 100%;
             }
             .game-container {
                 width: 100%;

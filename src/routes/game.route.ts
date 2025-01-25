@@ -330,13 +330,4 @@ export class GameRoute extends MobxLitElement {
     ];
 }
 
-//make gameover an overlay
-//Scale to fill a mobile screen
-//new game on defeat screen is broken
 //simplify logic where possible
-
-//add PWA shortcut
-//style like Jot
-
-//make sure game is ending on correct condition
-//Fix swipes

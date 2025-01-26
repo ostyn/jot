@@ -206,7 +206,16 @@ export class GameRoute extends MobxLitElement {
 
     connectedCallback() {
         super.connectedCallback();
-        this.gesture = new TinyGesture(this, { velocityThreshold: 0.3 });
+        this.gesture = new TinyGesture(this, {
+            velocityThreshold: 0.3,
+            threshold: (type, self) =>
+                Math.max(
+                    25,
+                    Math.floor(
+                        0.15 * (window.innerWidth || document.body.clientWidth)
+                    )
+                ),
+        });
         this.gesture.on('swipeup', () => this.handleDirection('up'));
         this.gesture.on('swipedown', () => this.handleDirection('down'));
         this.gesture.on('swipeleft', () => this.handleDirection('left'));

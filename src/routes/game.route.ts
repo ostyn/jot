@@ -208,7 +208,7 @@ export class GameRoute extends MobxLitElement {
         super.connectedCallback();
         this.gesture = new TinyGesture(this, {
             velocityThreshold: 0.3,
-            threshold: (type, self) =>
+            threshold: () =>
                 Math.max(
                     25,
                     Math.floor(

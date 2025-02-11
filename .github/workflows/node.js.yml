@@ -38,7 +38,6 @@ jobs:
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
-        # location of the coverage artifacts
         path: "./dist"
 
   deploy:
@@ -51,7 +50,6 @@ jobs:
       id-token: write
 
     environment:
-      # environment created automatically by GitHub
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 

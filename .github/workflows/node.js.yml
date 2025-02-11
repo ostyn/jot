@@ -30,6 +30,10 @@ jobs:
         VITE_GCLIENT_ID: ${{ secrets.VITE_GCLIENT_ID }}
         VITE_GAPI_KEY: ${{ secrets.VITE_GAPI_KEY }}
         VITE_GOAT_COUNTER_ID: ${{ vars.VITE_GOAT_COUNTER_ID }}
+    - name: Check for Symlinks
+      run: find ./dist -type l -exec rm -f {} +
+    - name: Check Artifact Size
+      run: du -sh ./dist
     - name: Setup Pages
       if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v5
@@ -38,8 +42,8 @@ jobs:
       if: github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
-        name: "github-pages"
         path: "./dist"
+        name: github-pages
 
   deploy:
     if: github.ref == 'refs/heads/main'

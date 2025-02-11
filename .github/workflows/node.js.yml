@@ -39,7 +39,7 @@ jobs:
 
     - name: Upload Artifact
       if: github.ref == 'refs/heads/main'
-      uses: actions/upload-pages-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         # location of the coverage artifacts
         path: "./dist"
@@ -62,4 +62,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
-  

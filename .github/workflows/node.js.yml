@@ -30,8 +30,6 @@ jobs:
         VITE_GCLIENT_ID: ${{ secrets.VITE_GCLIENT_ID }}
         VITE_GAPI_KEY: ${{ secrets.VITE_GAPI_KEY }}
         VITE_GOAT_COUNTER_ID: ${{ vars.VITE_GOAT_COUNTER_ID }}
-    - name: Set folder ownership
-      run: chmod -R a+rX ./dist
     - name: Setup Pages
       if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v5

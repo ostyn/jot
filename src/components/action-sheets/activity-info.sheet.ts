@@ -31,6 +31,15 @@ export class ActivityInfoSheet extends LitElement {
     dateValues: any = {};
     @state()
     filter = '';
+    onActivityDetailClick = (activityId: string, detail: string) => {
+        Sheet.close();
+        go('search', {
+            queryParams: {
+                a: activityId,
+                detail: detail,
+            },
+        });
+    };
     static getActionSheet(
         data: any,
         _submit: (data: any) => void
@@ -129,11 +138,10 @@ export class ActivityInfoSheet extends LitElement {
             <ul>
                 ${Array.from(this.relatedEntryMap?.entries() || []).map(
                     ([key, value]) =>
-                        html`<li
-                            class="activity-info-recent"
-                            @click=${() => this.onDateSelect(value.date)}
-                        >
-                            <span class="activity-info-recent-date"
+                        html`<li class="activity-info-recent">
+                            <span
+                                @click=${() => this.onDateSelect(value.date)}
+                                class="activity-info-recent-date"
                                 >${key}</span
                             >
                             ${Array.isArray(value.activities[this.activityId])
@@ -144,7 +152,11 @@ export class ActivityInfoSheet extends LitElement {
                                   ).map(
                                       (textItem) =>
                                           html`<activity-detail
-                                              click.trigger="selectTextItem(textItem)"
+                                              @click="${() =>
+                                                  this.onActivityDetailClick(
+                                                      this.activityId,
+                                                      textItem
+                                                  )}"
                                               >${textItem}</activity-detail
                                           >`
                                   )
@@ -166,7 +178,10 @@ export class ActivityInfoSheet extends LitElement {
                       />
                       <activity-detail-stats
                           @activityDetailClick=${(e: any) =>
-                              this.onDateSelect(e.detail.dates[0].entry.date)}
+                              this.onActivityDetailClick(
+                                  this.activityId,
+                                  e.detail.text
+                              )}
                           .activityId=${this.activityId}
                           .filter=${(detail: StatsDetailEntry) =>
                               detail.text

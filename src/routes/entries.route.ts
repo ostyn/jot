@@ -24,10 +24,7 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
     @state() filteredEntries: Entry[] = [];
     gesture?: TinyGesture<this>;
     onAfterEnter() {
-        window.addEventListener(
-            'vaadin-router-location-changed',
-            this.getParamsAndUpdate
-        );
+        window.addEventListener('jot-navigate', this.getParamsAndUpdate);
         this.getParamsAndUpdate();
         this.gesture = new TinyGesture(this, {
             threshold: (type, _self) =>
@@ -50,10 +47,7 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
         });
     }
     onAfterLeave() {
-        window.removeEventListener(
-            'vaadin-router-location-changed',
-            this.getParamsAndUpdate
-        );
+        window.removeEventListener('jot-navigate', this.getParamsAndUpdate);
         this.getParamsAndUpdate();
         this.gesture?.destroy();
     }

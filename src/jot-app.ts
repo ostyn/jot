@@ -5,6 +5,7 @@ import { Router } from '@vaadin/router';
 import { registerSW } from 'virtual:pwa-register';
 import { base } from './baseStyles';
 import './components/action-sheets/action-sheet';
+import { Sheet } from './components/action-sheets/action-sheet';
 import './components/jot-icon';
 import './components/nav-bar';
 import { routerContext, routes } from './routes/route-config';
@@ -28,6 +29,13 @@ export class JotApp extends LitElement {
         settings.setShowArchivedFromStorage();
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
+        window.addEventListener('vaadin-router-location-changed', () => {
+            if (Sheet.isShown) {
+                Sheet.close();
+            } else {
+                window.dispatchEvent(new CustomEvent('jot-navigate'));
+            }
+        });
     }
 
     render() {

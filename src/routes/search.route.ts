@@ -2,7 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { WebComponentInterface  } from '@vaadin/router';
+import { WebComponentInterface } from '@vaadin/router';
 import escapeRegExp from 'escape-string-regexp';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
@@ -142,10 +142,7 @@ export class SearchRoute
     store = new SearchStore();
     reactionDisposer: any;
     onAfterEnter() {
-        window.addEventListener(
-            'vaadin-router-location-changed',
-            this.getParamsAndUpdate
-        );
+        window.addEventListener('jot-navigate', this.getParamsAndUpdate);
         this.getParamsAndUpdate();
         // Updating URL based on state updates
         this.reactionDisposer = reaction(
@@ -198,10 +195,7 @@ export class SearchRoute
     };
     onAfterLeave() {
         this.reactionDisposer();
-        window.removeEventListener(
-            'vaadin-router-location-changed',
-            this.getParamsAndUpdate
-        );
+        window.removeEventListener('jot-navigate', this.getParamsAndUpdate);
     }
     addFilter() {
         if (!this.store.selectedActivityId) this.openActivitySelect();

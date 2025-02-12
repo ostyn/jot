@@ -43,6 +43,7 @@ export class ActionSheet extends LitElement {
         data?: any;
         onClose?: (data?: any) => void;
     }) {
+        history.pushState({ sheetOpen: true }, 'Sheet Open', '#sheet');
         if (this.isShown) this.close();
         disableBodyScroll(this, { allowTouchMove: () => true });
         this.data = options.data;
@@ -68,7 +69,7 @@ export class ActionSheet extends LitElement {
 
         window.addEventListener('keyup', (event: any) => {
             if (event.key === 'Escape') {
-                this.close();
+                history.back();
             }
         });
 
@@ -94,7 +95,7 @@ export class ActionSheet extends LitElement {
             this.dragPosition = undefined;
 
             if (this.sheetHeight < 25) {
-                this.close();
+                history.back();
             } else if (this.sheetHeight > 75) {
                 this.setSheetHeight(100);
             } else {
@@ -109,7 +110,7 @@ export class ActionSheet extends LitElement {
         });
         gesture.on('swipedown', () => {
             if (this.sheetHeight <= 50) {
-                this.close();
+                history.back();
             } else {
                 this.setSheetHeight(50);
             }
@@ -129,7 +130,7 @@ export class ActionSheet extends LitElement {
     render() {
         return html`<span>
             <div class="sheet" aria-hidden=${!this.isShown} role="dialog">
-                <div class="overlay" @click=${this.close}></div>
+                <div class="overlay" @click=${() => history.back()}></div>
 
                 <div
                     class="contents"

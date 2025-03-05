@@ -1,6 +1,6 @@
 import { action, makeObservable, observable, runInAction } from 'mobx';
 import { entryDao } from '../dao/EntryDao';
-import { Entry } from '../interfaces/entry.interface';
+import { EditTools, Entry } from '../interfaces/entry.interface';
 
 const entriesData: Entry[] = await entryDao.getItems();
 class EntriesStore {
@@ -23,8 +23,8 @@ class EntriesStore {
         });
     }
     @action.bound
-    async bulkImport(entries: Entry[]) {
-        await entryDao.saveItems(entries);
+    async bulkImport(entries: Entry[], importTool: EditTools) {
+        await entryDao.saveItems(entries, importTool);
         const updatedEntries = await entryDao.getItems();
         runInAction(() => {
             this.all = updatedEntries;

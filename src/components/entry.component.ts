@@ -61,6 +61,10 @@ export class EntryComponent extends MobxLitElement {
             }
         );
 
+        const msSpentEditing = this.entry.editLog.reduce(
+            (sum, entry) => sum + (entry?.duration ?? 0),
+            0
+        );
         return html`<article class="entry">
             <header class="entry-header">
                 <hgroup>
@@ -113,30 +117,45 @@ export class EntryComponent extends MobxLitElement {
                     edit
                 </button>
                 <div class="entry-footer-dates">
-                    ${this.entry.created
+                    <span>
+                        Entered
+                        ${DateHelpers.dateToStringDate(
+                            this.entry.editLog[0].date
+                        )},
+                        ${DateHelpers.dateToStringTime(
+                            this.entry.editLog[0].date
+                        )}<br />
+                    </span>
+                    ${this.entry?.editLog?.length > 1
                         ? html`<span>
-                              Entered
-                              ${DateHelpers.dateToStringDate(
-                                  this.entry.created
-                              )},
-                              ${DateHelpers.dateToStringTime(
-                                  this.entry.created
-                              )}<br />
-                          </span>`
+                                  Updated
+                                  ${DateHelpers.dateToStringDate(
+                                      this.entry.editLog[
+                                          this.entry.editLog.length - 1
+                                      ].date
+                                  )},
+                                  ${DateHelpers.dateToStringTime(
+                                      this.entry.editLog[
+                                          this.entry.editLog.length - 1
+                                      ].date
+                                  )}<br />
+                              </span>
+                              ${msSpentEditing > 0
+                                  ? html`<span>
+                                        ${DateHelpers.duration(msSpentEditing)}
+                                        spent editing
+                                        ${this.entry.editLog.length > 1
+                                            ? html`across
+                                              ${this.entry.editLog.length}
+                                              sessions`
+                                            : nothing}
+                                        <br />
+                                    </span>`
+                                  : nothing}`
                         : nothing}
-                    ${this.entry.updated &&
-                    this.entry.created !== this.entry.updated
-                        ? html`<span>
-                              Updated
-                              ${DateHelpers.dateToStringDate(
-                                  this.entry.updated
-                              )},
-                              ${DateHelpers.dateToStringTime(
-                                  this.entry.updated
-                              )}<br />
-                          </span>`
-                        : nothing}
-                    ${this.entry.createdBy === 'DAYLIO_IMPORT'
+                    ${['DAYLIO_IMPORT', 'DAYLIO'].includes(
+                        this.entry.editLog[0].tool
+                    )
                         ? html`<span>Imported from Daylio<br /></span>`
                         : nothing}
                 </div>

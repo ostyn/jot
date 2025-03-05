@@ -7,6 +7,7 @@ import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { settings } from '../stores/settings.store';
+import { createExportContents } from '../utils/BackupHelpers';
 import { go } from './route-config';
 
 @customElement('settings-route')
@@ -14,24 +15,12 @@ export class SettingsRoute extends MobxLitElement {
     sub: any;
     exportBackup() {
         if (confirm('Download complete backup file of all personal data?')) {
-            const backupEntries = entries.all.map((entry) => {
-                const newEntry: any = { ...entry };
-                return newEntry;
-            });
             this.download(
                 `Jot Backup ${format(
                     new Date(),
                     'yyyy-dd-MM @ HH.mm.ss'
                 )}.json`,
-                JSON.stringify(
-                    {
-                        entries: backupEntries,
-                        activities: activities.all,
-                        moods: moods.userCreated,
-                    },
-                    undefined,
-                    2
-                )
+                createExportContents(true)
             );
         }
     }

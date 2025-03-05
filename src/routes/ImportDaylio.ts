@@ -1,12 +1,7 @@
 import { parse } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import Papa from 'papaparse';
-import { Entry } from '../interfaces/entry.interface';
-
-export enum EditTools {
-    'WEB' = 'WEB',
-    'DAYLIO_IMPORT' = 'DAYLIO_IMPORT',
-}
+import { EditTools, Entry } from '../interfaces/entry.interface';
 
 export class ImportDaylio {
     static parseCsv(
@@ -51,10 +46,12 @@ export class ImportDaylio {
                 note: row.note_title
                     ? row.note_title + '\n\n' + row.note
                     : row.note,
-                created: zonedDate,
-                updated: zonedDate,
-                createdBy: EditTools.DAYLIO_IMPORT,
-                lastUpdatedBy: EditTools.DAYLIO_IMPORT,
+                editLog: [
+                    {
+                        date: zonedDate,
+                        tool: EditTools.DAYLIO,
+                    },
+                ],
             };
             entries.push(entry);
         }

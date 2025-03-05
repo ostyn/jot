@@ -1,6 +1,9 @@
 import { format, parseISO } from 'date-fns';
+import { formatDistance } from 'date-fns';
 
 export class DateHelpers {
+    public static duration = (ms: number) =>
+        formatDistance(0, ms, { includeSeconds: true });
     public static stringDateToDate(date: string) {
         return format(parseISO(date), 'MMMM d, yyyy');
     }

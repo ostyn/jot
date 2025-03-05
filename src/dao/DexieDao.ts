@@ -24,13 +24,8 @@ export class DexieDao implements JotDao {
                 ? crypto.randomUUID()
                 : Math.random();
         }
-        passedEntry.updated = new Date();
-        if (!passedEntry.created) {
-            passedEntry.created = passedEntry.updated;
-        }
-        passedEntry.lastUpdatedBy = EditTools.JOT;
-        if (!passedEntry.createdBy) {
-            passedEntry.createdBy = EditTools.JOT;
+        if (!passedEntry.editLog) {
+            this.addUpdateInfo(passedEntry);
         }
         const newLocal = db.table(this.name).put(passedEntry);
         return newLocal;
@@ -43,11 +38,14 @@ export class DexieDao implements JotDao {
         passedItems.forEach((item) => {
             let newItem = { ...item };
             newItem.id ||= crypto.randomUUID();
-            newItem.created ||= new Date();
-            newItem.updated ||= newItem.created;
-
-            item.lastUpdatedBy = importTool;
-            item.createdBy ||= importTool;
+            if (!item.editLog) {
+                this.addUpdateInfo(newItem);
+            } else {
+                item.editLog.push({
+                    date: new Date(),
+                    tool: importTool,
+                });
+            }
             itemsToSave.push(newItem);
         });
 
@@ -58,5 +56,11 @@ export class DexieDao implements JotDao {
     }
     sortItems(items: any[]): any[] {
         return items;
+    }
+    private addUpdateInfo(passedEntry: any) {
+        passedEntry.updated = new Date();
+        if (!passedEntry.created) {
+            passedEntry.created = passedEntry.updated;
+        }
     }
 }

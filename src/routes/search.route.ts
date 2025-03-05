@@ -94,8 +94,7 @@ class SearchStore {
             let containsSearchQuery =
                 regex.test(entry.note) ||
                 regex.test(entry.id || '') ||
-                regex.test(entry.createdBy) ||
-                regex.test(entry.lastUpdatedBy || '') ||
+                regex.test(entry.editLog[0]?.tool || '') ||
                 Array.from(Object.values(entry.activities))
                     .filter((activity) => Array.isArray(activity))
                     .some((activityDetail) =>

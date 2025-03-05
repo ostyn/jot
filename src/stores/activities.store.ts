@@ -7,7 +7,7 @@ import {
 } from 'mobx';
 import { activityDao } from '../dao/ActivityDao';
 import { Activity } from '../interfaces/activity.interface';
-import { Entry } from '../interfaces/entry.interface';
+import { EditTools, Entry } from '../interfaces/entry.interface';
 import {
     StatsActivityEntry,
     StatsDetailEntry,
@@ -40,8 +40,8 @@ class ActivityStore {
         await this.refreshActivities();
     }
     @action.bound
-    public async bulkImport(activities: Activity[]) {
-        await activityDao.saveItems(activities);
+    public async bulkImport(activities: Activity[], importTool: EditTools) {
+        await activityDao.saveItems(activities, importTool);
         await this.refreshActivities();
     }
     @action.bound

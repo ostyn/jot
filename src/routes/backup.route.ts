@@ -2,16 +2,19 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { animate } from '@lit-labs/motion';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
-import { Activity } from '../interfaces/activity.interface';
-import { Entry } from '../interfaces/entry.interface';
-import { Mood } from '../interfaces/mood.interface';
+import { EditTools } from '../interfaces/entry.interface';
 import { GoogleDriveService } from '../services/google-drive.service';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import {
+    createExportContents,
+    JsonExport,
+    prepJsonForImport,
+} from '../utils/BackupHelpers';
 
 declare global {
     interface Window {
@@ -39,11 +42,7 @@ export class BackupRoute extends LitElement {
         this.isLoading = true;
         await this.gdrive.addFile(
             'Backup.json',
-            JSON.stringify({
-                entries: entries.all,
-                activities: activities.all,
-                moods: moods.userCreated,
-            }),
+            createExportContents(),
             `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}`
         );
         this.backups = await this.gdrive.listFolder();
@@ -151,32 +150,18 @@ export class BackupRoute extends LitElement {
             )
         ) {
             const resp = await this.gdrive.getFile(file.id);
-            const newEntries = resp.result.entries;
-            const newActivities = resp.result.activities;
-            const newMoods = resp.result.moods;
+            const importData: JsonExport = resp.result;
 
-            newEntries.forEach((entry: Entry) => {
-                entry.created = parseISO(entry.created as unknown as string);
-                entry.updated = parseISO(entry.updated as unknown as string);
-            });
-            newMoods.forEach((mood: Mood) => {
-                mood.created = parseISO(mood.created as unknown as string);
-                mood.updated = parseISO(mood.updated as unknown as string);
-            });
-            newActivities.forEach((activity: Activity) => {
-                activity.created = parseISO(
-                    activity.created as unknown as string
-                );
-                activity.updated = parseISO(
-                    activity.updated as unknown as string
-                );
-            });
+            prepJsonForImport(importData);
             entries.reset();
             activities.reset();
             moods.reset();
-            moods.bulkImport(newMoods);
-            activities.bulkImport(newActivities);
-            entries.bulkImport(newEntries);
+            moods.bulkImport(importData.moods, EditTools.GOOGLE_IMPORT);
+            activities.bulkImport(
+                importData.activities,
+                EditTools.GOOGLE_IMPORT
+            );
+            entries.bulkImport(importData.entries, EditTools.GOOGLE_IMPORT);
         }
     }
     static styles = [

@@ -6,6 +6,7 @@ import {
     runInAction,
 } from 'mobx';
 import { moodDao } from '../dao/MoodDao';
+import { EditTools } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
 
 const savedMoods = await moodDao.getItems();
@@ -39,8 +40,8 @@ class MoodStore {
         });
     }
     @action.bound
-    public async bulkImport(moods: Mood[]) {
-        await moodDao.saveItems(moods);
+    public async bulkImport(moods: Mood[], importTool: EditTools) {
+        await moodDao.saveItems(moods, importTool);
         const updatedMoods = await moodDao.getItems();
         runInAction(() => {
             this.userCreated = updatedMoods;

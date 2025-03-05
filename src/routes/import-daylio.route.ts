@@ -5,12 +5,13 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { Activity } from '../interfaces/activity.interface';
-import { Entry } from '../interfaces/entry.interface';
+import { EditTools, Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { ImportDaylio } from './ImportDaylio';
+import { go } from './route-config';
 
 @customElement('import-daylio-route')
 export class ImportDaylioRoute extends LitElement {
@@ -51,7 +52,8 @@ export class ImportDaylioRoute extends LitElement {
         ).length;
     }
     private import(): void {
-        entries.bulkImport(this.entries);
+        entries.bulkImport(this.entries, EditTools.DAYLIO_IMPORT);
+        go('entries');
     }
     private getMood(moodId: string): Mood | undefined {
         return moods.getMood(moodId);

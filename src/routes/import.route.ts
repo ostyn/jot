@@ -1,13 +1,13 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
-import { Entry } from '../interfaces/entry.interface';
+import { EditTools, Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { prepJsonForImport } from '../utils/BackupHelpers';
 
 @customElement('import-route')
 export class ImportRoute extends LitElement {
@@ -39,30 +39,7 @@ export class ImportRoute extends LitElement {
                     file.type === 'text/plain'
                 ) {
                     const data = JSON.parse(event.target?.result as string);
-                    data.entries.forEach((entry: Entry) => {
-                        entry.created = parseISO(
-                            entry.created as unknown as string
-                        );
-                        entry.updated = parseISO(
-                            entry.updated as unknown as string
-                        );
-                    });
-                    data.moods.forEach((mood: Mood) => {
-                        mood.created = parseISO(
-                            mood.created as unknown as string
-                        );
-                        mood.updated = parseISO(
-                            mood.updated as unknown as string
-                        );
-                    });
-                    data.activities.forEach((activity: Activity) => {
-                        activity.created = parseISO(
-                            activity.created as unknown as string
-                        );
-                        activity.updated = parseISO(
-                            activity.updated as unknown as string
-                        );
-                    });
+                    prepJsonForImport(data);
                     this.entries = data.entries;
                     this.moods = data.moods;
                     this.activities = data.activities;
@@ -82,19 +59,22 @@ export class ImportRoute extends LitElement {
                     if (this.overwriteExistingData) {
                         entries.reset();
                     }
-                    entries.bulkImport(this.entries);
+                    entries.bulkImport(this.entries, EditTools.JSON_IMPORT);
                 }
                 if (this.importMoods) {
                     if (this.overwriteExistingData) {
                         moods.reset();
                     }
-                    moods.bulkImport(this.moods);
+                    moods.bulkImport(this.moods, EditTools.JSON_IMPORT);
                 }
                 if (this.importActivities) {
                     if (this.overwriteExistingData) {
                         activities.reset();
                     }
-                    activities.bulkImport(this.activities);
+                    activities.bulkImport(
+                        this.activities,
+                        EditTools.JSON_IMPORT
+                    );
                 }
                 this.isLoading = false;
             }, 1);

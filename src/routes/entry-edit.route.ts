@@ -131,8 +131,10 @@ export class EntryEditStore {
 export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
     originalEntry?: Partial<Entry>;
+    startEditTime = 0;
     async onAfterEnter(location: RouterLocation) {
         window.scrollTo({ top: 0 });
+        this.startEditTime = new Date().getTime();
         if (location.params.id) {
             this.originalEntry = await entries.getEntry(
                 location.params.id as string
@@ -143,8 +145,7 @@ export class EntryEditRoute extends MobxLitElement {
                 date: '',
                 mood: '0',
                 note: '',
-                createdBy: EditTools.JOT,
-                lastUpdatedBy: EditTools.JOT,
+                editLog: [],
             };
         }
         this.store.setEntry(this.originalEntry as Entry);
@@ -322,6 +323,12 @@ export class EntryEditRoute extends MobxLitElement {
     ];
 
     private saveEntry() {
+        const now = new Date();
+        const timeSpentEditing = now.getTime() - this.startEditTime;
+        const editLog = [
+            ...(this.originalEntry?.editLog || []),
+            { date: now, duration: timeSpentEditing, tool: EditTools.JOT },
+        ];
         this.store.unmarkPendingChanges();
         entries.upsertEntry({
             ...this.originalEntry,
@@ -329,9 +336,8 @@ export class EntryEditRoute extends MobxLitElement {
             note: this.store.note,
             mood: this.store.mood,
             date: this.store.date,
-            location: toJS(this.store.location.coords),
-            lastUpdatedBy: EditTools.JOT,
-            createdBy: EditTools.JOT,
+            // location: toJS(this.store.location.coords),
+            editLog,
         });
         go('entries', {
             queryParams: DateHelpers.getDateStringParts(this.store.date),

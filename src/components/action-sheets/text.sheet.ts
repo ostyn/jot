@@ -23,7 +23,9 @@ export class TextSheet extends LitElement {
     }
     protected firstUpdated() {
         this.newText = this.text || '';
-        this?.inputRef?.value?.focus();
+        setTimeout(() => {
+            this.inputRef?.value?.focus();
+        }, 1);
     }
     disconnectedCallback() {
         // Was getting multiple of these

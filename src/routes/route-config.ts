@@ -9,6 +9,7 @@ import './game.route';
 import './import-daylio.route';
 import './import.route';
 import './moods.route';
+import './notes.route';
 import './search.route';
 import './settings.route';
 
@@ -20,6 +21,7 @@ export const routes = [
         name: 'entries',
         options: { menuItem: true, iconName: 'BookOpen' },
     },
+
     {
         path: '/moods',
         component: 'moods-route',
@@ -31,6 +33,12 @@ export const routes = [
         component: 'activities-route',
         name: 'activities',
         options: { menuItem: true, iconName: 'Activity' },
+    },
+    {
+        path: '/notes',
+        component: 'notes-route',
+        name: 'notes',
+        options: { menuItem: true, iconName: 'StickyNote' },
     },
     {
         path: '/',

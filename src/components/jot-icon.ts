@@ -32,6 +32,7 @@ import {
     Share,
     Smile,
     SmilePlus,
+    StickyNote,
     TableProperties,
     Trash2,
     TrendingUp,
@@ -75,6 +76,7 @@ const mapping = {
     MapPin,
     MapPinOff,
     Locate,
+    StickyNote,
 };
 export type JotIconName = keyof typeof mapping;
 

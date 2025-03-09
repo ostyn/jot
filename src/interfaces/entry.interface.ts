@@ -5,8 +5,9 @@ export type Entry = {
     location?: { lat: number; lon: number };
     activities: { [key: string]: ActivityDetail };
     note: string;
-    editLog: { date: Date; duration?: number; tool: EditTools }[];
+    editLog: EditLog[];
 };
+export type EditLog = { date: Date; duration?: number; tool: EditTools };
 export type Entry_v3 = Omit<Entry, 'editLog'> & {
     updated?: Date;
     created?: Date;

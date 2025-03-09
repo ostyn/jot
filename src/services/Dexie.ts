@@ -20,6 +20,12 @@ db.version(4)
             .toCollection()
             .modify(versions[4].upgrade);
     });
+db.version(5).stores({
+    moods: 'id',
+    activities: 'id',
+    entries: 'id, date',
+    notes: 'id, date, path',
+});
 export interface EntryVersion {
     version: number;
     description: string;

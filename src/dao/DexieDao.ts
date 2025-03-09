@@ -30,10 +30,7 @@ export class DexieDao implements JotDao {
         const newLocal = db.table(this.name).put(passedEntry);
         return newLocal;
     }
-    async saveItems(
-        passedItems: any[],
-        importTool = EditTools.DAYLIO_IMPORT
-    ): Promise<any> {
+    async saveItems(passedItems: any[], importTool: EditTools): Promise<any> {
         const itemsToSave: any[] = [];
         passedItems.forEach((item) => {
             let newItem = { ...item };

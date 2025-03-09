@@ -10,6 +10,7 @@ import { DateHelpers } from '../utils/DateHelpers';
 import { Sheet } from './action-sheets/action-sheet';
 import { MapSheet } from './action-sheets/map.sheet';
 import './activity.component';
+import './edit-log-dates.component';
 
 @customElement('entry-component')
 export class EntryComponent extends MobxLitElement {
@@ -61,10 +62,6 @@ export class EntryComponent extends MobxLitElement {
             }
         );
 
-        const msSpentEditing = this.entry.editLog.reduce(
-            (sum, entry) => sum + (entry?.duration ?? 0),
-            0
-        );
         return html`<article class="entry">
             <header class="entry-header">
                 <hgroup>
@@ -109,57 +106,15 @@ export class EntryComponent extends MobxLitElement {
             ${this.entry.note != ''
                 ? html`<section class="entry-note">${this.entry.note}</section>`
                 : nothing}
-            <section class="entry-footer">
+            <footer class="entry-footer">
                 <button
                     class="inline outline contrast"
                     @click=${this.editEntry}
                 >
                     edit
                 </button>
-                <div class="entry-footer-dates">
-                    <span>
-                        Entered
-                        ${DateHelpers.dateToStringDate(
-                            this.entry.editLog[0].date
-                        )},
-                        ${DateHelpers.dateToStringTime(
-                            this.entry.editLog[0].date
-                        )}<br />
-                    </span>
-                    ${this.entry?.editLog?.length > 1
-                        ? html`<span>
-                                  Updated
-                                  ${DateHelpers.dateToStringDate(
-                                      this.entry.editLog[
-                                          this.entry.editLog.length - 1
-                                      ].date
-                                  )},
-                                  ${DateHelpers.dateToStringTime(
-                                      this.entry.editLog[
-                                          this.entry.editLog.length - 1
-                                      ].date
-                                  )}<br />
-                              </span>
-                              ${msSpentEditing > 0
-                                  ? html`<span>
-                                        ${DateHelpers.duration(msSpentEditing)}
-                                        spent editing
-                                        ${this.entry.editLog.length > 1
-                                            ? html`across
-                                              ${this.entry.editLog.length}
-                                              sessions`
-                                            : nothing}
-                                        <br />
-                                    </span>`
-                                  : nothing}`
-                        : nothing}
-                    ${['DAYLIO_IMPORT', 'DAYLIO'].includes(
-                        this.entry.editLog[0].tool
-                    )
-                        ? html`<span>Imported from Daylio<br /></span>`
-                        : nothing}
-                </div>
-            </section>
+                <edit-log-dates .editLog=${this.entry.editLog}></edit-log-dates>
+            </footer>
         </article>`;
     }
     static styles = [
@@ -211,15 +166,6 @@ export class EntryComponent extends MobxLitElement {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
-            }
-            .entry-footer-dates {
-                display: inline-block;
-                text-align: right;
-            }
-            .entry-footer-dates {
-                font-size: 0.75rem;
-                line-height: 1rem;
-                color: var(--pico-secondary);
             }
         `,
     ];

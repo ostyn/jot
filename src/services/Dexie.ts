@@ -82,7 +82,7 @@ export const versions: { [key: number]: EntryVersion } = {
     5: {
         version: 5,
         description: 'Added notes',
-        needsToRun: (entry: Entry) => false,
+        needsToRun: () => false,
         upgrade: (entry: Entry) => entry,
         importTransform: (entry: Entry) => {
             for (const log of entry.editLog) {

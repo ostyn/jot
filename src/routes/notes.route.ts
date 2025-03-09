@@ -50,6 +50,13 @@ export class NotesRoute extends MobxLitElement {
                                                         ],
                                                     };
                                                     if (
+                                                        updatedNote.content ===
+                                                        ''
+                                                    )
+                                                        notes.removeNote(
+                                                            updatedNote.id
+                                                        );
+                                                    else if (
                                                         updatedNote.content !==
                                                         note.content
                                                     )

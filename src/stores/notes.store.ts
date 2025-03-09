@@ -4,14 +4,6 @@ import { EditTools } from '../interfaces/entry.interface';
 import { Note, NoteTools } from '../interfaces/note.interface';
 
 const notesData: Note[] = await notesDao.getItems();
-if (notesData.length === 0) {
-    notesDao.saveItem({
-        path: '',
-        content:
-            'Happy Birthday Ranger!\nYou are now 13 years old. You are officially a teenager. You are growing up so fast. I am so proud of you. I love you so much. I hope you have a great day. Love, Jared',
-        editLog: [{ date: new Date(), duration: 100000, tool: EditTools.JOT }],
-    });
-}
 class NotesStore {
     @observable
     public all: Note[] = notesData;

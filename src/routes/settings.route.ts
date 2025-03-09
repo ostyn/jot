@@ -6,6 +6,7 @@ import { base } from '../baseStyles';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { notes } from '../stores/notes.store';
 import { settings } from '../stores/settings.store';
 import { createExportContents } from '../utils/BackupHelpers';
 import { go } from './route-config';
@@ -117,6 +118,7 @@ export class SettingsRoute extends MobxLitElement {
             entries.reset();
             activities.reset();
             moods.reset();
+            notes.reset();
         }
     }
     static styles = [

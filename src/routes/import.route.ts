@@ -4,10 +4,12 @@ import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { EditTools, Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
+import { Note } from '../interfaces/note.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
-import { prepJsonForImport } from '../utils/BackupHelpers';
+import { notes } from '../stores/notes.store';
+import { JsonExport, prepJsonForImport } from '../utils/BackupHelpers';
 
 @customElement('import-route')
 export class ImportRoute extends LitElement {
@@ -18,6 +20,8 @@ export class ImportRoute extends LitElement {
     @state()
     moods: Mood[] = [];
     @state()
+    notes: Note[] = [];
+    @state()
     isLoading = false;
     @state()
     importEntries = true;
@@ -25,6 +29,8 @@ export class ImportRoute extends LitElement {
     importMoods = true;
     @state()
     importActivities = true;
+    @state()
+    importNotes = true;
     @state()
     overwriteExistingData = true;
     handleFile() {
@@ -38,11 +44,14 @@ export class ImportRoute extends LitElement {
                     file.type === 'application/json' ||
                     file.type === 'text/plain'
                 ) {
-                    const data = JSON.parse(event.target?.result as string);
+                    const data: JsonExport = JSON.parse(
+                        event.target?.result as string
+                    );
                     prepJsonForImport(data);
                     this.entries = data.entries;
                     this.moods = data.moods;
                     this.activities = data.activities;
+                    this.notes = data.notes || [];
                     this.isLoading = false;
                 }
             };
@@ -75,6 +84,12 @@ export class ImportRoute extends LitElement {
                         this.activities,
                         EditTools.JSON_IMPORT
                     );
+                }
+                if (this.importNotes) {
+                    if (this.overwriteExistingData) {
+                        notes.reset();
+                    }
+                    notes.bulkImport(this.notes, EditTools.JSON_IMPORT);
                 }
                 this.isLoading = false;
             }, 1);
@@ -116,6 +131,14 @@ export class ImportRoute extends LitElement {
                                   (this.importActivities =
                                       !this.importActivities)}
                           />Activities: ${this.activities.length}
+                      </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importNotes}
+                              @change=${() =>
+                                  (this.importNotes = !this.importNotes)}
+                          />Notes: ${this.notes.length}
                       </label>
                       <hr />
                       <label

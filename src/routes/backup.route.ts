@@ -10,6 +10,7 @@ import { GoogleDriveService } from '../services/google-drive.service';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
+import { notes } from '../stores/notes.store';
 import {
     createExportContents,
     JsonExport,
@@ -43,7 +44,7 @@ export class BackupRoute extends LitElement {
         await this.gdrive.addFile(
             'Backup.json',
             createExportContents(),
-            `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}`
+            `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}, Notes: ${notes.all.length}`
         );
         this.backups = await this.gdrive.listFolder();
         this.isLoading = false;
@@ -156,12 +157,15 @@ export class BackupRoute extends LitElement {
             entries.reset();
             activities.reset();
             moods.reset();
+            notes.reset();
             moods.bulkImport(importData.moods, EditTools.GOOGLE_IMPORT);
             activities.bulkImport(
                 importData.activities,
                 EditTools.GOOGLE_IMPORT
             );
             entries.bulkImport(importData.entries, EditTools.GOOGLE_IMPORT);
+            if (importData.notes)
+                notes.bulkImport(importData.notes, EditTools.GOOGLE_IMPORT);
         }
     }
     static styles = [

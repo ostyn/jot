@@ -79,4 +79,15 @@ export const versions: { [key: number]: EntryVersion } = {
             }
         },
     },
+    5: {
+        version: 5,
+        description: 'Added notes',
+        needsToRun: (entry: Entry) => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
 };

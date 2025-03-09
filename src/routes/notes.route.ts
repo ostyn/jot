@@ -98,19 +98,20 @@ export class NotesRoute extends MobxLitElement {
                             data: '',
                             onClose: (content: string) => {
                                 const endEdit = new Date();
-                                notes.insertNote({
-                                    path: '',
-                                    content,
-                                    editLog: [
-                                        {
-                                            date: endEdit,
-                                            duration:
-                                                endEdit.getTime() -
-                                                startEdit.getTime(),
-                                            tool: EditTools.JOT,
-                                        },
-                                    ],
-                                });
+                                if (content !== '')
+                                    notes.insertNote({
+                                        path: '',
+                                        content,
+                                        editLog: [
+                                            {
+                                                date: endEdit,
+                                                duration:
+                                                    endEdit.getTime() -
+                                                    startEdit.getTime(),
+                                                tool: EditTools.JOT,
+                                            },
+                                        ],
+                                    });
                             },
                         });
                     }}

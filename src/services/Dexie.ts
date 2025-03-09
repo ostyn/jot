@@ -29,7 +29,7 @@ db.version(5).stores({
 export interface EntryVersion {
     version: number;
     description: string;
-    needsToRun: (entry: Entry) => boolean;
+    needUpgrade: (entry: Entry) => boolean;
     upgrade: (entry: Entry) => void;
     importTransform: (entry: Entry) => void;
 }
@@ -38,7 +38,7 @@ export const versions: { [key: number]: EntryVersion } = {
         version: 3,
         description:
             'Everything before version 4. This is really just here for the importTransform',
-        needsToRun: () => false,
+        needUpgrade: () => false,
         upgrade: () => {},
         importTransform: (entry: Entry_v3) => {
             if (typeof entry.created === 'string')
@@ -50,7 +50,7 @@ export const versions: { [key: number]: EntryVersion } = {
     4: {
         version: 4,
         description: 'Add editLog to entries',
-        needsToRun: (entry: Entry) => entry.editLog === undefined,
+        needUpgrade: (entry: Entry) => entry.editLog === undefined,
         upgrade: (entry: Entry_v3) => {
             const updatedEntry: Entry = entry as Entry;
             updatedEntry.editLog = [
@@ -82,7 +82,7 @@ export const versions: { [key: number]: EntryVersion } = {
     5: {
         version: 5,
         description: 'Added notes',
-        needsToRun: () => false,
+        needUpgrade: () => false,
         upgrade: (entry: Entry) => entry,
         importTransform: (entry: Entry) => {
             for (const log of entry.editLog) {

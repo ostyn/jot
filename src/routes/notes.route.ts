@@ -71,7 +71,7 @@ export class NotesRoute extends MobxLitElement {
                                             ${note.content.split('\n')[0]}
                                         </header>
 
-                                        <section>
+                                        <section class="note-content">
                                             ${note.content
                                                 .split('\n')
                                                 .slice(1)
@@ -123,9 +123,8 @@ export class NotesRoute extends MobxLitElement {
     static styles = [
         base,
         css`
-            .moods-mood {
-                font-size: 2rem;
-                cursor: pointer;
+            .note-content {
+                white-space: pre-wrap;
             }
             .folderLabel {
                 padding-left: 1.5rem;

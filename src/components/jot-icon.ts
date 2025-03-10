@@ -13,6 +13,8 @@ import {
     Eye,
     EyeOff,
     FileText,
+    Heart,
+    HeartOff,
     Import,
     Info,
     Locate,
@@ -25,6 +27,7 @@ import {
     Play,
     Plus,
     PlusCircle,
+    RefreshCw,
     Save,
     Search,
     Server,
@@ -42,6 +45,10 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    Menu,
+    Heart,
+    HeartOff,
+    RefreshCw,
     TableProperties,
     AlertTriangle,
     AlignJustify,
@@ -86,9 +93,13 @@ export class JotIcon extends LitElement {
     name: JotIconName = 'Smile';
     @property({ type: Object })
     size: 'small' | 'medium' | 'large' | 'xlarge' = 'medium';
+    @property({ type: String })
+    fillColor?: string;
+
     render() {
-        const icon = createElement(mapping[this.name] || Menu);
+        const icon = createElement(mapping[this.name]);
         icon.classList.add(this.size);
+        if (this.fillColor) icon.style.fill = this.fillColor;
         return icon;
     }
     static styles = [

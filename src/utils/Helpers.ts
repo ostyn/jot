@@ -52,3 +52,38 @@ export enum Events {
 export function timer(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export function xmlToJson(xmlString: string): Record<string, any> {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, 'application/xml');
+    const result: Record<string, any> = {};
+
+    function processNode(node: Element): any {
+        const children = Array.from(node.children);
+        if (children.length > 0) {
+            const obj: Record<string, any> = {};
+            children.forEach((child) => {
+                const key = child.nodeName;
+                const value = processNode(child);
+                if (obj[key]) {
+                    if (!Array.isArray(obj[key])) {
+                        obj[key] = [obj[key]];
+                    }
+                    obj[key].push(value);
+                } else {
+                    obj[key] = value;
+                }
+            });
+            return obj;
+        }
+
+        return node.textContent || null;
+    }
+
+    const root = xmlDoc.documentElement;
+    if (root) {
+        result[root.nodeName] = processNode(root);
+    }
+
+    return result;
+}

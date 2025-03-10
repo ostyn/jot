@@ -3,6 +3,7 @@ import { Route, Router } from '@vaadin/router';
 import { JotIconName } from '../components/jot-icon';
 import './activities.route';
 import './backup.route';
+import './cycle.route';
 import './entries.route';
 import './entry-edit.route';
 import './game.route';
@@ -39,6 +40,11 @@ export const routes = [
         component: 'notes-route',
         name: 'notes',
         options: { menuItem: true, iconName: 'StickyNote' },
+    },
+    {
+        path: '/cycle',
+        component: 'cycle-route',
+        name: 'cycle',
     },
     {
         path: '/',

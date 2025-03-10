@@ -12,7 +12,7 @@ import { notes } from '../stores/notes.store';
 @customElement('notes-route')
 export class NotesRoute extends MobxLitElement {
     render() {
-        return html` <article class="notesHeader">
+        return html`<article class="notesHeader">
                 <header>Notes</header>
             </article>
             <hr />

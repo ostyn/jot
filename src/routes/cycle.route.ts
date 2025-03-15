@@ -82,6 +82,7 @@ export class CycleRoute extends LitElement {
 
     async onAfterEnter() {
         await this.fetchStations();
+        this.sort();
 
         navigator.geolocation.watchPosition((location) => {
             this.lat = location.coords.latitude;

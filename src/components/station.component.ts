@@ -44,7 +44,7 @@ export class StationComponent extends LitElement {
                 color: var(--pico-background-color);
                 border-radius: 9999px;
                 font-size: 0.75rem;
-                box-decoration-break: clone;
+                white-space: nowrap;
             }
             .station-details {
                 display: flex;

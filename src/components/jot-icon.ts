@@ -104,6 +104,9 @@ export class JotIcon extends LitElement {
     }
     static styles = [
         css`
+            :host {
+                line-height: 0px;
+            }
             .small {
             }
             .medium {

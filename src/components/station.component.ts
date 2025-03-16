@@ -35,6 +35,8 @@ export class StationComponent extends LitElement {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                gap: 8px;
+                text-align: center;
             }
             .tag {
                 padding: 0.2rem 0.4rem;
@@ -42,15 +44,16 @@ export class StationComponent extends LitElement {
                 color: var(--pico-background-color);
                 border-radius: 9999px;
                 font-size: 0.75rem;
+                box-decoration-break: clone;
             }
-            meter {
-                width: 50%;
+            .station-details {
+                display: flex;
+                flex-direction: column;
             }
-            meter::after {
-                content: attr(value) ' ' attr(title);
-                top: -22px;
-                left: calc(100% + 20px);
-                position: relative;
+            .detail-row {
+                display: flex;
+                width: 100%;
+                justify-content: space-between;
             }
         `,
     ];
@@ -68,32 +71,38 @@ export class StationComponent extends LitElement {
                 }}"
             >
                 <header class="station">
+                    <jot-icon
+                        @click="${this.toggleFavorite}"
+                        name="Heart"
+                        fillColor="${this.station.isFavorite ? 'white' : ''}"
+                    ></jot-icon>
+                    ${this.station.name}
                     <span>
-                        ${this.station.name}
                         ${this.station.distanceFromUser &&
                         html` <span class="tag"
                             >${this.station.distanceFromUser?.toFixed(2)}
                             mi</span
                         >`}
                     </span>
-                    <button @click="${this.toggleFavorite}">
-                        <jot-icon
-                            name="Heart"
-                            fillColor="${this.station.isFavorite
-                                ? 'white'
-                                : ''}"
-                        ></jot-icon>
-                    </button>
                 </header>
                 <section class="station-details">
                     <meter
-                        title="bikes"
-                        id="fuel"
+                        class="detail-row"
                         min="0"
                         max="${this.station.nbDocks - this.station.nbEBikes}"
                         low="4"
                         value="${this.station.nbStandardBikes}"
                     ></meter>
+                    <div class="detail-row">
+                        <span>${this.station.nbStandardBikes} bikes</span>
+                        <span
+                            >${this.station.nbDocks -
+                            this.station.nbEBikes -
+                            this.station.nbStandardBikes}
+                            free docks</span
+                        >
+                    </div>
+
                     ${this.station.installDate &&
                     this.itsYourBirthday(this.station.installDate)
                         ? html`<p>

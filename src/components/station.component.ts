@@ -1,5 +1,6 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import { DateHelpers } from '../utils/DateHelpers';
 import { Sheet } from './action-sheets/action-sheet';
@@ -13,8 +14,8 @@ export interface Station {
     long: number; // Longitude of the station
     installed: boolean; // Indicates whether the station is installed
     locked: boolean; // Indicates whether the station is locked
-    installDate?: string; // Installation date as a timestamp
-    removalDate?: string | null; // Removal date (optional, as it can be empty)
+    installDate?: Date; // Installation date as a timestamp
+    removalDate?: Date; // Removal date (optional, as it can be empty)
     temporary: boolean; // Indicates whether the station is temporary
     nbBikes: number; // Total number of bikes available
     nbStandardBikes: number; // Number of standard bikes available
@@ -41,6 +42,15 @@ export class StationComponent extends LitElement {
                 color: var(--pico-background-color);
                 border-radius: 9999px;
                 font-size: 0.75rem;
+            }
+            meter {
+                width: 50%;
+            }
+            meter::after {
+                content: attr(value) ' ' attr(title);
+                top: -22px;
+                left: calc(100% + 20px);
+                position: relative;
             }
         `,
     ];
@@ -76,20 +86,31 @@ export class StationComponent extends LitElement {
                     </button>
                 </header>
                 <section class="station-details">
-                    <p>
-                        Normal Bikes Available: ${this.station.nbStandardBikes}
-                    </p>
-                    <p>Empty Docks: ${this.station.nbEmptyDocks}</p>
+                    <meter
+                        title="bikes"
+                        id="fuel"
+                        min="0"
+                        max="${this.station.nbDocks - this.station.nbEBikes}"
+                        low="4"
+                        value="${this.station.nbStandardBikes}"
+                    ></meter>
                     ${this.station.installDate &&
-                    html`<p>
-                        Birthday:
-                        ${DateHelpers.dateToStringDate(
-                            new Date(Number.parseInt(this.station.installDate))
-                        )}
-                    </p>`}
+                    this.itsYourBirthday(this.station.installDate)
+                        ? html`<p>
+                              Happy Birthday! 🎂🥳🎈:
+                              ${DateHelpers.dateToStringDate(
+                                  this.station.installDate
+                              )}
+                          </p>`
+                        : nothing}
                 </section>
             </article>
         `;
+    }
+
+    private itsYourBirthday(birthday: Date) {
+        const now = new Date();
+        return format(now, 'MM-dd') === format(birthday, 'MM-dd');
     }
 
     private toggleFavorite(event: Event) {

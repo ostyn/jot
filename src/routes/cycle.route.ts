@@ -1,5 +1,6 @@
 import { css, html, LitElement, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { base } from '../baseStyles';
 import '../components/station.component';
 import { Station } from '../components/station.component';
@@ -17,6 +18,7 @@ export class CycleRoute extends LitElement {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                gap: 8px;
             }
             .station input {
                 margin-bottom: 0px;
@@ -45,12 +47,26 @@ export class CycleRoute extends LitElement {
                 'https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml'
             );
             const xml = await response.text();
-            this.stations = xmlToJson(xml).stations.station;
-            this.stations.forEach((station) => {
+            const resp: Station[] = xmlToJson(xml).stations.station;
+            resp.forEach((station) => {
                 if (this.favoriteIds.includes(station.id)) {
                     station.isFavorite = true;
                 }
+                if (station.installDate)
+                    station.installDate = new Date(
+                        Number.parseInt(
+                            station.installDate as unknown as string
+                        )
+                    );
+                if (station.removalDate)
+                    station.removalDate = new Date(
+                        Number.parseInt(
+                            station.removalDate as unknown as string
+                        )
+                    );
             });
+            this.sort(resp);
+            this.stations = resp;
         } catch (error) {
             console.error('Error fetching stations:', error);
         }
@@ -82,7 +98,6 @@ export class CycleRoute extends LitElement {
 
     async onAfterEnter() {
         await this.fetchStations();
-        this.sort();
 
         navigator.geolocation.watchPosition((location) => {
             this.lat = location.coords.latitude;
@@ -96,17 +111,18 @@ export class CycleRoute extends LitElement {
                     'miles'
                 );
             });
-            this.sort();
+            this.sort(this.stations);
         });
     }
 
-    private sort() {
-        this.stations.sort((a, b) => {
+    private sort(stations: Station[]) {
+        stations.sort((a, b) => {
             return (
                 ~~b.isFavorite - ~~a.isFavorite ||
                 a.distanceFromUser - b.distanceFromUser
             );
         });
+        this.requestUpdate();
     }
 
     getDistanceFromCoordinates(
@@ -140,8 +156,7 @@ export class CycleRoute extends LitElement {
         } else {
             this.addToFavorites(station);
         }
-        this.sort();
-        this.requestUpdate();
+        this.sort(this.stations);
     }
 
     render(): TemplateResult {
@@ -153,7 +168,7 @@ export class CycleRoute extends LitElement {
             <article class="header">
                 <header class="station">
                     <input
-                        type="text"
+                        type="search"
                         @input="${this.updateSearch}"
                         placeholder="Search stations..."
                     />
@@ -164,13 +179,15 @@ export class CycleRoute extends LitElement {
             </article>
 
             <div class="stations">
-                ${filteredStations.map(
-                    (station: Station) => html`
-                        <station-component
+                ${repeat(
+                    filteredStations,
+                    (station) =>
+                        `${station.id}-${station.isFavorite}-${station.distanceFromUser}`,
+                    (station) =>
+                        html` <station-component
                             .station="${station}"
                             @favorite-toggle="${this.handleFavoriteToggle}"
-                        ></station-component>
-                    `
+                        ></station-component>`
                 )}
             </div>
         `;

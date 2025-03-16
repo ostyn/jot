@@ -98,8 +98,13 @@ export class CycleRoute extends LitElement {
     }
 
     async onAfterEnter() {
+        this.loadState();
+    }
+
+    private async loadState() {
         await this.fetchStations();
-        navigator.geolocation.clearWatch(this.locationWatcher);
+        if (this.locationWatcher)
+            navigator.geolocation.clearWatch(this.locationWatcher);
         this.locationWatcher = navigator.geolocation.watchPosition(
             (location) => {
                 this.lat = location.coords.latitude;
@@ -175,7 +180,7 @@ export class CycleRoute extends LitElement {
                         @input="${this.updateSearch}"
                         placeholder="Search stations..."
                     />
-                    <button @click="${() => this.onAfterEnter()}">
+                    <button @click="${this.loadState}">
                         <jot-icon name="RefreshCw"></jot-icon>
                     </button>
                 </header>

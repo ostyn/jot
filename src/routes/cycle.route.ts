@@ -1,6 +1,6 @@
-import { css, html, LitElement, TemplateResult } from 'lit';
+import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { repeat } from 'lit/directives/repeat.js';
+import '@lit-labs/virtualizer';
 import { base } from '../baseStyles';
 import '../components/station.component';
 import { Station } from '../components/station.component';
@@ -23,6 +23,9 @@ export class CycleRoute extends LitElement {
             .station input {
                 margin-bottom: 0px;
             }
+            station-component {
+                width: 100%;
+            }
         `,
     ];
 
@@ -32,6 +35,7 @@ export class CycleRoute extends LitElement {
     @state() lat?: number;
     @state() long?: number;
     locationWatcher?: number;
+    @state() loading: boolean = false;
 
     constructor() {
         super();
@@ -102,6 +106,7 @@ export class CycleRoute extends LitElement {
     }
 
     private async loadState() {
+        this.loading = true;
         await this.fetchStations();
         if (this.locationWatcher)
             navigator.geolocation.clearWatch(this.locationWatcher);
@@ -119,6 +124,7 @@ export class CycleRoute extends LitElement {
                     );
                 });
                 this.sort(this.stations);
+                this.loading = false;
             }
         );
     }
@@ -180,23 +186,30 @@ export class CycleRoute extends LitElement {
                         @input="${this.updateSearch}"
                         placeholder="Search stations..."
                     />
-                    <button @click="${this.loadState}">
-                        <jot-icon name="RefreshCw"></jot-icon>
+                    <button
+                        aria-busy="${this.loading}"
+                        @click="${this.loadState}"
+                    >
+                        ${!this.loading
+                            ? html`<jot-icon name="RefreshCw"></jot-icon>`
+                            : nothing}
                     </button>
                 </header>
             </article>
 
             <div class="stations">
-                ${repeat(
-                    filteredStations,
-                    (station) =>
-                        `${station.id}-${station.isFavorite}-${station.distanceFromUser}`,
-                    (station) =>
-                        html` <station-component
+                <lit-virtualizer
+                    .items=${filteredStations}
+                    .renderItem=${(station: Station): TemplateResult =>
+                        html`<station-component
                             .station="${station}"
-                            @favorite-toggle="${this.handleFavoriteToggle}"
-                        ></station-component>`
-                )}
+                            .distanceFromUser="${station.distanceFromUser}"
+                            .isFavorite="${station.isFavorite}"
+                            @favorite-toggle="${this.handleFavoriteToggle.bind(
+                                this
+                            )}"
+                        ></station-component>`}
+                ></lit-virtualizer>
             </div>
         `;
     }

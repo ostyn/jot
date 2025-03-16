@@ -59,6 +59,8 @@ export class StationComponent extends LitElement {
     ];
 
     @property({ type: Object }) station!: Station;
+    @property({ type: Boolean }) isFavorite!: boolean;
+    @property({ type: Number }) distanceFromUser!: number;
 
     render() {
         return html`
@@ -74,14 +76,13 @@ export class StationComponent extends LitElement {
                     <jot-icon
                         @click="${this.toggleFavorite}"
                         name="Heart"
-                        fillColor="${this.station.isFavorite ? 'white' : ''}"
+                        fillColor="${this.isFavorite ? 'white' : ''}"
                     ></jot-icon>
                     ${this.station.name}
                     <span>
-                        ${this.station.distanceFromUser &&
+                        ${this.distanceFromUser &&
                         html` <span class="tag"
-                            >${this.station.distanceFromUser?.toFixed(2)}
-                            mi</span
+                            >${this.distanceFromUser?.toFixed(2)} mi</span
                         >`}
                     </span>
                 </header>

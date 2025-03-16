@@ -26,11 +26,12 @@ export class CycleRoute extends LitElement {
         `,
     ];
 
-    @property({ type: Array }) stations: Station[] = [];
+    @state() stations: Station[] = [];
     @state() favoriteIds: string[] = [];
     @state() searchQuery: string = '';
     @state() lat?: number;
     @state() long?: number;
+    locationWatcher?: number;
 
     constructor() {
         super();
@@ -98,21 +99,23 @@ export class CycleRoute extends LitElement {
 
     async onAfterEnter() {
         await this.fetchStations();
-
-        navigator.geolocation.watchPosition((location) => {
-            this.lat = location.coords.latitude;
-            this.long = location.coords.longitude;
-            this.stations.forEach((station) => {
-                station.distanceFromUser = this.getDistanceFromCoordinates(
-                    this.lat as number,
-                    this.long as number,
-                    station.lat,
-                    station.long,
-                    'miles'
-                );
-            });
-            this.sort(this.stations);
-        });
+        navigator.geolocation.clearWatch(this.locationWatcher);
+        this.locationWatcher = navigator.geolocation.watchPosition(
+            (location) => {
+                this.lat = location.coords.latitude;
+                this.long = location.coords.longitude;
+                this.stations.forEach((station) => {
+                    station.distanceFromUser = this.getDistanceFromCoordinates(
+                        this.lat as number,
+                        this.long as number,
+                        station.lat,
+                        station.long,
+                        'miles'
+                    );
+                });
+                this.sort(this.stations);
+            }
+        );
     }
 
     private sort(stations: Station[]) {
@@ -172,7 +175,7 @@ export class CycleRoute extends LitElement {
                         @input="${this.updateSearch}"
                         placeholder="Search stations..."
                     />
-                    <button @click="${() => this.fetchStations()}">
+                    <button @click="${() => this.onAfterEnter()}">
                         <jot-icon name="RefreshCw"></jot-icon>
                     </button>
                 </header>

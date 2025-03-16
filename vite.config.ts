@@ -28,6 +28,11 @@ export default defineConfig({
                         url: '/game',
                         description: 'Play a quick round of 2048',
                     },
+                    {
+                        name: 'cycle',
+                        url: '/cycle',
+                        description: 'London Bikes',
+                    },
                 ],
                 theme_color: '#000000',
                 background_color: '#000000',

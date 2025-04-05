@@ -80,10 +80,16 @@ export class StationComponent extends LitElement {
                     ></jot-icon>
                     ${this.station.name}
                     <span>
-                        ${this.distanceFromUser &&
-                        html` <span class="tag"
-                            >${this.distanceFromUser?.toFixed(2)} mi</span
-                        >`}
+                        ${this.distanceFromUser
+                            ? html` <span class="tag"
+                                  >${this.distanceFromUser?.toFixed(2)} mi</span
+                              >`
+                            : html`<jot-icon
+                                  name="Locate"
+                                  size="large"
+                                  animated
+                                  animationInterval="500"
+                              ></jot-icon>`}
                     </span>
                 </header>
                 <section class="station-details">

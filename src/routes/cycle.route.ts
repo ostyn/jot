@@ -47,6 +47,7 @@ export class CycleRoute extends LitElement {
     }
 
     async fetchStations(): Promise<void> {
+        this.loading = true;
         try {
             const response = await fetch(
                 'https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml'
@@ -70,11 +71,13 @@ export class CycleRoute extends LitElement {
                         )
                     );
             });
-            this.sort(resp);
+
             this.stations = resp;
+            this.setDistanceOnStations();
         } catch (error) {
             console.error('Error fetching stations:', error);
         }
+        this.loading = false;
     }
 
     updateSearch(e: InputEvent): void {
@@ -102,11 +105,6 @@ export class CycleRoute extends LitElement {
     }
 
     async onAfterEnter() {
-        this.loadState();
-    }
-
-    private async loadState() {
-        this.loading = true;
         await this.fetchStations();
         if (this.locationWatcher)
             navigator.geolocation.clearWatch(this.locationWatcher);
@@ -114,19 +112,24 @@ export class CycleRoute extends LitElement {
             (location) => {
                 this.lat = location.coords.latitude;
                 this.long = location.coords.longitude;
-                this.stations.forEach((station) => {
-                    station.distanceFromUser = this.getDistanceFromCoordinates(
-                        this.lat as number,
-                        this.long as number,
-                        station.lat,
-                        station.long,
-                        'miles'
-                    );
-                });
-                this.sort(this.stations);
-                this.loading = false;
+                this.setDistanceOnStations();
             }
         );
+    }
+
+    private setDistanceOnStations() {
+        if (this.lat && this.long) {
+            this.stations.forEach((station) => {
+                station.distanceFromUser = this.getDistanceFromCoordinates(
+                    this.lat as number,
+                    this.long as number,
+                    station.lat,
+                    station.long,
+                    'miles'
+                );
+            });
+            this.sort(this.stations);
+        }
     }
 
     private sort(stations: Station[]) {
@@ -188,7 +191,7 @@ export class CycleRoute extends LitElement {
                     />
                     <button
                         aria-busy="${this.loading}"
-                        @click="${this.loadState}"
+                        @click="${this.fetchStations}"
                     >
                         ${!this.loading
                             ? html`<jot-icon name="RefreshCw"></jot-icon>`

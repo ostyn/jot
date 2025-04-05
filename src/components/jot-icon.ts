@@ -18,6 +18,8 @@ import {
     Import,
     Info,
     Locate,
+    LocateFixed,
+    LocateOff,
     MapPin,
     MapPinOff,
     Maximize2,
@@ -45,6 +47,9 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    Locate,
+    LocateFixed,
+    LocateOff,
     Menu,
     Heart,
     HeartOff,
@@ -82,19 +87,68 @@ const mapping = {
     SmilePlus,
     MapPin,
     MapPinOff,
-    Locate,
     StickyNote,
 };
 export type JotIconName = keyof typeof mapping;
-
 @customElement('jot-icon')
 export class JotIcon extends LitElement {
     @property({ type: String })
     name: JotIconName = 'Smile';
+
     @property({ type: Object })
     size: 'small' | 'medium' | 'large' | 'xlarge' = 'medium';
+
     @property({ type: String })
     fillColor?: string;
+
+    @property({ type: Boolean })
+    animated: boolean = false;
+
+    @property({ type: Number })
+    animationInterval: number = 1000; // Interval in milliseconds
+
+    private animationHandle?: number;
+
+    connectedCallback() {
+        super.connectedCallback();
+        if (this.animated) {
+            this.startAnimation();
+        }
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        if (this.animationHandle) {
+            clearInterval(this.animationHandle);
+        }
+    }
+
+    updated(changedProperties: Map<string | number | symbol, unknown>) {
+        super.updated(changedProperties);
+        if (changedProperties.has('animated')) {
+            if (this.animated) {
+                this.startAnimation();
+            } else {
+                this.stopAnimation();
+            }
+        }
+    }
+
+    startAnimation() {
+        if (this.animationHandle) {
+            clearInterval(this.animationHandle);
+        }
+        this.animationHandle = window.setInterval(() => {
+            this.name = this.name === 'Locate' ? 'LocateFixed' : 'Locate';
+        }, this.animationInterval);
+    }
+
+    stopAnimation() {
+        if (this.animationHandle) {
+            clearInterval(this.animationHandle);
+            this.animationHandle = undefined;
+        }
+    }
 
     render() {
         const icon = createElement(mapping[this.name]);
@@ -102,6 +156,7 @@ export class JotIcon extends LitElement {
         if (this.fillColor) icon.style.fill = this.fillColor;
         return icon;
     }
+
     static styles = [
         css`
             :host {

@@ -93,7 +93,7 @@ class ActivityStore {
         );
         activityDetailStats.mfuDetails = activityDetailStats.mfuDetails.slice(
             0,
-            Math.min(7, activityDetailStats.mfuDetails.length)
+            Math.min(10, activityDetailStats.mfuDetails.length)
         );
 
         activityDetailStats.mruDetails = Array.from(map.values()).filter(
@@ -109,7 +109,7 @@ class ActivityStore {
         );
         activityDetailStats.mruDetails = activityDetailStats.mruDetails.slice(
             0,
-            Math.min(7, activityDetailStats.mruDetails.length)
+            Math.min(10, activityDetailStats.mruDetails.length)
         );
         return activityDetailStats;
     }

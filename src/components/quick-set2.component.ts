@@ -35,7 +35,7 @@ export class QuickSet2 extends MobxLitElement {
         this.store?.addToNumericActivityDetail(this.activityId, amount);
     }
     @state()
-    mfuDetails?: StatsDetailEntry[];
+    mruDetails?: StatsDetailEntry[];
     @property()
     filter: (detail: StatsDetailEntry) => boolean = (_) => true;
     setupDetailLists() {
@@ -49,7 +49,7 @@ export class QuickSet2 extends MobxLitElement {
             (detail: StatsDetailEntry) =>
                 !lowerCaseDetails.includes(detail.text.toLowerCase())
         );
-        this.mfuDetails = detailStats.mfuDetails;
+        this.mruDetails = detailStats.mruDetails;
     }
     render() {
         const detail = this.store?.getActivityDetail(this.activityId);
@@ -79,7 +79,7 @@ export class QuickSet2 extends MobxLitElement {
                     <jot-icon name="Trash2"></jot-icon>
                 </span>
                 <div class="activities">
-                    ${this.mfuDetails?.map(
+                    ${this.mruDetails?.map(
                         (detail) =>
                             html`<div
                                 @click=${() => {

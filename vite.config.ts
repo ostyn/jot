@@ -29,9 +29,14 @@ export default defineConfig({
                         description: 'Play a quick round of 2048',
                     },
                     {
-                        name: 'cycle',
+                        name: 'Cycle Locator',
                         url: '/cycle',
                         description: 'London Bikes',
+                    },
+                    {
+                        name: 'Notes',
+                        url: '/notes',
+                        description: 'Basic note taking',
                     },
                 ],
                 theme_color: '#000000',

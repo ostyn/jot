@@ -21,7 +21,23 @@ class NotesStore {
             }
             notesByPath[path].push(note);
         });
-        return notesByPath;
+        // Sort notes in each folder by date
+        Object.keys(notesByPath).forEach((path) => {
+            notesByPath[path].sort(
+                (a, b) =>
+                    new Date(b.editLog[0].date).getTime() -
+                    new Date(a.editLog[0].date).getTime()
+            );
+        });
+        // Sort folders by name
+        const sortedPaths = Object.keys(notesByPath).sort((a, b) =>
+            a.localeCompare(b)
+        );
+        const sortedNotesByPath: { [key: string]: Note[] } = {};
+        sortedPaths.forEach((path) => {
+            sortedNotesByPath[path] = notesByPath[path];
+        });
+        return sortedNotesByPath;
     }
     public getNotePaths(): string[] {
         return Array.from(new Set(this.all.map((note) => note.path)));

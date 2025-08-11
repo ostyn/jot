@@ -3,6 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { base } from '../../baseStyles';
 import { dispatchEvent, Events } from '../../utils/Helpers';
+import { Sheet } from './action-sheet';
 
 @customElement('text-sheet')
 export class TextSheet extends LitElement {
@@ -22,6 +23,7 @@ export class TextSheet extends LitElement {
         ></text-sheet>`;
     }
     protected firstUpdated() {
+        Sheet.sheetHeight = 100;
         this.newText = this.text || '';
         setTimeout(() => {
             this.inputRef?.value?.focus();

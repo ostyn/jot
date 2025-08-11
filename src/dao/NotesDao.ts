@@ -6,7 +6,7 @@ export class NotesDao extends DexieDao {
     constructor() {
         super('notes');
     }
-    saveItem(passedEntry: Note): Promise<any> {
+    saveItem(passedEntry: Partial<Note>): Promise<any> {
         passedEntry = this.updateItemPath(passedEntry);
         return super.saveItem(passedEntry);
     }
@@ -16,7 +16,7 @@ export class NotesDao extends DexieDao {
         });
         return super.saveItems(passedItems, importTool);
     }
-    private updateItemPath(item: Note): Note {
+    private updateItemPath(item: Partial<Note>): Partial<Note> {
         if (item.content && item.content.length > 0) {
             const lastLine = item.content.split('\n').pop();
             if (lastLine?.startsWith('#')) {

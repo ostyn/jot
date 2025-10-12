@@ -12,6 +12,7 @@ import {
     Circle,
     circle,
     map as createMap,
+    LatLng,
     Map as MapType,
     tileLayer,
 } from 'leaflet';
@@ -62,16 +63,16 @@ export class MapSheet extends LitElement {
             attributionControl: false,
         }).setView([lat, lon], 16);
         this.circle2 = circle(this.map.getCenter(), {
-            color: 'blue',
+            color: 'red',
             opacity: 0.1,
-            fillColor: 'blue',
+            fillColor: 'red',
             fillOpacity: 0.3,
             radius: 1,
         }).addTo(this.map);
         this.circle3 = circle(this.map.getCenter(), {
-            color: 'blue',
+            color: 'red',
             opacity: 0.1,
-            fillColor: 'blue',
+            fillColor: 'red',
             fillOpacity: 0.3,
             radius: 50,
         }).addTo(this.map);
@@ -89,6 +90,26 @@ export class MapSheet extends LitElement {
             this.map.invalidateSize();
         });
         resizeObserver.observe(this);
+        navigator.geolocation.getCurrentPosition((location) => {
+            const latLng = new LatLng(
+                location.coords.latitude,
+                location.coords.longitude
+            );
+            this.circle2 = circle(latLng, {
+                color: 'blue',
+                opacity: 0.1,
+                fillColor: 'blue',
+                fillOpacity: 0.3,
+                radius: 1,
+            }).addTo(this.map);
+            this.circle3 = circle(latLng, {
+                color: 'blue',
+                opacity: 0.1,
+                fillColor: 'blue',
+                fillOpacity: 0.3,
+                radius: 50,
+            }).addTo(this.map);
+        });
     }
 
     async disconnectedCallback() {

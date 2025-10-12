@@ -4,6 +4,7 @@ import '@lit-labs/virtualizer';
 import { base } from '../baseStyles';
 import '../components/station.component';
 import { Station } from '../components/station.component';
+import { locationService } from '../services/location.service';
 import { xmlToJson } from '../utils/Helpers';
 
 @customElement('cycle-route')
@@ -106,15 +107,11 @@ export class CycleRoute extends LitElement {
 
     async onAfterEnter() {
         await this.fetchStations();
-        if (this.locationWatcher)
-            navigator.geolocation.clearWatch(this.locationWatcher);
-        this.locationWatcher = navigator.geolocation.watchPosition(
-            (location) => {
-                this.lat = location.coords.latitude;
-                this.long = location.coords.longitude;
-                this.setDistanceOnStations();
-            }
-        );
+        locationService.subscribe((coords) => {
+            this.lat = coords.latitude;
+            this.long = coords.longitude;
+            this.setDistanceOnStations();
+        });
     }
 
     private setDistanceOnStations() {

@@ -17,6 +17,7 @@ import {
     tileLayer,
 } from 'leaflet';
 import { base } from '../../baseStyles';
+import { locationService } from '../../services/location.service';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 import leaflet from '/node_modules/leaflet/dist/leaflet.css?inline';
 
@@ -32,6 +33,8 @@ export class MapSheet extends LitElement {
     map!: MapType;
     circle2!: Circle;
     circle3!: Circle;
+    currentLocation1!: Circle;
+    currentLocation2!: Circle;
     static getActionSheet(
         data: any,
         submit: (data: any) => void
@@ -47,11 +50,8 @@ export class MapSheet extends LitElement {
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
         if (!this.lat || !this.lon) {
-            navigator.geolocation.getCurrentPosition((location) => {
-                this.lat = location.coords.latitude;
-                this.lon = location.coords.longitude;
-                this.setupMap(this.lat, this.lon);
-            });
+            const latLng = locationService.getCachedLocation();
+            this.setupMap(latLng!.latitude, latLng!.longitude);
         } else {
             this.setupMap(this.lat, this.lon);
         }
@@ -90,26 +90,47 @@ export class MapSheet extends LitElement {
             this.map.invalidateSize();
         });
         resizeObserver.observe(this);
-        navigator.geolocation.getCurrentPosition((location) => {
-            const latLng = new LatLng(
-                location.coords.latitude,
-                location.coords.longitude
-            );
-            this.circle2 = circle(latLng, {
-                color: 'blue',
-                opacity: 0.1,
-                fillColor: 'blue',
-                fillOpacity: 0.3,
-                radius: 1,
-            }).addTo(this.map);
-            this.circle3 = circle(latLng, {
-                color: 'blue',
-                opacity: 0.1,
-                fillColor: 'blue',
-                fillOpacity: 0.3,
-                radius: 50,
-            }).addTo(this.map);
+
+        const latLng = new LatLng(0, 0);
+        this.currentLocation1 = circle(latLng, {
+            color: 'blue',
+            opacity: 0.1,
+            fillColor: 'blue',
+            fillOpacity: 0.3,
+            radius: 1,
+        }).addTo(this.map);
+        this.currentLocation2 = circle(latLng, {
+            color: 'blue',
+            opacity: 0.1,
+            fillColor: 'blue',
+            fillOpacity: 0.3,
+            radius: 50,
+        }).addTo(this.map);
+        locationService.subscribe(() => {
+            this.updateCurrentLocationMarker();
         });
+        this.map.on('zoomend', () => {
+            this.updateCircleRadius();
+        });
+        this.updateCircleRadius();
+    }
+    private getScaledRadius(): number {
+        const zoom = this.map.getZoom();
+        // Base radius at zoom level 16
+        const baseZoom = 16;
+        const baseRadius = 50; // meters
+
+        // Scale exponentially or linearly depending on preference
+        const scale = Math.pow(2, baseZoom - zoom);
+        return Math.max(10, baseRadius * scale); // clamp to minimum radius
+    }
+    private updateCircleRadius() {
+        const scaledRadius = this.getScaledRadius();
+        this.circle2.setRadius(scaledRadius * 0.02); // smaller inner ring
+        this.circle3.setRadius(scaledRadius); // outer ring
+
+        this.currentLocation1.setRadius(scaledRadius * 0.02);
+        this.currentLocation2.setRadius(scaledRadius);
     }
 
     async disconnectedCallback() {
@@ -198,6 +219,15 @@ export class MapSheet extends LitElement {
         const location = { lat: this.lat, lng: this.lon };
         this.circle2.setLatLng(location as any);
         this.circle3.setLatLng(location as any);
+        this.map.panTo(location as any);
+    }
+    private updateCurrentLocationMarker() {
+        const location = {
+            lat: locationService.getCachedLocation()?.latitude,
+            lng: locationService.getCachedLocation()?.longitude,
+        };
+        this.currentLocation1.setLatLng(location as any);
+        this.currentLocation2.setLatLng(location as any);
         this.map.panTo(location as any);
     }
 }

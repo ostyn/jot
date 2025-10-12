@@ -228,6 +228,5 @@ export class MapSheet extends LitElement {
         };
         this.currentLocation1.setLatLng(location as any);
         this.currentLocation2.setLatLng(location as any);
-        this.map.panTo(location as any);
     }
 }

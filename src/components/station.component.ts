@@ -31,6 +31,10 @@ export class StationComponent extends LitElement {
     static styles = [
         base,
         css`
+            :host {
+                margin-bottom: 0.5rem;
+                margin-top: 0.5rem;
+            }
             .station {
                 display: flex;
                 justify-content: space-between;

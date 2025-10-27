@@ -125,9 +125,6 @@ export class EntryComponent extends MobxLitElement {
                 gap: 16px;
                 flex-direction: column;
             }
-            .entry > * {
-                margin-bottom: 0px;
-            }
 
             .entry-header {
                 padding: 16px;

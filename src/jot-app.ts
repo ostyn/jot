@@ -40,7 +40,7 @@ export class JotApp extends LitElement {
 
     render() {
         return html`
-            <main>
+            <main id="main">
                 <div id="outlet"></div>
             </main>
             <action-sheet></action-sheet>
@@ -50,11 +50,19 @@ export class JotApp extends LitElement {
     static styles = [
         base,
         css`
+            #main {
+                flex-direction: column;
+                display: flex;
+                align-items: center;
+            }
             #outlet {
                 display: block;
                 max-width: 36rem;
                 margin: auto;
-                padding-bottom: 4rem;
+                padding-bottom: 12rem;
+                width: calc(100% - 2rem);
+                margin: 1rem;
+                margin-top: 0;
             }
         `,
     ];

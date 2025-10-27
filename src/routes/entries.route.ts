@@ -183,6 +183,9 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
                 overflow-x: hidden;
             }
             .entries {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
                 min-height: calc(100vh - 10rem);
             }
             .month-control-bar {
@@ -190,9 +193,8 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
                 z-index: 50;
                 top: -0.1px;
                 background-color: var(--pico-background-color);
-                padding-top: 0.375rem;
-                padding-bottom: 0.375rem;
-                margin: 0.5rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
             }
             .loader {
                 height: 100vh;

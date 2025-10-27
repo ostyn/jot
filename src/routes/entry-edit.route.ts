@@ -271,6 +271,12 @@ export class EntryEditRoute extends MobxLitElement {
     static styles = [
         base,
         css`
+            :host {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
             .note-preview {
                 display: flex;
                 overflow: auto;
@@ -316,7 +322,6 @@ export class EntryEditRoute extends MobxLitElement {
                 display: flex;
                 align-items: center;
                 gap: 8px;
-                margin: 0.5rem;
                 min-height: 100px;
             }
         `,

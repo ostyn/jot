@@ -205,13 +205,16 @@ export class ActivityGridComponent extends MobxLitElement {
     static styles = [
         base,
         css`
+            :host {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
             .grid-controls {
                 position: sticky;
                 top: -1px;
                 background-color: var(--pico-card-background-color);
                 z-index: 90;
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
                 display: flex;
                 justify-content: center;
                 gap: 1rem;

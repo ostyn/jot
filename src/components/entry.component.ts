@@ -122,12 +122,12 @@ export class EntryComponent extends MobxLitElement {
         css`
             .entry {
                 display: flex;
-                gap: 16px;
+                gap: 1rem;
                 flex-direction: column;
             }
 
             .entry-header {
-                padding: 16px;
+                padding: 1rem;
                 display: flex;
                 vertical-align: middle;
             }
@@ -163,6 +163,7 @@ export class EntryComponent extends MobxLitElement {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
+                padding: 1rem;
             }
         `,
     ];

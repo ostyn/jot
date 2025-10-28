@@ -71,7 +71,6 @@ section:last-child {
 }
 body {
     margin-top: var(--pico-spacing);
-    overscroll-behavior-y: contain;
 }
 a,
 a:link,

@@ -42,6 +42,7 @@ export class NavBar extends LitElement {
                             return html`<a
                                 class="item-wrapper"
                                 href="${route.path}"
+                                aria-label=${route.name}
                                 ><span
                                     class=${'menu-bar-item ' +
                                     (this.isRouteSelected(route.path)

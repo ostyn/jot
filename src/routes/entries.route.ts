@@ -168,10 +168,18 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
                             </article>`}
                   </section>`}
             <div class="sticky-buttons">
-                <button class="inline contrast" @click=${() => go('search')}>
+                <button
+                    aria-label="search"
+                    class="inline contrast"
+                    @click=${() => go('search')}
+                >
                     <jot-icon name="Search"></jot-icon>
                 </button>
-                <button class="inline" @click=${() => go('entry')}>
+                <button
+                    aria-label="new entry"
+                    class="inline"
+                    @click=${() => go('entry')}
+                >
                     <jot-icon name="PenLine"></jot-icon>
                 </button>
             </div>`;

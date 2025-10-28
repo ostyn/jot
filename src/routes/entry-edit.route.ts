@@ -320,7 +320,7 @@ export class EntryEditRoute extends MobxLitElement {
             }
             .entry-editor-buttons {
                 display: flex;
-                align-items: center;
+                align-items: stretch;
                 gap: 8px;
                 min-height: 100px;
             }

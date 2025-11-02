@@ -232,7 +232,6 @@ export class GameRoute extends MobxLitElement {
         base,
         css`
             :host {
-                margin: 0.5rem;
                 display: flex;
                 flex-direction: column;
                 gap: 0.5rem;
@@ -267,7 +266,7 @@ export class GameRoute extends MobxLitElement {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                font-size: 36px;
+                font-size: clamp(16px, 6vw, 36px);
                 font-weight: bold;
                 border-radius: 6px;
                 color: white;

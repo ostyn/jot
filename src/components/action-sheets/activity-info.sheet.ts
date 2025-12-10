@@ -63,7 +63,7 @@ export class ActivityInfoSheet extends LitElement {
             affectedDates = activityStats.detailsUsed.get(
                 this.selectedTextItem
             )?.dates;
-        const entryDates = affectedDates?.filter((date) => {
+        const entryDates = affectedDates?.filter((date: any) => {
             return (
                 Number.parseInt(date.entry.date.split('-')[1]) == month + 1 &&
                 Number.parseInt(date.entry.date.split('-')[0]) == year

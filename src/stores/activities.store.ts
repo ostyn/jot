@@ -115,40 +115,8 @@ class ActivityStore {
     }
     @computed
     public get stats() {
-        const activityStats = new Map<string, StatsActivityEntry>();
-        let dates: { date: string; entry: Entry }[] = [];
-        entries.all.forEach((entry: Entry) => {
-            dates.push({ date: entry.date, entry });
-            for (let [activityId, detail] of Object.entries(entry.activities)) {
-                if (!activityStats.has(activityId)) {
-                    activityStats.set(activityId, { count: 0, dates: [] });
-                }
-                let activity: any = activityStats.get(activityId);
-                activity.dates.push({ date: entry.date, entry });
-                if (Array.isArray(detail)) {
-                    if (!activity.detailsUsed) {
-                        activity.detailsUsed = new Map();
-                    }
-                    let currentActivityDetails = activity.detailsUsed;
-                    detail.forEach((detailItem) => {
-                        if (!currentActivityDetails.has(detailItem))
-                            currentActivityDetails.set(detailItem, {
-                                count: 0,
-                                text: detailItem,
-                                dates: [],
-                            });
-                        let currentDetailItem =
-                            currentActivityDetails.get(detailItem);
-                        currentDetailItem.count++;
-                        currentDetailItem.dates.push({
-                            date: entry.date,
-                            entry,
-                        });
-                    });
-                }
-            }
-        });
-        return activityStats;
+        // let's make this generic enough to work for a set of entries, regardless of how they're retrieved
+        return accumulateStatsFromEntries(entries.all);
     }
     public getActivity(id: string): Activity | undefined {
         return this.map[id];
@@ -167,3 +135,42 @@ class ActivityStore {
     }
 }
 export const activities = new ActivityStore();
+export function accumulateStatsFromEntries(entries: Entry[]): any {
+    const activityStats = new Map<string, StatsActivityEntry>();
+    let dates: { date: string; entry: Entry }[] = [];
+    entries.forEach((entry: Entry) => {
+        dates.push({ date: entry.date, entry });
+        for (let [activityId, detail] of Object.entries(entry.activities)) {
+            if (!activityStats.has(activityId)) {
+                activityStats.set(activityId, { count: 0, dates: [] });
+            }
+            let activity: any = activityStats.get(activityId);
+            activity.dates.push({ date: entry.date, entry });
+            if (Array.isArray(detail)) {
+                if (!activity.detailsUsed) {
+                    activity.detailsUsed = new Map();
+                }
+                let currentActivityDetails = activity.detailsUsed;
+                detail.forEach((detailItem) => {
+                    if (!currentActivityDetails.has(detailItem))
+                        currentActivityDetails.set(detailItem, {
+                            count: 0,
+                            text: detailItem,
+                            dates: [],
+                        });
+                    let currentDetailItem =
+                        currentActivityDetails.get(detailItem);
+                    currentDetailItem.count++;
+                    currentDetailItem.dates.push({
+                        date: entry.date,
+                        entry,
+                    });
+                });
+                activity.count += detail.length;
+            } else {
+                activity.count += detail;
+            }
+        }
+    });
+    return activityStats;
+}

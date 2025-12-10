@@ -13,6 +13,7 @@ import './moods.route';
 import './notes.route';
 import './search.route';
 import './settings.route';
+import './summary.route';
 
 export const routerContext = createContext<Router>('router');
 export const routes = [
@@ -55,6 +56,11 @@ export const routes = [
         path: '/entry/:id?',
         component: 'entry-edit-route',
         name: 'entry',
+    },
+    {
+        path: '/summary/:start?/:end?',
+        component: 'summary-route',
+        name: 'summary',
     },
 
     {

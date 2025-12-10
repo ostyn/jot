@@ -15,6 +15,18 @@ export class EntryDao extends DexieDao {
 
         return x;
     }
+    async getEntriesBetweenDates(startDate: Date, endDate: Date) {
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        let x = await db
+            .table('entries')
+            .where('date')
+            .between(startDateStr, endDateStr, true, true)
+            .reverse()
+            .toArray();
+
+        return x;
+    }
     async getItems(): Promise<any> {
         return await db.table(this.name).orderBy('date').reverse().toArray();
     }

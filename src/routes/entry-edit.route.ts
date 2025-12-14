@@ -9,6 +9,7 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
+import '../components/mood.component';
 import { QuickSet2 } from '../components/quick-set2.component';
 import {
     ActivityDetail,
@@ -214,16 +215,18 @@ export class EntryEditRoute extends MobxLitElement {
                         name=""
                     />
                     <span class="icons">
-                        <span
-                            class="icon"
+                        <mood-component
+                            class="entry-header-emoji"
+                            .mood=${moods.getMood(this.store.mood)}
                             @click=${() =>
                                 Sheet.open({
                                     type: MoodsSheet,
                                     data: this.store.mood || 0,
                                     onClose: (data) => this.store.setMood(data),
                                 })}
-                            >${moods?.getMood(this.store.mood)?.emoji || ''}
-                        </span>
+                            >${moods?.getMood(this.store.mood)?.emoji || ''} >
+                        </mood-component>
+
                         <!-- TODO: removing feature for now <span
                             class="icon"
                             @click=\${() =>

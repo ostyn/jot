@@ -11,6 +11,7 @@ import { Sheet } from './action-sheets/action-sheet';
 import { MapSheet } from './action-sheets/map.sheet';
 import './activity.component';
 import './edit-log-dates.component';
+import './mood.component';
 
 @customElement('entry-component')
 export class EntryComponent extends MobxLitElement {
@@ -85,12 +86,10 @@ export class EntryComponent extends MobxLitElement {
                           ></jot-icon>`
                         : nothing}
                 </hgroup>
-                <span
+                <mood-component
                     class="entry-header-emoji"
-                    .title=${moods.getMood(this.entry.mood)?.name || ''}
-                >
-                    ${moods.getMood(this.entry.mood)?.emoji || ''}
-                </span>
+                    .mood=${moods.getMood(this.entry.mood)}
+                ></mood-component>
             </header>
             <section class="entry-activities">
                 ${activityOrder.map((activityId) =>
@@ -139,8 +138,6 @@ export class EntryComponent extends MobxLitElement {
             }
             .entry-header-emoji {
                 margin-left: auto;
-                font-size: 2.25rem;
-                line-height: 2.25rem;
             }
             .entry-activities {
                 display: flex;

@@ -92,8 +92,10 @@ export class SummaryRoute extends MobxLitElement {
                         <strong>Worst days:</strong>
                         <div class="entryLinks">
                         ${v.map(
-                            (e) =>
-                                html`<entry-link .date=${e.date}></entry-link>`
+                            (entry: Entry) =>
+                                html`<entry-link
+                                    .date=${entry.date}
+                                ></entry-link>`
                         )}
                         </div>
                     </p>`,

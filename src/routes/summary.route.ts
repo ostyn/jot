@@ -5,6 +5,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
+import '../components/mood.component';
 import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
@@ -58,9 +59,13 @@ export class SummaryRoute extends MobxLitElement {
                     }
                 },
                 finalize: (state: any) => state.entries,
-                render: (v: any) =>
+                render: (v: Entry[]) =>
                     html`<p>
-                        <strong>Best days:</strong> ${Array.isArray(v)
+                        <mood-component
+                            .mood=${moods.getMood(v[0].mood)}
+                        ></mood-component>
+                        <strong>Best days :</strong>
+                        ${Array.isArray(v)
                             ? `${v.length} (${(v as any[])
                                   .map((e: any) => e?.date)
                                   .filter(Boolean)
@@ -87,7 +92,11 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entries,
                 render: (v: any) =>
                     html`<p>
-                        <strong>Worst days:</strong> ${Array.isArray(v)
+                        <mood-component
+                            .mood=${moods.getMood(v[0].mood)}
+                        ></mood-component
+                        ><strong>Worst days:</strong>
+                        ${Array.isArray(v)
                             ? `${v.length} (${(v as any[])
                                   .map((e: any) => e?.date)
                                   .filter(Boolean)
@@ -157,12 +166,15 @@ export class SummaryRoute extends MobxLitElement {
                             bestId = id;
                         }
                     }
-                    return bestId ? moodsStore.getMood(bestId) : null;
+                    return bestId ? moods.getMood(bestId) : null;
                 },
                 render: (v: any) =>
                     html`<p>
                         <strong>Most common mood:</strong> ${v
-                            ? `${v.emoji} (${v.name})`
+                            ? html`<mood-component
+                                  .showName=${true}
+                                  .mood=${v}
+                              ></mood-component>`
                             : 'N/A'}
                     </p>`,
             },

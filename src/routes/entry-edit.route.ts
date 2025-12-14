@@ -224,7 +224,7 @@ export class EntryEditRoute extends MobxLitElement {
                                     data: this.store.mood || 0,
                                     onClose: (data) => this.store.setMood(data),
                                 })}
-                            >${moods?.getMood(this.store.mood)?.emoji || ''} >
+                        >
                         </mood-component>
 
                         <!-- TODO: removing feature for now <span

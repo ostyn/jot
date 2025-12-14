@@ -5,6 +5,7 @@ import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { MoodEditSheet } from '../components/action-sheets/mood-edit.sheet';
 import '../components/calendar-wrapper.component';
+import '../components/mood.component';
 import { Mood } from '../interfaces/mood.interface';
 import { moods } from '../stores/moods.store';
 
@@ -21,11 +22,15 @@ export class MoodsRoute extends MobxLitElement {
             <header>Moods</header>
             <section>
                 ${moods.userCreated.map((mood) => {
-                    return html`<span
-                        @click=${() => this.moodSelected(mood)}
-                        class="moods-mood"
-                        >${mood.emoji}</span
-                    >`;
+                    return html`
+                        <mood-component
+                            class="entry-header-emoji"
+                            .mood=${mood}
+                            .showName=${true}
+                            @click=${() => this.moodSelected(mood)}
+                        >
+                        </mood-component>
+                    `;
                 })}
                 <span class="moods-mood" @click=${() => this.moodSelected()}>
                     <jot-icon name="PlusCircle"></jot-icon>

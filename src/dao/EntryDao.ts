@@ -1,3 +1,4 @@
+import { Entry } from '../interfaces/entry.interface';
 import { db } from '../services/Dexie';
 import { DexieDao } from './DexieDao';
 
@@ -5,15 +6,28 @@ export class EntryDao extends DexieDao {
     constructor() {
         super('entries');
     }
-    async getEntriesFromYearAndMonth(year: number, month: number) {
+    async getEntriesFromDate(date: string): Promise<Entry[]> {
         let x = await db
             .table('entries')
             .where('date')
-            .startsWith(`${year}-${month < 10 ? `0${month}` : month}`)
-            .reverse()
+            .startsWith(date)
             .toArray();
 
         return x;
+    }
+    async getEntriesFromYearAndMonth(
+        year: number,
+        month?: number,
+        day?: number
+    ): Promise<Entry[]> {
+        let startsWithQuery = `${year}-`;
+        if (month !== undefined) {
+            startsWithQuery += month < 10 ? `0${month}-` : `${month}-`;
+            if (day !== undefined) {
+                startsWithQuery += day < 10 ? `0${day}` : `${day}`;
+            }
+        }
+        return this.getEntriesFromDate(startsWithQuery);
     }
     async getEntriesBetweenDates(startDate: Date, endDate: Date) {
         const startDateStr = startDate.toISOString().split('T')[0];

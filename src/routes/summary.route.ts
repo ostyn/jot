@@ -5,6 +5,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
+import '../components/entry-link.component';
 import '../components/mood.component';
 import { entryDao } from '../dao/EntryDao';
 import { Entry } from '../interfaces/entry.interface';
@@ -123,7 +124,8 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entry,
                 render: (v: any) =>
                     html`<p>
-                        <strong>Chattiest day:</strong> ${v ? v.date : 'N/A'}
+                        <strong>Chattiest day:</strong>
+                        <entry-link .date=${v.date}></entry-link>
                     </p>`,
             },
             // Fullest entry (most activities + details)
@@ -146,7 +148,8 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entry,
                 render: (v: any) =>
                     html`<p>
-                        <strong>Fullest day:</strong> ${v ? v.date : 'N/A'}
+                        <strong>Fullest day:</strong>
+                        <entry-link .date=${v.date}></entry-link>
                     </p>`,
             },
             // Most common mood
@@ -215,9 +218,12 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entry,
                 render: (v: any) =>
                     html`<p>
-                        <strong>Most edited entry:</strong> ${v
-                            ? `${v.date} (${(v.editLog || []).length} edits)`
-                            : 'N/A'}
+                        <strong>Most edited entry:</strong>
+
+                        <entry-link .date=${v.date}></entry-link> (${(
+                            v.editLog || []
+                        ).length}
+                        edits)
                     </p>`,
             },
             // Longest edited entry (by edit duration)
@@ -237,9 +243,15 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entry,
                 render: (v: any) =>
                     html`<p>
-                        <strong>Longest edited entry:</strong> ${v
-                            ? `${v.date} (${DateHelpers.duration((v.editLog || []).reduce((s: any, e: any) => s + (e?.duration || 0), 0))})`
-                            : 'N/A'}
+                        <strong>Longest edited entry:</strong>
+
+                        <entry-link .date=${v.date}></entry-link>
+                        (${DateHelpers.duration(
+                            (v.editLog || []).reduce(
+                                (s: any, e: any) => s + (e?.duration || 0),
+                                0
+                            )
+                        )})
                     </p>`,
             },
             // Activities logged count
@@ -338,8 +350,6 @@ export class SummaryRoute extends MobxLitElement {
         }
     }
     render() {
-        console.log(this.stats);
-
         return html` <div class="route-container">
             <h2>
                 Summary from ${this.startDate.toLocaleDateString()} to

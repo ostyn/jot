@@ -1,4 +1,4 @@
-import { css, html } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
@@ -340,81 +340,84 @@ export class SummaryRoute extends MobxLitElement {
             </div>
             <div>
                 <div>
-                    ${map(
-                        this.stats,
-                        (statEntry) =>
-                            html`<div>
-                                <activity-component
-                                    .activity=${activities.getActivity(
-                                        statEntry[0]
-                                    )}
-                                    .showName=${true}
-                                ></activity-component>
-                                <p>Count recorded: ${statEntry[1].count}</p>
-                                <p>
-                                    Days recorded: ${statEntry[1].dates.length}
-                                </p>
-                                <p>
-                                    Distinct details recorded:
-                                    ${statEntry[1].detailsUsed
-                                        ? statEntry[1].detailsUsed.size
-                                        : 0}
-                                </p>
-                                <p>
-                                    Times that details were recorded:
-                                    ${Array.from(
-                                        statEntry[1].detailsUsed?.values() || []
-                                    ).reduce(
-                                        (acc, detail) => acc + detail.count,
-                                        0
-                                    )}
-                                </p>
-                                <p>
-                                    Percent of days in period with activity:
-                                    ${(
-                                        (statEntry[1].dates.length /
-                                            Math.ceil(
-                                                (this.endDate.getTime() -
-                                                    this.startDate.getTime()) /
-                                                    (1000 * 60 * 60 * 24)
-                                            )) *
-                                        100
-                                    ).toFixed(2)}%
-                                </p>
-                                <p>
-                                    Average per day:
-                                    ${(
-                                        statEntry[1].count /
-                                        Math.ceil(
-                                            (this.endDate.getTime() -
-                                                this.startDate.getTime()) /
-                                                (1000 * 60 * 60 * 24)
-                                        )
-                                    ).toFixed(2)}
-                                </p>
-                                <p>
-                                    Average per day when recorded:
-                                    ${(
-                                        statEntry[1].count /
-                                        statEntry[1].dates.length
-                                    ).toFixed(2)}
-                                </p>
-                                <p>Top 10 details used:</p>
-                                ${map(
-                                    Array.from(
-                                        statEntry[1].detailsUsed?.values() || []
-                                    )
-                                        .sort((a, b) => b.count - a.count)
-                                        .slice(0, 10),
-                                    (detail) =>
-                                        html`<div>
-                                            <activity-detail
-                                                >${detail.text}</activity-detail
-                                            >
-                                            : ${detail.count} times
-                                        </div>`
-                                )}
-                            </div>`
+                    ${map(this.stats, (statEntry) =>
+                        activities.getActivity(statEntry[0])
+                            ? html`<div>
+                                  <activity-component
+                                      .activity=${activities.getActivity(
+                                          statEntry[0]
+                                      )}
+                                      .showName=${true}
+                                  ></activity-component>
+                                  <p>Count recorded: ${statEntry[1].count}</p>
+                                  <p>
+                                      Days recorded:
+                                      ${statEntry[1].dates.length}
+                                  </p>
+                                  <p>
+                                      Distinct details recorded:
+                                      ${statEntry[1].detailsUsed
+                                          ? statEntry[1].detailsUsed.size
+                                          : 0}
+                                  </p>
+                                  <p>
+                                      Times that details were recorded:
+                                      ${Array.from(
+                                          statEntry[1].detailsUsed?.values() ||
+                                              []
+                                      ).reduce(
+                                          (acc, detail) => acc + detail.count,
+                                          0
+                                      )}
+                                  </p>
+                                  <p>
+                                      Percent of days in period with activity:
+                                      ${(
+                                          (statEntry[1].dates.length /
+                                              Math.ceil(
+                                                  (this.endDate.getTime() -
+                                                      this.startDate.getTime()) /
+                                                      (1000 * 60 * 60 * 24)
+                                              )) *
+                                          100
+                                      ).toFixed(2)}%
+                                  </p>
+                                  <p>
+                                      Average per day:
+                                      ${(
+                                          statEntry[1].count /
+                                          Math.ceil(
+                                              (this.endDate.getTime() -
+                                                  this.startDate.getTime()) /
+                                                  (1000 * 60 * 60 * 24)
+                                          )
+                                      ).toFixed(2)}
+                                  </p>
+                                  <p>
+                                      Average per day when recorded:
+                                      ${(
+                                          statEntry[1].count /
+                                          statEntry[1].dates.length
+                                      ).toFixed(2)}
+                                  </p>
+                                  <p>Top 10 details used:</p>
+                                  ${map(
+                                      Array.from(
+                                          statEntry[1].detailsUsed?.values() ||
+                                              []
+                                      )
+                                          .sort((a, b) => b.count - a.count)
+                                          .slice(0, 10),
+                                      (detail) =>
+                                          html`<div>
+                                              <activity-detail
+                                                  >${detail.text}</activity-detail
+                                              >
+                                              : ${detail.count} times
+                                          </div>`
+                                  )}
+                              </div>`
+                            : nothing
                     )}
                 </div>
             </div>

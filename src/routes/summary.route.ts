@@ -268,6 +268,24 @@ export class SummaryRoute extends MobxLitElement {
                 render: (v: any) =>
                     html`<p><strong>Details logged:</strong> ${v}</p>`,
             },
+            // Total time spent editing
+            {
+                id: 'totalEditingTime',
+                init: () => ({ totalMs: 0 }),
+                accumulate: (state: any, entry: Entry) => {
+                    const ms = (entry.editLog || []).reduce(
+                        (s, e) => s + (e?.duration || 0),
+                        0
+                    );
+                    state.totalMs += ms;
+                },
+                finalize: (state: any) => state.totalMs,
+                render: (v: any) =>
+                    html`<p>
+                        <strong>Total time spent editing:</strong>
+                        ${DateHelpers.duration(v)}
+                    </p>`,
+            },
         ];
     }
 
@@ -383,11 +401,14 @@ export class SummaryRoute extends MobxLitElement {
                                       )}
                                   </p>
                                   <p>
-                                      Percent of days in period with activity:
+                                      Percent of elapsed days in period with
+                                      activity:
                                       ${(
                                           (statEntry[1].dates.length /
                                               Math.ceil(
-                                                  (this.endDate.getTime() -
+                                                  ((this.endDate > new Date()
+                                                      ? new Date().getTime()
+                                                      : this.endDate.getTime()) -
                                                       this.startDate.getTime()) /
                                                       (1000 * 60 * 60 * 24)
                                               )) *
@@ -412,22 +433,29 @@ export class SummaryRoute extends MobxLitElement {
                                           statEntry[1].dates.length
                                       ).toFixed(2)}
                                   </p>
-                                  <p>Top 10 details used:</p>
-                                  ${map(
-                                      Array.from(
-                                          statEntry[1].detailsUsed?.values() ||
-                                              []
-                                      )
-                                          .sort((a, b) => b.count - a.count)
-                                          .slice(0, 10),
-                                      (detail) =>
-                                          html`<div>
-                                              <activity-detail
-                                                  >${detail.text}</activity-detail
-                                              >
-                                              : ${detail.count} times
-                                          </div>`
-                                  )}
+                                  ${statEntry[1].detailsUsed?.size
+                                      ? html`
+                                            <p>Top 10 details used:</p>
+                                            ${map(
+                                                Array.from(
+                                                    statEntry[1].detailsUsed?.values() ||
+                                                        []
+                                                )
+                                                    .sort(
+                                                        (a, b) =>
+                                                            b.count - a.count
+                                                    )
+                                                    .slice(0, 10),
+                                                (detail) =>
+                                                    html`<div>
+                                                        <activity-detail
+                                                            >${detail.text}</activity-detail
+                                                        >
+                                                        : ${detail.count} times
+                                                    </div>`
+                                            )}
+                                        `
+                                      : nothing}
                               </div>`
                             : nothing
                     )}

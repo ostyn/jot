@@ -341,6 +341,7 @@ export class SummaryRoute extends MobxLitElement {
             this.runSummaries(this.entries);
             this.requestUpdate();
         }
+        window.scrollTo({ top: 0 });
     }
     render() {
         return html` <div class="route-container">

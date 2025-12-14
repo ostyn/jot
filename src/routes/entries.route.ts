@@ -110,6 +110,17 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
             },
         });
     }
+    getAnnualSummaryUrl() {
+        const currentYear = new Date().getFullYear();
+        //if today is before July 1, show last year
+        const today = new Date();
+        if (today.getMonth() < 6) {
+            return [`${currentYear - 1}-01-01`, `${currentYear - 1}-12-31`];
+        } else {
+            return [`${currentYear}-01-01`, `${currentYear}-12-31`];
+        }
+    }
+
     render() {
         return html`<section class="month-control-bar">
                 <month-control
@@ -168,6 +179,16 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
                             </article>`}
                   </section>`}
             <div class="sticky-buttons">
+                <button
+                    aria-label="search"
+                    class="inline contrast"
+                    @click=${() =>
+                        go('summary', {
+                            pathParams: this.getAnnualSummaryUrl(),
+                        })}
+                >
+                    <jot-icon name="PartyPopper"></jot-icon>
+                </button>
                 <button
                     aria-label="search"
                     class="inline contrast"

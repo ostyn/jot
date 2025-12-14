@@ -25,6 +25,7 @@ import {
     Maximize2,
     Menu,
     Minimize2,
+    PartyPopper,
     PenLine,
     Play,
     Plus,
@@ -47,6 +48,7 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    PartyPopper,
     Locate,
     LocateFixed,
     LocateOff,

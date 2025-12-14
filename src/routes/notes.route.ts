@@ -22,69 +22,74 @@ export class NotesRoute extends MobxLitElement {
                             <summary class="folderLabel">
                                 ${folderName || 'Default'}
                             </summary>
-                            ${notesInFolder.map(
-                                (note) =>
-                                    html` <article
-                                        @click=${() => {
-                                            const startEdit = new Date();
-                                            Sheet.open({
-                                                type: TextSheet,
-                                                data: note.content,
-                                                onClose: (content: string) => {
-                                                    const endEdit = new Date();
-                                                    const updatedNote = {
-                                                        id: note.id,
-                                                        path: note.path,
-                                                        content,
-                                                        editLog: [
-                                                            ...toJS(
-                                                                note.editLog
-                                                            ),
-                                                            {
-                                                                date: endEdit,
-                                                                duration:
-                                                                    endEdit.getTime() -
-                                                                    startEdit.getTime(),
-                                                                tool: EditTools.JOT,
-                                                            },
-                                                        ],
-                                                    };
-                                                    if (
-                                                        updatedNote.content ===
-                                                        ''
-                                                    )
-                                                        notes.removeNote(
-                                                            updatedNote.id
-                                                        );
-                                                    else if (
-                                                        updatedNote.content !==
-                                                        note.content
-                                                    )
-                                                        notes.upsertNote(
-                                                            updatedNote
-                                                        );
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        <header>
-                                            ${note.content.split('\n')[0]}
-                                        </header>
+                            <div class="notes-folder">
+                                ${notesInFolder.map(
+                                    (note) =>
+                                        html` <article
+                                            @click=${() => {
+                                                const startEdit = new Date();
+                                                Sheet.open({
+                                                    type: TextSheet,
+                                                    data: note.content,
+                                                    onClose: (
+                                                        content: string
+                                                    ) => {
+                                                        const endEdit =
+                                                            new Date();
+                                                        const updatedNote = {
+                                                            id: note.id,
+                                                            path: note.path,
+                                                            content,
+                                                            editLog: [
+                                                                ...toJS(
+                                                                    note.editLog
+                                                                ),
+                                                                {
+                                                                    date: endEdit,
+                                                                    duration:
+                                                                        endEdit.getTime() -
+                                                                        startEdit.getTime(),
+                                                                    tool: EditTools.JOT,
+                                                                },
+                                                            ],
+                                                        };
+                                                        if (
+                                                            updatedNote.content ===
+                                                            ''
+                                                        )
+                                                            notes.removeNote(
+                                                                updatedNote.id
+                                                            );
+                                                        else if (
+                                                            updatedNote.content !==
+                                                            note.content
+                                                        )
+                                                            notes.upsertNote(
+                                                                updatedNote
+                                                            );
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            <header>
+                                                ${note.content.split('\n')[0]}
+                                            </header>
 
-                                        <section class="note-content">
-                                            ${note.content
-                                                .split('\n')
-                                                .slice(1)
-                                                .join('\n')}
-                                        </section>
-                                        <footer>
-                                            <edit-log-dates
-                                                class="edit-dates"
-                                                .editLog=${note.editLog}
-                                            ></edit-log-dates>
-                                        </footer>
-                                    </article>`
-                            )}
+                                            <section class="note-content">
+                                                ${note.content
+                                                    .split('\n')
+                                                    .slice(1)
+                                                    .join('\n')}
+                                            </section>
+                                            <footer>
+                                                <edit-log-dates
+                                                    class="edit-dates"
+                                                    .editLog=${note.editLog}
+                                                ></edit-log-dates>
+                                            </footer>
+                                        </article>`
+                                )}
+                            </div>
                         </details>
                         <hr />`
             )}
@@ -123,6 +128,11 @@ export class NotesRoute extends MobxLitElement {
     static styles = [
         base,
         css`
+            .notes-folder {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
             .note-content {
                 white-space: pre-wrap;
             }

@@ -62,16 +62,12 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entries,
                 render: (v: Entry[]) =>
                     html`<p>
-                        <mood-component
-                            .mood=${moods.getMood(v[0].mood)}
-                        ></mood-component>
                         <strong>Best days :</strong>
-                        ${Array.isArray(v)
-                            ? `${v.length} (${(v as any[])
-                                  .map((e: any) => e?.date)
-                                  .filter(Boolean)
-                                  .join(', ')})`
-                            : 'N/A'}
+                       <div class="entryLinks"> ${v.map(
+                           (e) => html`
+                               <entry-link .date=${e.date}></entry-link>
+                           `
+                       )}</div>
                     </p>`,
             },
             // Worst days summarizer
@@ -93,16 +89,13 @@ export class SummaryRoute extends MobxLitElement {
                 finalize: (state: any) => state.entries,
                 render: (v: any) =>
                     html`<p>
-                        <mood-component
-                            .mood=${moods.getMood(v[0].mood)}
-                        ></mood-component
-                        ><strong>Worst days:</strong>
-                        ${Array.isArray(v)
-                            ? `${v.length} (${(v as any[])
-                                  .map((e: any) => e?.date)
-                                  .filter(Boolean)
-                                  .join(', ')})`
-                            : 'N/A'}
+                        <strong>Worst days:</strong>
+                        <div class="entryLinks">
+                        ${v.map(
+                            (e) =>
+                                html`<entry-link .date=${e.date}></entry-link>`
+                        )}
+                        </div>
                     </p>`,
             },
             // Chattiest entry (most characters)
@@ -473,5 +466,15 @@ export class SummaryRoute extends MobxLitElement {
             </div>
         </div>`;
     }
-    static styles = [base, css``];
+    static styles = [
+        base,
+        css`
+            .entryLinks {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+        `,
+    ];
 }

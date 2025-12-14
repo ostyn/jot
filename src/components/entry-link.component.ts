@@ -15,7 +15,6 @@ export class EntryLinkComponent extends LitElement {
     entry!: Entry;
     protected async firstUpdated() {
         this.entry = (await entryDao.getEntriesFromDate(this.date))[0];
-        console.log('Entry for date', this.date, this.entry);
         this.requestUpdate();
     }
     render() {

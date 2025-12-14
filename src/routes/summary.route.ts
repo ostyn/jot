@@ -426,7 +426,9 @@ export class SummaryRoute extends MobxLitElement {
                                       ${(
                                           statEntry[1].count /
                                           Math.ceil(
-                                              (this.endDate.getTime() -
+                                              ((this.endDate > new Date()
+                                                  ? new Date().getTime()
+                                                  : this.endDate.getTime()) -
                                                   this.startDate.getTime()) /
                                                   (1000 * 60 * 60 * 24)
                                           )

@@ -11,6 +11,7 @@ export class EntryDao extends DexieDao {
             .table('entries')
             .where('date')
             .startsWith(date)
+            .reverse()
             .toArray();
 
         return x;

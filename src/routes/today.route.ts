@@ -1,6 +1,5 @@
 import { LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { RouterLocation } from '@vaadin/router';
 import { entryDao } from '../dao/EntryDao';
 import { go } from './route-config';
 

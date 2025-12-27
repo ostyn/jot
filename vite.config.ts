@@ -19,9 +19,9 @@ export default defineConfig({
                 start_url: '/entries',
                 shortcuts: [
                     {
-                        name: 'New Entry',
-                        url: '/entry',
-                        description: 'Log a new entry',
+                        name: 'Today',
+                        url: '/today',
+                        description: 'Log today',
                     },
                     {
                         name: '2048',

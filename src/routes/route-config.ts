@@ -14,6 +14,7 @@ import './notes.route';
 import './search.route';
 import './settings.route';
 import './summary.route';
+import './today.route';
 
 export const routerContext = createContext<Router>('router');
 export const routes = [
@@ -93,6 +94,11 @@ export const routes = [
         path: '/game',
         component: 'game-route',
         name: 'game',
+    },
+    {
+        path: '/today',
+        component: 'today-route',
+        name: 'today',
     },
 ] as const satisfies JotRoute[];
 type RouteName = (typeof routes)[number]['name'];

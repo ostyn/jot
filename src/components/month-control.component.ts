@@ -1,4 +1,4 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { addMonths, format } from 'date-fns';
 import { base } from '../baseStyles';
@@ -25,9 +25,6 @@ export class MonthControlComponent extends LitElement {
         dispatchEvent(this, Events.monthClick);
     }
 
-    goToMonthSummary(date: Date) {
-        dispatchEvent(this, Events.monthSummaryClick, date);
-    }
     getSummaryUrl(date: Date) {
         const currentYear = date.getFullYear();
         const currentMonthPadded = String(date.getMonth() + 1).padStart(2, '0');

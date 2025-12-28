@@ -6,6 +6,7 @@ import {
     AlignJustify,
     ArrowRight,
     BookOpen,
+    ChartBar,
     ChevronLeft,
     ChevronRight,
     createElement,
@@ -48,6 +49,7 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    ChartBar,
     PartyPopper,
     Locate,
     LocateFixed,

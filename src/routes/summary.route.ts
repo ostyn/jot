@@ -350,33 +350,35 @@ export class SummaryRoute extends MobxLitElement {
     }
     render() {
         return html` <div class="route-container">
-            <h2>
-                Summary from ${this.startDate.toLocaleDateString()} to
-                ${this.endDate.toLocaleDateString()}
-            </h2>
-            <div>
-                ${(() => {
-                    if (!this.summarizers || this.summarizers.length === 0)
-                        this.setupSummarizers();
-                    const format = (v: any) => {
-                        if (v === null || v === undefined) return 'N/A';
-                        if (typeof v === 'number') return v.toFixed(2);
-                        return String(v);
-                    };
+            <article>
+                <h2>
+                    Summary from ${this.startDate.toLocaleDateString()} to
+                    ${this.endDate.toLocaleDateString()}
+                </h2>
+                <div>
+                    ${(() => {
+                        if (!this.summarizers || this.summarizers.length === 0)
+                            this.setupSummarizers();
+                        const format = (v: any) => {
+                            if (v === null || v === undefined) return 'N/A';
+                            if (typeof v === 'number') return v.toFixed(2);
+                            return String(v);
+                        };
 
-                    return this.summarizers.map((s) => {
-                        const val = this.summaryResults.get(s.id);
-                        try {
-                            if (s.render) return s.render(val);
-                        } catch (e) {
-                            console.warn('summary render error', s.id, e);
-                        }
-                        return html`<p>
-                            <strong>${s.id}:</strong> ${format(val)}
-                        </p>`;
-                    });
-                })()}
-            </div>
+                        return this.summarizers.map((s) => {
+                            const val = this.summaryResults.get(s.id);
+                            try {
+                                if (s.render) return s.render(val);
+                            } catch (e) {
+                                console.warn('summary render error', s.id, e);
+                            }
+                            return html`<p>
+                                <strong>${s.id}:</strong> ${format(val)}
+                            </p>`;
+                        });
+                    })()}
+                </div>
+            </article>
             <div class="activity-stats">
                 ${map(this.stats, (statEntry) =>
                     activities.getActivity(statEntry[0])
@@ -477,6 +479,7 @@ export class SummaryRoute extends MobxLitElement {
                 gap: 0.5rem;
             }
             .activity-stats {
+                padding-top: 1rem;
                 display: grid;
                 gap: 1rem;
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

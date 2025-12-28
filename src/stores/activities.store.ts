@@ -172,5 +172,17 @@ export function accumulateStatsFromEntries(entries: Entry[]): any {
             }
         }
     });
-    return activityStats;
+    //sort activities by name after looking up the activity by the ID
+    const sortedActivityStats = Array.from(activityStats.entries()).sort(
+        (a, b) => {
+            const activityA = activities.getActivity(a[0]);
+            const activityB = activities.getActivity(b[0]);
+            if (activityA && activityB) {
+                return activityA.name.localeCompare(activityB.name);
+            } else {
+                return 0;
+            }
+        }
+    );
+    return sortedActivityStats;
 }

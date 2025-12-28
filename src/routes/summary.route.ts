@@ -60,15 +60,18 @@ export class SummaryRoute extends MobxLitElement {
                     }
                 },
                 finalize: (state: any) => state.entries,
-                render: (v: Entry[]) =>
-                    html`<p>
-                        <strong>Best days :</strong>
-                       <div class="entryLinks"> ${v.map(
-                           (e) => html`
-                               <entry-link .date=${e.date}></entry-link>
-                           `
-                       )}</div>
-                    </p>`,
+                render: (v: Entry[]) => html`
+                    <details>
+                        <summary>Best days</summary>
+                        <div class="entryLinks">
+                            ${v.map(
+                                (e) => html`
+                                    <entry-link .date=${e.date}></entry-link>
+                                `
+                            )}
+                        </div>
+                    </details>
+                `,
             },
             // Worst days summarizer
             {
@@ -87,18 +90,18 @@ export class SummaryRoute extends MobxLitElement {
                     }
                 },
                 finalize: (state: any) => state.entries,
-                render: (v: any) =>
-                    html`<p>
-                        <strong>Worst days:</strong>
+                render: (v: Entry[]) => html`
+                    <details>
+                        <summary>Worst days</summary>
                         <div class="entryLinks">
-                        ${v.map(
-                            (entry: Entry) =>
-                                html`<entry-link
-                                    .date=${entry.date}
-                                ></entry-link>`
-                        )}
+                            ${v.map(
+                                (e) => html`
+                                    <entry-link .date=${e.date}></entry-link>
+                                `
+                            )}
                         </div>
-                    </p>`,
+                    </details>
+                `,
             },
             // Chattiest entry (most characters)
             {
@@ -374,100 +377,93 @@ export class SummaryRoute extends MobxLitElement {
                     });
                 })()}
             </div>
-            <div>
-                <div>
-                    ${map(this.stats, (statEntry) =>
-                        activities.getActivity(statEntry[0])
-                            ? html`<div>
-                                  <activity-component
-                                      .activity=${activities.getActivity(
-                                          statEntry[0]
-                                      )}
-                                      .showName=${true}
-                                  ></activity-component>
-                                  <p>Count recorded: ${statEntry[1].count}</p>
-                                  <p>
-                                      Days recorded:
-                                      ${statEntry[1].dates.length}
-                                  </p>
-                                  <p>
-                                      Distinct details recorded:
-                                      ${statEntry[1].detailsUsed
-                                          ? statEntry[1].detailsUsed.size
-                                          : 0}
-                                  </p>
-                                  <p>
-                                      Times that details were recorded:
-                                      ${Array.from(
-                                          statEntry[1].detailsUsed?.values() ||
-                                              []
-                                      ).reduce(
-                                          (acc, detail) => acc + detail.count,
-                                          0
-                                      )}
-                                  </p>
-                                  <p>
-                                      Percent of elapsed days in period with
-                                      activity:
-                                      ${(
-                                          (statEntry[1].dates.length /
-                                              Math.ceil(
-                                                  ((this.endDate > new Date()
-                                                      ? new Date().getTime()
-                                                      : this.endDate.getTime()) -
-                                                      this.startDate.getTime()) /
-                                                      (1000 * 60 * 60 * 24)
-                                              )) *
-                                          100
-                                      ).toFixed(2)}%
-                                  </p>
-                                  <p>
-                                      Average per day:
-                                      ${(
-                                          statEntry[1].count /
+            <div class="activity-stats">
+                ${map(this.stats, (statEntry) =>
+                    activities.getActivity(statEntry[0])
+                        ? html`<article>
+                              <activity-component
+                                  .activity=${activities.getActivity(
+                                      statEntry[0]
+                                  )}
+                                  .showName=${true}
+                              ></activity-component>
+                              <p>Count recorded: ${statEntry[1].count}</p>
+                              <p>Days recorded: ${statEntry[1].dates.length}</p>
+                              <p>
+                                  Distinct details recorded:
+                                  ${statEntry[1].detailsUsed
+                                      ? statEntry[1].detailsUsed.size
+                                      : 0}
+                              </p>
+                              <p>
+                                  Times that details were recorded:
+                                  ${Array.from(
+                                      statEntry[1].detailsUsed?.values() || []
+                                  ).reduce(
+                                      (acc, detail) => acc + detail.count,
+                                      0
+                                  )}
+                              </p>
+                              <p>
+                                  Percent of elapsed days in period with
+                                  activity:
+                                  ${(
+                                      (statEntry[1].dates.length /
                                           Math.ceil(
                                               ((this.endDate > new Date()
                                                   ? new Date().getTime()
                                                   : this.endDate.getTime()) -
                                                   this.startDate.getTime()) /
                                                   (1000 * 60 * 60 * 24)
-                                          )
-                                      ).toFixed(2)}
-                                  </p>
-                                  <p>
-                                      Average per day when recorded:
-                                      ${(
-                                          statEntry[1].count /
-                                          statEntry[1].dates.length
-                                      ).toFixed(2)}
-                                  </p>
-                                  ${statEntry[1].detailsUsed?.size
-                                      ? html`
-                                            <p>Top 10 details used:</p>
-                                            ${map(
-                                                Array.from(
-                                                    statEntry[1].detailsUsed?.values() ||
-                                                        []
+                                          )) *
+                                      100
+                                  ).toFixed(2)}%
+                              </p>
+                              <p>
+                                  Average per day:
+                                  ${(
+                                      statEntry[1].count /
+                                      Math.ceil(
+                                          ((this.endDate > new Date()
+                                              ? new Date().getTime()
+                                              : this.endDate.getTime()) -
+                                              this.startDate.getTime()) /
+                                              (1000 * 60 * 60 * 24)
+                                      )
+                                  ).toFixed(2)}
+                              </p>
+                              <p>
+                                  Average per day when recorded:
+                                  ${(
+                                      statEntry[1].count /
+                                      statEntry[1].dates.length
+                                  ).toFixed(2)}
+                              </p>
+                              ${statEntry[1].detailsUsed?.size
+                                  ? html`
+                                        <p>Top 10 details used:</p>
+                                        ${map(
+                                            Array.from(
+                                                statEntry[1].detailsUsed?.values() ||
+                                                    []
+                                            )
+                                                .sort(
+                                                    (a, b) => b.count - a.count
                                                 )
-                                                    .sort(
-                                                        (a, b) =>
-                                                            b.count - a.count
-                                                    )
-                                                    .slice(0, 10),
-                                                (detail) =>
-                                                    html`<div>
-                                                        <activity-detail
-                                                            >${detail.text}</activity-detail
-                                                        >
-                                                        : ${detail.count} times
-                                                    </div>`
-                                            )}
-                                        `
-                                      : nothing}
-                              </div>`
-                            : nothing
-                    )}
-                </div>
+                                                .slice(0, 10),
+                                            (detail) =>
+                                                html`<div>
+                                                    <activity-detail
+                                                        >${detail.text}</activity-detail
+                                                    >
+                                                    : ${detail.count} times
+                                                </div>`
+                                        )}
+                                    `
+                                  : nothing}
+                          </article>`
+                        : nothing
+                )}
             </div>
         </div>`;
     }
@@ -479,6 +475,11 @@ export class SummaryRoute extends MobxLitElement {
                 flex-direction: row;
                 flex-wrap: wrap;
                 gap: 0.5rem;
+            }
+            .activity-stats {
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
         `,
     ];

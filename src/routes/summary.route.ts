@@ -8,6 +8,7 @@ import '../components/calendar-wrapper.component';
 import '../components/entry-link.component';
 import '../components/mood.component';
 import { entryDao } from '../dao/EntryDao';
+import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 import {
@@ -380,27 +381,28 @@ export class SummaryRoute extends MobxLitElement {
                 </div>
             </article>
             <div class="activity-stats">
-                ${map(this.stats, (statEntry) =>
-                    activities.getActivity(statEntry[0])
+                ${map(activities.allVisibleActivities, (activity: Activity) => {
+                    const activityStats = this.stats.get(activity.id);
+                    return this.stats.has(activity.id) && activityStats
                         ? html`<article>
                               <activity-component
-                                  .activity=${activities.getActivity(
-                                      statEntry[0]
-                                  )}
+                                  .activity=${activity}
                                   .showName=${true}
                               ></activity-component>
-                              <p>Count recorded: ${statEntry[1].count}</p>
-                              <p>Days recorded: ${statEntry[1].dates.length}</p>
+                              <p>Count recorded: ${activityStats.count}</p>
+                              <p>
+                                  Days recorded: ${activityStats.dates.length}
+                              </p>
                               <p>
                                   Distinct details recorded:
-                                  ${statEntry[1].detailsUsed
-                                      ? statEntry[1].detailsUsed.size
+                                  ${activityStats.detailsUsed
+                                      ? activityStats.detailsUsed.size
                                       : 0}
                               </p>
                               <p>
                                   Times that details were recorded:
                                   ${Array.from(
-                                      statEntry[1].detailsUsed?.values() || []
+                                      activityStats.detailsUsed?.values() || []
                                   ).reduce(
                                       (acc, detail) => acc + detail.count,
                                       0
@@ -410,7 +412,7 @@ export class SummaryRoute extends MobxLitElement {
                                   Percent of elapsed days in period with
                                   activity:
                                   ${(
-                                      (statEntry[1].dates.length /
+                                      (activityStats.dates.length /
                                           Math.ceil(
                                               ((this.endDate > new Date()
                                                   ? new Date().getTime()
@@ -424,7 +426,7 @@ export class SummaryRoute extends MobxLitElement {
                               <p>
                                   Average per day:
                                   ${(
-                                      statEntry[1].count /
+                                      activityStats.count /
                                       Math.ceil(
                                           ((this.endDate > new Date()
                                               ? new Date().getTime()
@@ -437,16 +439,16 @@ export class SummaryRoute extends MobxLitElement {
                               <p>
                                   Average per day when recorded:
                                   ${(
-                                      statEntry[1].count /
-                                      statEntry[1].dates.length
+                                      activityStats.count /
+                                      activityStats.dates.length
                                   ).toFixed(2)}
                               </p>
-                              ${statEntry[1].detailsUsed?.size
+                              ${activityStats.detailsUsed?.size
                                   ? html`
                                         <p>Top 10 details used:</p>
                                         ${map(
                                             Array.from(
-                                                statEntry[1].detailsUsed?.values() ||
+                                                activityStats.detailsUsed?.values() ||
                                                     []
                                             )
                                                 .sort(
@@ -464,8 +466,8 @@ export class SummaryRoute extends MobxLitElement {
                                     `
                                   : nothing}
                           </article>`
-                        : nothing
-                )}
+                        : nothing;
+                })}
             </div>
         </div>`;
     }

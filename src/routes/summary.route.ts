@@ -4,6 +4,8 @@ import { map } from 'lit/directives/map.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
 import { base } from '../baseStyles';
+import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import '../components/calendar-wrapper.component';
 import '../components/entry-link.component';
 import '../components/mood.component';
@@ -39,6 +41,7 @@ export class SummaryRoute extends MobxLitElement {
         finalize: (state: any) => any;
         render?: (value: any) => unknown;
     }> = [];
+    selectedActivity: Activity | undefined;
 
     setupSummarizers() {
         const moodsStore = moods;
@@ -322,6 +325,21 @@ export class SummaryRoute extends MobxLitElement {
             this.summaryResults.set(s.id, s.finalize(states.get(s.id)));
         }
     }
+    openActivitySelect() {
+        Sheet.open({
+            type: ActivitySheet,
+            data: { focusedActivityIdList: this.stats.keys() },
+            onClose: (id: string) => {
+                this.selectedActivity = activities.getActivity(id);
+                this.requestUpdate();
+            },
+        });
+    }
+    clearFilter() {
+        this.selectedActivity = undefined;
+        this.requestUpdate();
+    }
+
     async onAfterEnter(location: RouterLocation) {
         if (location.params.start && location.params.end) {
             this.startDate = new Date(
@@ -380,94 +398,114 @@ export class SummaryRoute extends MobxLitElement {
                     })()}
                 </div>
             </article>
+            <div class="filter-bar">
+                <button @click="${() => this.openActivitySelect()}">
+                    Filter <jot-icon name="Filter"></jot-icon>
+                </button>
+
+                ${this.selectedActivity
+                    ? html` <button @click="${() => this.clearFilter()}">
+                          Clear <jot-icon name="FilterX"></jot-icon>
+                      </button>`
+                    : nothing}
+            </div>
+
             <div class="activity-stats">
-                ${map(activities.allVisibleActivities, (activity: Activity) => {
-                    const activityStats = this.stats.get(activity.id);
-                    return this.stats.has(activity.id) && activityStats
-                        ? html`<article>
-                              <activity-component
-                                  .activity=${activity}
-                                  .showName=${true}
-                              ></activity-component>
-                              <p>Count recorded: ${activityStats.count}</p>
-                              <p>
-                                  Days recorded: ${activityStats.dates.length}
-                              </p>
-                              <p>
-                                  Distinct details recorded:
-                                  ${activityStats.detailsUsed
-                                      ? activityStats.detailsUsed.size
-                                      : 0}
-                              </p>
-                              <p>
-                                  Times that details were recorded:
-                                  ${Array.from(
-                                      activityStats.detailsUsed?.values() || []
-                                  ).reduce(
-                                      (acc, detail) => acc + detail.count,
-                                      0
-                                  )}
-                              </p>
-                              <p>
-                                  Percent of elapsed days in period with
-                                  activity:
-                                  ${(
-                                      (activityStats.dates.length /
+                ${map(
+                    this.selectedActivity
+                        ? [this.selectedActivity]
+                        : activities.allVisibleActivities,
+                    (activity: Activity) => {
+                        const activityStats = this.stats.get(activity.id);
+                        return this.stats.has(activity.id) && activityStats
+                            ? html`<article>
+                                  <activity-component
+                                      .activity=${activity}
+                                      .showName=${true}
+                                  ></activity-component>
+                                  <p>Count recorded: ${activityStats.count}</p>
+                                  <p>
+                                      Days recorded:
+                                      ${activityStats.dates.length}
+                                  </p>
+                                  <p>
+                                      Distinct details recorded:
+                                      ${activityStats.detailsUsed
+                                          ? activityStats.detailsUsed.size
+                                          : 0}
+                                  </p>
+                                  <p>
+                                      Times that details were recorded:
+                                      ${Array.from(
+                                          activityStats.detailsUsed?.values() ||
+                                              []
+                                      ).reduce(
+                                          (acc, detail) => acc + detail.count,
+                                          0
+                                      )}
+                                  </p>
+                                  <p>
+                                      Percent of elapsed days in period with
+                                      activity:
+                                      ${(
+                                          (activityStats.dates.length /
+                                              Math.ceil(
+                                                  ((this.endDate > new Date()
+                                                      ? new Date().getTime()
+                                                      : this.endDate.getTime()) -
+                                                      this.startDate.getTime()) /
+                                                      (1000 * 60 * 60 * 24)
+                                              )) *
+                                          100
+                                      ).toFixed(2)}%
+                                  </p>
+                                  <p>
+                                      Average per day:
+                                      ${(
+                                          activityStats.count /
                                           Math.ceil(
                                               ((this.endDate > new Date()
                                                   ? new Date().getTime()
                                                   : this.endDate.getTime()) -
                                                   this.startDate.getTime()) /
                                                   (1000 * 60 * 60 * 24)
-                                          )) *
-                                      100
-                                  ).toFixed(2)}%
-                              </p>
-                              <p>
-                                  Average per day:
-                                  ${(
-                                      activityStats.count /
-                                      Math.ceil(
-                                          ((this.endDate > new Date()
-                                              ? new Date().getTime()
-                                              : this.endDate.getTime()) -
-                                              this.startDate.getTime()) /
-                                              (1000 * 60 * 60 * 24)
-                                      )
-                                  ).toFixed(2)}
-                              </p>
-                              <p>
-                                  Average per day when recorded:
-                                  ${(
-                                      activityStats.count /
-                                      activityStats.dates.length
-                                  ).toFixed(2)}
-                              </p>
-                              ${activityStats.detailsUsed?.size
-                                  ? html`
-                                        <p>Top 10 details used:</p>
-                                        ${map(
-                                            Array.from(
-                                                activityStats.detailsUsed?.values() ||
-                                                    []
-                                            )
-                                                .sort(
-                                                    (a, b) => b.count - a.count
+                                          )
+                                      ).toFixed(2)}
+                                  </p>
+                                  <p>
+                                      Average per day when recorded:
+                                      ${(
+                                          activityStats.count /
+                                          activityStats.dates.length
+                                      ).toFixed(2)}
+                                  </p>
+                                  ${activityStats.detailsUsed?.size
+                                      ? html`
+                                            <p>Top 10 details used:</p>
+                                            ${map(
+                                                Array.from(
+                                                    activityStats.detailsUsed?.values() ||
+                                                        []
                                                 )
-                                                .slice(0, 10),
-                                            (detail) =>
-                                                html`<div>
-                                                    <activity-detail
-                                                        >${detail.text}</activity-detail
-                                                    >
-                                                    : ${detail.count} times
-                                                </div>`
-                                        )}
-                                    `
-                                  : nothing}
-                          </article>`
-                        : nothing;
-                })}
+                                                    .sort(
+                                                        (a, b) =>
+                                                            b.count - a.count
+                                                    )
+                                                    .slice(0, 10),
+                                                (detail) =>
+                                                    html`<div>
+                                                        <activity-detail
+                                                            >${detail.text}</activity-detail
+                                                        >
+                                                        : ${detail.count} times
+                                                    </div>`
+                                            )}
+                                        `
+                                      : nothing}
+                              </article>`
+                            : nothing;
+                    }
+                )}
             </div>
         </div>`;
     }
@@ -481,10 +519,20 @@ export class SummaryRoute extends MobxLitElement {
                 gap: 0.5rem;
             }
             .activity-stats {
-                padding-top: 1rem;
                 display: grid;
                 gap: 1rem;
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            .filter-bar {
+                margin: 1rem 0;
+                display: flex;
+                gap: 0.5rem;
+                justify-content: center;
+            }
+            .filter-bar button {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.25rem;
             }
         `,
     ];

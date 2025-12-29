@@ -14,6 +14,8 @@ import {
     Eye,
     EyeOff,
     FileText,
+    Filter,
+    FilterX,
     Heart,
     HeartOff,
     Import,
@@ -49,6 +51,8 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    Filter,
+    FilterX,
     ChartBar,
     PartyPopper,
     Locate,

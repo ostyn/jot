@@ -19,6 +19,8 @@ export class ActivityGridComponent extends MobxLitElement {
     selectedActivityInfo?: { [key: string]: ActivityDetail };
     @property()
     showFilterUnused = false;
+    @property()
+    focusedActivityIdList: string[] = [];
     @state()
     search: boolean = false;
     @state()
@@ -31,7 +33,13 @@ export class ActivityGridComponent extends MobxLitElement {
     }
     activitiesChanged() {
         this.categoryToActivityList = new Map();
-        activities.allVisibleActivities.forEach((activity: Activity) => {
+        const filteredActivities: Activity[] = this.focusedActivityIdList.length
+            ? activities.allVisibleActivities.filter((activity: Activity) => {
+                  return this.focusedActivityIdList?.includes(activity.id);
+              })
+            : activities.allVisibleActivities;
+
+        filteredActivities.forEach((activity: Activity) => {
             if (
                 (this.filterArchived && activity.isArchived) ||
                 (this.filterUnused &&

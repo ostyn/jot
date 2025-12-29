@@ -77,6 +77,7 @@ export class NavBar extends LitElement {
                 background-color: var(--pico-card-background-color);
                 box-shadow: var(--pico-card-box-shadow);
                 z-index: 100;
+                overflow: hidden;
             }
 
             @supports (-webkit-hyphens: none) {
@@ -87,9 +88,11 @@ export class NavBar extends LitElement {
 
             .footer-content {
                 display: flex;
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center;
                 user-select: none;
+                overflow-x: auto;
+                scrollbar-width: none;
             }
             .item-wrapper {
                 height: 64px;

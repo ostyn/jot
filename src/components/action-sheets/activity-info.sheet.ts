@@ -191,6 +191,9 @@ export class ActivityInfoSheet extends LitElement {
     static styles = [
         base,
         css`
+            ul {
+                padding-left: 0;
+            }
             .activity-info-header {
                 display: flex;
             }

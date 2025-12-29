@@ -2,7 +2,7 @@ import { css, html, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { parseISO } from 'date-fns';
-import { Calendar, Options } from 'vanilla-calendar-pro';
+import { Calendar, type Options } from 'vanilla-calendar-pro';
 import { TypesCalendar } from 'vanilla-calendar-pro';
 import calendar from 'vanilla-calendar-pro/styles/index.css?inline';
 import calendarLayout from 'vanilla-calendar-pro/styles/layout.css?inline';
@@ -29,10 +29,22 @@ export class CalendarWrapperComponent extends MobxLitElement {
         this.calendar.update();
     }
     protected firstUpdated(): void {
-        this.shownMonth = this.startingDate.getMonth();
-        this.shownYear = this.startingDate.getFullYear();
-        const options: Partial<Options> = {
+        // If we have selected dates, start with the month of the first selected date
+        let displayDate = this.startingDate;
+        if (this.selectedDatesInitial.length > 0) {
+            try {
+                displayDate = parseISO(this.selectedDatesInitial[0]);
+            } catch (e) {
+                // Fall back to startingDate if parsing fails
+            }
+        }
+
+        this.shownMonth = displayDate.getMonth();
+        this.shownYear = displayDate.getFullYear();
+        const options: Options = {
             type: this.type,
+            firstWeekday: 0,
+            selectedWeekends: [],
             dateToday: this.startingDate,
             selectionDatesMode: this.selectionDatesMode,
             ...(this.selectedDatesInitial.length > 0 && {
@@ -76,11 +88,8 @@ export class CalendarWrapperComponent extends MobxLitElement {
                 }
             },
             onClickArrow: (self: any) => {
-                this.shownMonth =
-                    self.context.displayYear === this.shownYear
-                        ? self.context.displayMonth
-                        : this.shownMonth;
-                this.shownYear = self.context.displayYear;
+                this.shownMonth = self.context.selectedMonth;
+                this.shownYear = self.context.selectedYear;
                 this.onViewChange();
             },
             onClickMonth: (self: any) => {
@@ -102,10 +111,12 @@ export class CalendarWrapperComponent extends MobxLitElement {
                     dispatchEvent(this, Events.monthSelect, {
                         date: new Date(year, month, 1),
                     });
+                    this.onViewChange();
                 }
             },
             onClickYear: (self: any) => {
-                this.shownYear = self.context.displayYear;
+                this.shownMonth = self.context.selectedMonth;
+                this.shownYear = self.context.selectedYear;
                 this.onViewChange();
             },
         };
@@ -120,9 +131,13 @@ export class CalendarWrapperComponent extends MobxLitElement {
         }
     }
     private onViewChange() {
+        const month =
+            this.shownMonth !== undefined
+                ? this.shownMonth
+                : new Date().getMonth();
         dispatchEvent(this, Events.viewChange, {
             year: this.shownYear,
-            month: this.shownMonth,
+            month,
         });
     }
     protected render() {

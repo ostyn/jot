@@ -58,7 +58,6 @@ export class ActivityInfoSheet extends LitElement {
         this.year = year;
         let activityStats = activities.stats.get(this.activityId);
         let affectedDates = activityStats?.dates;
-
         if (activityStats && activityStats.detailsUsed && this.selectedTextItem)
             affectedDates = activityStats.detailsUsed.get(
                 this.selectedTextItem
@@ -82,7 +81,6 @@ export class ActivityInfoSheet extends LitElement {
                 ? activityDetail.length
                 : activityDetail;
         }
-
         this.daysElapsed = this.getDaysElapsedInMonth(month, year);
         this.daysWithActivity = this.relatedEntryMap.size;
         this.percentOfDays = this.daysElapsed
@@ -128,7 +126,6 @@ export class ActivityInfoSheet extends LitElement {
             <calendar-wrapper
                 class="inline"
                 .startingDate=${this.date}
-                .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}
                 @dateSelect=${(e: any) =>

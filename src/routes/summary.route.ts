@@ -3,6 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { map } from 'lit/directives/map.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
+import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
@@ -52,6 +53,20 @@ export class SummaryRoute extends MobxLitElement {
 
         this.summarizers = [
             // Best days summarizer (returns array of entries with highest mood rating)
+            {
+                id: 'numberOfEntries',
+                init: () => ({
+                    count: 0,
+                }),
+                accumulate: (state: any) => {
+                    state.count += 1;
+                    return state;
+                },
+                finalize: (state: any) => state.count,
+                render: (v: any) =>
+                    html`<p><strong>Number of entries:</strong> ${v}</p>`,
+            },
+            // Best days summarizer
             {
                 id: 'bestDays',
                 init: () => ({ bestRating: -Infinity, entries: [] as Entry[] }),
@@ -377,26 +392,16 @@ export class SummaryRoute extends MobxLitElement {
 
     async onAfterEnter(location: RouterLocation) {
         if (location.params.start && location.params.end) {
-            this.startDate = new Date(
-                ...((location.params.start as string)
-                    .split('-')
-                    .map((v: string, i: number) =>
-                        i === 1 ? parseInt(v) - 1 : parseInt(v)
-                    ) as [number, number, number])
-            );
-            this.endDate = new Date(
-                ...((location.params.end as string)
-                    .split('-')
-                    .map((v: string, i: number) =>
-                        i === 1 ? parseInt(v) - 1 : parseInt(v)
-                    ) as [number, number, number])
-            );
+            //Parsing dates isn't working here and that's why we're starting the calendar with the wrong date selected
+            this.startDate = parseISO(location.params.start as string);
+            this.startDate.setHours(0, 0, 0, 0);
+            this.endDate = parseISO(location.params.end as string);
             this.endDate.setHours(23, 59, 59, 999);
             this.selectedStartDate = this.formatDateForInput(this.startDate);
             this.selectedEndDate = this.formatDateForInput(this.endDate);
-            this.entries = await entryDao.getEntriesBetweenDates(
-                this.startDate,
-                this.endDate
+            this.entries = await entryDao.getEntriesBetweenDateStrings(
+                location.params.start as string,
+                location.params.end as string
             );
             this.stats = accumulateStatsFromEntries(this.entries);
             this.runSummaries(this.entries);

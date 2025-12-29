@@ -6,7 +6,7 @@ export class ActivitySheet {
         submit: (data: any) => void
     ): TemplateResult {
         return html`<activity-grid
-            .focusedActivityIdList=${[...data.focusedActivityIdList]}
+            .focusedActivityIdList=${[...(data?.focusedActivityIdList || [])]}
             @activityClick=${(data: any) => submit(data.detail.id)}
         ></activity-grid>`;
     }

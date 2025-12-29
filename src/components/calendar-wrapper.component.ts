@@ -1,13 +1,14 @@
 import { css, html, unsafeCSS } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import VanillaCalendar, { Options } from '@uvarov.frontend/vanilla-calendar';
-import { TypesCalendar } from '@uvarov.frontend/vanilla-calendar/types';
 import { parseISO } from 'date-fns';
+import { Calendar, Options } from 'vanilla-calendar-pro';
+import { TypesCalendar } from 'vanilla-calendar-pro';
+import calendar from 'vanilla-calendar-pro/styles/index.css?inline';
+import calendarLayout from 'vanilla-calendar-pro/styles/layout.css?inline';
+import calendarDark from 'vanilla-calendar-pro/styles/themes/dark.css?inline';
+import calendarLight from 'vanilla-calendar-pro/styles/themes/light.css?inline';
 import { dispatchEvent, Events } from '../utils/Helpers';
-import calendarDark from '/node_modules/@uvarov.frontend/vanilla-calendar/build/themes/dark.min.css?inline';
-import calendarLight from '/node_modules/@uvarov.frontend/vanilla-calendar/build/themes/light.min.css?inline';
-import calendar from '/node_modules/@uvarov.frontend/vanilla-calendar/build/vanilla-calendar.min.css?inline';
 
 @customElement('calendar-wrapper')
 export class CalendarWrapperComponent extends MobxLitElement {
@@ -16,8 +17,12 @@ export class CalendarWrapperComponent extends MobxLitElement {
     @property()
     type: TypesCalendar = 'default';
     @property()
+    selectionDatesMode: 'multiple-ranged' | 'single' | 'multiple' = 'single';
+    @property()
     dateValues: { [key: string]: string } = {};
-    calendar!: VanillaCalendar;
+    @property()
+    selectedDatesInitial: string[] = [];
+    calendar!: Calendar;
     shownMonth!: number;
     shownYear!: number;
     protected updated() {
@@ -28,59 +33,86 @@ export class CalendarWrapperComponent extends MobxLitElement {
         this.shownYear = this.startingDate.getFullYear();
         const options: Partial<Options> = {
             type: this.type,
-            settings: {
-                iso8601: false,
-                visibility: {
-                    weekend: false,
-                },
-            },
-            date: {
-                today: this.startingDate,
-            },
-            actions: {
-                getDays: (day, date, _HTMLElement, HTMLButtonElement) => {
-                    if (this.dateValues[date] !== undefined) {
-                        HTMLButtonElement.style.flexDirection = 'column';
-                        HTMLButtonElement.innerHTML = `
-                      <span>${day}</span>
-                      <span class="date-detail">${this.dateValues[date]}</span>
-                    `;
-                    }
-                },
-                clickDay: (_event, dates) => {
-                    const date = parseISO((dates as string[])[0]);
-                    if (this.shownMonth === date.getMonth())
-                        dispatchEvent(this, Events.dateSelect, {
-                            date,
+            dateToday: this.startingDate,
+            selectionDatesMode: this.selectionDatesMode,
+            ...(this.selectedDatesInitial.length > 0 && {
+                selectedDates: this.selectedDatesInitial,
+            }),
+            onClickDate: (self: any, event: MouseEvent) => {
+                // Handle range selection - check if we have a complete range (2 dates, even if the same)
+                if (
+                    this.selectionDatesMode === 'multiple-ranged' &&
+                    self.context.selectedDates &&
+                    self.context.selectedDates.length === 2 &&
+                    self.context.selectedDates[0] &&
+                    self.context.selectedDates[1]
+                ) {
+                    try {
+                        const startDate = parseISO(
+                            self.context.selectedDates[0]
+                        );
+                        const endDate = parseISO(self.context.selectedDates[1]);
+                        dispatchEvent(this, Events.dateRangeSelect, {
+                            startDate,
+                            endDate,
                         });
-                    else {
-                        this.shownMonth = date.getMonth();
-                        this.shownYear = date.getFullYear();
-                        this.onViewChange();
+                    } catch (e) {
+                        console.warn('Error parsing selected dates:', e);
                     }
-                },
-                clickArrow: (_event, year, month) => {
+                } else {
+                    // Single date selection
+                    const dateEl = (event.target as HTMLElement).closest(
+                        '[data-date]'
+                    );
+                    if (dateEl) {
+                        const dateStr = dateEl.getAttribute('data-date');
+                        if (dateStr) {
+                            const date = parseISO(dateStr);
+                            dispatchEvent(this, Events.dateSelect, {
+                                date,
+                            });
+                        }
+                    }
+                }
+            },
+            onClickArrow: (self: any) => {
+                this.shownMonth =
+                    self.context.displayYear === this.shownYear
+                        ? self.context.displayMonth
+                        : this.shownMonth;
+                this.shownYear = self.context.displayYear;
+                this.onViewChange();
+            },
+            onClickMonth: (self: any) => {
+                // Use the calendar's current selected month and year
+                const year =
+                    self.context.selectedYear || self.context.displayYear;
+                const month =
+                    self.context.selectedMonth !== undefined
+                        ? self.context.selectedMonth
+                        : self.context.displayMonth;
+
+                if (
+                    month !== undefined &&
+                    month !== null &&
+                    year !== undefined
+                ) {
                     this.shownMonth = month;
                     this.shownYear = year;
-                    this.onViewChange();
-                },
-                clickMonth: (_event, month) => {
-                    this.shownMonth = month;
                     dispatchEvent(this, Events.monthSelect, {
-                        date: new Date(this.shownYear, this.shownMonth, 1),
+                        date: new Date(year, month, 1),
                     });
-                    this.onViewChange();
-                },
-                clickYear: (_event, year) => {
-                    this.shownYear = year;
-                    this.onViewChange();
-                },
+                }
+            },
+            onClickYear: (self: any) => {
+                this.shownYear = self.context.displayYear;
+                this.onViewChange();
             },
         };
 
         const calendarElement = this.shadowRoot?.querySelector('#calendar');
         if (calendarElement) {
-            this.calendar = new VanillaCalendar(
+            this.calendar = new Calendar(
                 calendarElement as HTMLElement,
                 options
             );
@@ -101,6 +133,7 @@ export class CalendarWrapperComponent extends MobxLitElement {
         unsafeCSS(calendar),
         unsafeCSS(calendarDark),
         unsafeCSS(calendarLight),
+        unsafeCSS(calendarLayout),
         css`
             .vanilla-calendar-day__btn {
                 margin: 1px;

@@ -46,6 +46,7 @@ export enum Events {
     activityLongClick = 'activityLongClick',
     activityDoubleClick = 'activityDoubleClick',
     dateSelect = 'dateSelect',
+    dateRangeSelect = 'dateRangeSelect',
     monthSelect = 'monthSelect',
     viewChange = 'viewChange',
 }

@@ -6,6 +6,7 @@ import { RouterLocation } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
+import { DateSheet } from '../components/action-sheets/date.sheet';
 import '../components/calendar-wrapper.component';
 import '../components/entry-link.component';
 import '../components/mood.component';
@@ -19,11 +20,14 @@ import {
 } from '../stores/activities.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
+import { go } from './route-config';
 
 @customElement('summary-route')
 export class SummaryRoute extends MobxLitElement {
     startDate!: Date;
     endDate!: Date;
+    selectedStartDate: string = '';
+    selectedEndDate: string = '';
     stats: Map<string, StatsActivityEntry> = new Map();
     entries: Entry[] = [];
     // Results populated by the summarizer framework after a single pass
@@ -340,6 +344,37 @@ export class SummaryRoute extends MobxLitElement {
         this.requestUpdate();
     }
 
+    openDateRangeSelector() {
+        Sheet.open({
+            type: DateSheet,
+            data: {
+                date: this.startDate || new Date(),
+                selectionMode: 'range',
+                selectedDates:
+                    this.startDate && this.endDate
+                        ? [
+                              this.formatDateForInput(this.startDate),
+                              this.formatDateForInput(this.endDate),
+                          ]
+                        : [],
+            },
+            onClose: (data: any) => {
+                if (data && data.startDate && data.endDate) {
+                    const startStr = this.formatDateForInput(data.startDate);
+                    const endStr = this.formatDateForInput(data.endDate);
+                    go(`summary`, { pathParams: [startStr, endStr] });
+                }
+            },
+        });
+    }
+
+    formatDateForInput(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     async onAfterEnter(location: RouterLocation) {
         if (location.params.start && location.params.end) {
             this.startDate = new Date(
@@ -357,6 +392,8 @@ export class SummaryRoute extends MobxLitElement {
                     ) as [number, number, number])
             );
             this.endDate.setHours(23, 59, 59, 999);
+            this.selectedStartDate = this.formatDateForInput(this.startDate);
+            this.selectedEndDate = this.formatDateForInput(this.endDate);
             this.entries = await entryDao.getEntriesBetweenDates(
                 this.startDate,
                 this.endDate
@@ -370,32 +407,52 @@ export class SummaryRoute extends MobxLitElement {
     render() {
         return html` <div class="route-container">
             <article>
-                <h2>
-                    Summary from ${this.startDate.toLocaleDateString()} to
-                    ${this.endDate.toLocaleDateString()}
-                </h2>
+                <div class="date-range-selector">
+                    <h2>Summary</h2>
+                    <div class="date-selector-button">
+                        <button @click=${() => this.openDateRangeSelector()}>
+                            Select Date Range
+                        </button>
+                        <span class="date-range-display">
+                            ${this.startDate.toLocaleDateString()} to
+                            ${this.endDate.toLocaleDateString()}
+                        </span>
+                    </div>
+                </div>
+                <h3></h3>
                 <div>
-                    ${(() => {
-                        if (!this.summarizers || this.summarizers.length === 0)
-                            this.setupSummarizers();
-                        const format = (v: any) => {
-                            if (v === null || v === undefined) return 'N/A';
-                            if (typeof v === 'number') return v.toFixed(2);
-                            return String(v);
-                        };
+                    ${this.entries && this.entries.length > 0
+                        ? (() => {
+                              if (
+                                  !this.summarizers ||
+                                  this.summarizers.length === 0
+                              )
+                                  this.setupSummarizers();
+                              const format = (v: any) => {
+                                  if (v === null || v === undefined)
+                                      return 'N/A';
+                                  if (typeof v === 'number')
+                                      return v.toFixed(2);
+                                  return String(v);
+                              };
 
-                        return this.summarizers.map((s) => {
-                            const val = this.summaryResults.get(s.id);
-                            try {
-                                if (s.render) return s.render(val);
-                            } catch (e) {
-                                console.warn('summary render error', s.id, e);
-                            }
-                            return html`<p>
-                                <strong>${s.id}:</strong> ${format(val)}
-                            </p>`;
-                        });
-                    })()}
+                              return this.summarizers.map((s) => {
+                                  const val = this.summaryResults.get(s.id);
+                                  try {
+                                      if (s.render) return s.render(val);
+                                  } catch (e) {
+                                      console.warn(
+                                          'summary render error',
+                                          s.id,
+                                          e
+                                      );
+                                  }
+                                  return html`<p>
+                                      <strong>${s.id}:</strong> ${format(val)}
+                                  </p>`;
+                              });
+                          })()
+                        : html`<p>Loading...</p>`}
                 </div>
             </article>
             <div class="filter-bar">
@@ -411,101 +468,114 @@ export class SummaryRoute extends MobxLitElement {
             </div>
 
             <div class="activity-stats">
-                ${map(
-                    this.selectedActivity
-                        ? [this.selectedActivity]
-                        : activities.allVisibleActivities,
-                    (activity: Activity) => {
-                        const activityStats = this.stats.get(activity.id);
-                        return this.stats.has(activity.id) && activityStats
-                            ? html`<article>
-                                  <activity-component
-                                      .activity=${activity}
-                                      .showName=${true}
-                                  ></activity-component>
-                                  <p>Count recorded: ${activityStats.count}</p>
-                                  <p>
-                                      Days recorded:
-                                      ${activityStats.dates.length}
-                                  </p>
-                                  <p>
-                                      Distinct details recorded:
-                                      ${activityStats.detailsUsed
-                                          ? activityStats.detailsUsed.size
-                                          : 0}
-                                  </p>
-                                  <p>
-                                      Times that details were recorded:
-                                      ${Array.from(
-                                          activityStats.detailsUsed?.values() ||
-                                              []
-                                      ).reduce(
-                                          (acc, detail) => acc + detail.count,
-                                          0
-                                      )}
-                                  </p>
-                                  <p>
-                                      Percent of elapsed days in period with
-                                      activity:
-                                      ${(
-                                          (activityStats.dates.length /
-                                              Math.ceil(
-                                                  ((this.endDate > new Date()
-                                                      ? new Date().getTime()
-                                                      : this.endDate.getTime()) -
-                                                      this.startDate.getTime()) /
-                                                      (1000 * 60 * 60 * 24)
-                                              )) *
-                                          100
-                                      ).toFixed(2)}%
-                                  </p>
-                                  <p>
-                                      Average per day:
-                                      ${(
-                                          activityStats.count /
-                                          Math.ceil(
-                                              ((this.endDate > new Date()
-                                                  ? new Date().getTime()
-                                                  : this.endDate.getTime()) -
-                                                  this.startDate.getTime()) /
-                                                  (1000 * 60 * 60 * 24)
-                                          )
-                                      ).toFixed(2)}
-                                  </p>
-                                  <p>
-                                      Average per day when recorded:
-                                      ${(
-                                          activityStats.count /
-                                          activityStats.dates.length
-                                      ).toFixed(2)}
-                                  </p>
-                                  ${activityStats.detailsUsed?.size
-                                      ? html`
-                                            <p>Top 10 details used:</p>
-                                            ${map(
-                                                Array.from(
-                                                    activityStats.detailsUsed?.values() ||
-                                                        []
-                                                )
-                                                    .sort(
-                                                        (a, b) =>
-                                                            b.count - a.count
-                                                    )
-                                                    .slice(0, 10),
-                                                (detail) =>
-                                                    html`<div>
-                                                        <activity-detail
-                                                            >${detail.text}</activity-detail
-                                                        >
-                                                        : ${detail.count} times
-                                                    </div>`
+                ${this.entries && this.entries.length > 0
+                    ? map(
+                          this.selectedActivity
+                              ? [this.selectedActivity]
+                              : activities.allVisibleActivities,
+                          (activity: Activity) => {
+                              const activityStats = this.stats.get(activity.id);
+                              return this.stats.has(activity.id) &&
+                                  activityStats
+                                  ? html`<article>
+                                        <activity-component
+                                            .activity=${activity}
+                                            .showName=${true}
+                                        ></activity-component>
+                                        <p>
+                                            Count recorded:
+                                            ${activityStats.count}
+                                        </p>
+                                        <p>
+                                            Days recorded:
+                                            ${activityStats.dates.length}
+                                        </p>
+                                        <p>
+                                            Distinct details recorded:
+                                            ${activityStats.detailsUsed
+                                                ? activityStats.detailsUsed.size
+                                                : 0}
+                                        </p>
+                                        <p>
+                                            Times that details were recorded:
+                                            ${Array.from(
+                                                activityStats.detailsUsed?.values() ||
+                                                    []
+                                            ).reduce(
+                                                (acc, detail) =>
+                                                    acc + detail.count,
+                                                0
                                             )}
-                                        `
-                                      : nothing}
-                              </article>`
-                            : nothing;
-                    }
-                )}
+                                        </p>
+                                        <p>
+                                            Percent of elapsed days in period
+                                            with activity:
+                                            ${(
+                                                (activityStats.dates.length /
+                                                    Math.ceil(
+                                                        ((this.endDate >
+                                                        new Date()
+                                                            ? new Date().getTime()
+                                                            : this.endDate.getTime()) -
+                                                            this.startDate.getTime()) /
+                                                            (1000 *
+                                                                60 *
+                                                                60 *
+                                                                24)
+                                                    )) *
+                                                100
+                                            ).toFixed(2)}%
+                                        </p>
+                                        <p>
+                                            Average per day:
+                                            ${(
+                                                activityStats.count /
+                                                Math.ceil(
+                                                    ((this.endDate > new Date()
+                                                        ? new Date().getTime()
+                                                        : this.endDate.getTime()) -
+                                                        this.startDate.getTime()) /
+                                                        (1000 * 60 * 60 * 24)
+                                                )
+                                            ).toFixed(2)}
+                                        </p>
+                                        <p>
+                                            Average per day when recorded:
+                                            ${(
+                                                activityStats.count /
+                                                activityStats.dates.length
+                                            ).toFixed(2)}
+                                        </p>
+                                        ${activityStats.detailsUsed?.size
+                                            ? html`
+                                                  <p>Top 10 details used:</p>
+                                                  ${map(
+                                                      Array.from(
+                                                          activityStats.detailsUsed?.values() ||
+                                                              []
+                                                      )
+                                                          .sort(
+                                                              (a, b) =>
+                                                                  b.count -
+                                                                  a.count
+                                                          )
+                                                          .slice(0, 10),
+                                                      (detail) =>
+                                                          html`<div>
+                                                              <activity-detail
+                                                                  >${detail.text}</activity-detail
+                                                              >
+                                                              : ${detail.count}
+                                                              times
+                                                          </div>`
+                                                  )}
+                                              `
+                                            : nothing}
+                                    </article>`
+                                  : nothing;
+                          }
+                      )
+                    : nothing}
             </div>
         </div>`;
     }
@@ -533,6 +603,26 @@ export class SummaryRoute extends MobxLitElement {
                 display: inline-flex;
                 align-items: center;
                 gap: 0.25rem;
+            }
+            .date-range-selector {
+                margin-bottom: 1.5rem;
+            }
+            .date-range-selector h2 {
+                margin-top: 0;
+                margin-bottom: 0.5rem;
+            }
+            .date-selector-button {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 1rem;
+                align-items: center;
+            }
+            .date-selector-button button {
+                padding: 0.5rem 1rem;
+            }
+            .date-range-display {
+                font-size: 0.95rem;
+                color: var(--pico-secondary);
             }
         `,
     ];

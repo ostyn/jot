@@ -1959,6 +1959,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/leaflet-routing-machine@npm:^3":
+  version: 3.2.9
+  resolution: "@types/leaflet-routing-machine@npm:3.2.9"
+  dependencies:
+    "@types/leaflet": "npm:^1.9"
+  checksum: 10c0/1ed260fcd7de771902ba274dc4b749641b7464cdc10ccc4d62961608659710336d7aed8f33ce383b029c9cd2a60873b711bc17163caca936151652077a3bd6c8
+  languageName: node
+  linkType: hard
+
+"@types/leaflet@npm:^1.9":
+  version: 1.9.21
+  resolution: "@types/leaflet@npm:1.9.21"
+  dependencies:
+    "@types/geojson": "npm:*"
+  checksum: 10c0/96a86bdeff7bf56104242e97536f39005a53dd857853aa0c5de127ce2c72f3f36638f2a5b8d23e2e825a2bfe32113be731ab26634a3143413b891299c29621ce
+  languageName: node
+  linkType: hard
+
 "@types/leaflet@npm:^1.9.14":
   version: 1.9.14
   resolution: "@types/leaflet@npm:1.9.14"
@@ -2020,13 +2038,6 @@ __metadata:
   version: 10.0.0
   resolution: "@types/uuid@npm:10.0.0"
   checksum: 10c0/9a1404bf287164481cb9b97f6bb638f78f955be57c40c6513b7655160beb29df6f84c915aaf4089a1559c216557dc4d2f79b48d978742d3ae10b937420ddac60
-  languageName: node
-  linkType: hard
-
-"@uvarov.frontend/vanilla-calendar@npm:^2.8.6":
-  version: 2.8.6
-  resolution: "@uvarov.frontend/vanilla-calendar@npm:2.8.6"
-  checksum: 10c0/ab6b607c0689189621bd796795c8ce04d4c63a09f6f03a43a049f371ab2cdd91073a9c7bc7d84edbb3540fdbbac0e7017cd03f3742c1382e6370d13b121742dc
   languageName: node
   linkType: hard
 
@@ -3610,9 +3621,9 @@ __metadata:
     "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
     "@types/body-scroll-lock": "npm:^3.1.2"
     "@types/leaflet": "npm:^1.9.14"
+    "@types/leaflet-routing-machine": "npm:^3"
     "@types/papaparse": "npm:^5.3.15"
     "@types/uuid": "npm:^10.0.0"
-    "@uvarov.frontend/vanilla-calendar": "npm:^2.8.6"
     "@vaadin/router": "npm:^2.0.0"
     body-scroll-lock-upgrade: "npm:^1.1.0"
     date-fns: "npm:^4.1.0"
@@ -3630,6 +3641,7 @@ __metadata:
     typescript: "npm:^5.7.2"
     urlpattern-polyfill: "npm:^10.0.0"
     uuid: "npm:^11.0.3"
+    vanilla-calendar-pro: "npm:^3.0.5"
     vite: "npm:^6.0.2"
     vite-plugin-mkcert: "npm:^1.17.6"
     vite-plugin-pwa: "npm:^0.21.1"
@@ -5199,6 +5211,13 @@ __metadata:
   bin:
     uuid: dist/esm/bin/uuid
   checksum: 10c0/cee762fc76d949a2ff9205770334699e0043d52bb766472593a25f150077c9deed821230251ea3d6ab3943a5ea137d2826678797f1d5f6754c7ce5ce27e9f7a6
+  languageName: node
+  linkType: hard
+
+"vanilla-calendar-pro@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "vanilla-calendar-pro@npm:3.0.5"
+  checksum: 10c0/a525032160fa6a69299e3685a85b33db397679ce4762c5a84137eae59e5788e7655da3b25df12db4bab1e80000ebc11cb044af3d407d011abd0b3b696f505eaf
   languageName: node
   linkType: hard
 

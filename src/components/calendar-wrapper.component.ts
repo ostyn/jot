@@ -46,6 +46,8 @@ export class CalendarWrapperComponent extends MobxLitElement {
             firstWeekday: 0,
             selectedWeekends: [],
             dateToday: this.startingDate,
+            selectedMonth: this.shownMonth as any,
+            selectedYear: this.shownYear,
             selectionDatesMode: this.selectionDatesMode,
             ...(this.selectedDatesInitial.length > 0 && {
                 selectedDates: this.selectedDatesInitial,

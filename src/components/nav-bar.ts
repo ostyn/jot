@@ -88,7 +88,7 @@ export class NavBar extends LitElement {
 
             .footer-content {
                 display: flex;
-                justify-content: flex-start;
+                justify-content: center;
                 align-items: center;
                 user-select: none;
                 overflow-x: auto;

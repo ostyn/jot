@@ -53,7 +53,6 @@ export class ActivityInfoSheet extends LitElement {
         this.onMonthChange(this.date.getMonth(), this.date.getFullYear());
     }
     public onMonthChange = (month: number, year: number) => {
-        console.log('ActivityInfoSheet onMonthChange', month, year);
         // Reset values in dateValues without recreating the object to keep reactivity working, because we can't reassign dateValues directly
         for (let key in this.dateValues) {
             delete this.dateValues[key];
@@ -91,6 +90,7 @@ export class ActivityInfoSheet extends LitElement {
         this.percentOfDays = this.daysElapsed
             ? ((this.daysWithActivity / this.daysElapsed) * 100).toFixed(2)
             : '0.00';
+        this.requestUpdate();
     };
     private getDaysElapsedInMonth(month: number, year: number): number {
         const currentDate = new Date();

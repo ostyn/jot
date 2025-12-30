@@ -19,15 +19,13 @@ export class CalendarWrapperComponent extends MobxLitElement {
     @property()
     selectionDatesMode: 'multiple-ranged' | 'single' | 'multiple' = 'single';
     @property()
-    dateValues: { [key: string]: string } = {};
+    dateValues!: { [key: string]: string };
     @property()
     selectedDatesInitial: string[] = [];
     calendar!: Calendar;
     shownMonth!: number;
     shownYear!: number;
-    protected updated() {
-        this.calendar.update();
-    }
+
     protected firstUpdated(): void {
         // If we have selected dates, start with the month of the first selected date
         let displayDate = this.startingDate;

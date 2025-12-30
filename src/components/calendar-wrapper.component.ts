@@ -51,16 +51,18 @@ export class CalendarWrapperComponent extends MobxLitElement {
                 selectedDates: this.selectedDatesInitial,
             }),
             onCreateDateEls: (_self, dateEl) => {
-                const dateValues = this.dateValues;
-                const date = dateEl.getAttribute('data-vc-date') || '';
-                if (dateValues[date] !== undefined) {
-                    const btnEl = dateEl.querySelector(
-                        '[data-vc-date-btn]'
-                    ) as HTMLButtonElement;
-                    const day = btnEl.innerHTML;
-                    btnEl.style.flexDirection = 'column';
-                    btnEl.innerHTML = `<span>${day}</span>
+                if (this.selectionDatesMode === 'single') {
+                    const dateValues = this.dateValues;
+                    const date = dateEl.getAttribute('data-vc-date') || '';
+                    if (dateValues[date] !== undefined) {
+                        const btnEl = dateEl.querySelector(
+                            '[data-vc-date-btn]'
+                        ) as HTMLButtonElement;
+                        const day = btnEl.innerHTML;
+                        btnEl.style.flexDirection = 'column';
+                        btnEl.innerHTML = `<span>${day}</span>
                       <span class="date-detail">${dateValues[date]}</span>`;
+                    }
                 }
             },
             onClickDate: (self: any, event: MouseEvent) => {

@@ -23,7 +23,7 @@ export class ActivityInfoSheet extends LitElement {
     totalActivity: number = 0;
     @state()
     selectedTextItem?: string;
-    relatedEntryMap?: Map<string, Entry>;
+    relatedEntryMap: Map<string, Entry> = new Map();
     daysElapsed?: number;
     month?: number;
     year?: number;
@@ -53,7 +53,12 @@ export class ActivityInfoSheet extends LitElement {
         this.onMonthChange(this.date.getMonth(), this.date.getFullYear());
     }
     public onMonthChange = (month: number, year: number) => {
-        this.dateValues = {};
+        console.log('ActivityInfoSheet onMonthChange', month, year);
+        // Reset values in dateValues without recreating the object to keep reactivity working, because we can't reassign dateValues directly
+        for (let key in this.dateValues) {
+            delete this.dateValues[key];
+        }
+
         this.month = month;
         this.year = year;
         let activityStats = activities.stats.get(this.activityId);
@@ -68,7 +73,7 @@ export class ActivityInfoSheet extends LitElement {
                 Number.parseInt(date.entry.date.split('-')[0]) == year
             );
         });
-        this.relatedEntryMap = new Map();
+        this.relatedEntryMap.clear();
         this.totalActivity = 0;
         for (let entryDate of entryDates || []) {
             this.relatedEntryMap.set(entryDate.date, entryDate.entry);
@@ -126,6 +131,7 @@ export class ActivityInfoSheet extends LitElement {
             <calendar-wrapper
                 class="inline"
                 .startingDate=${this.date}
+                .dateValues=${this.dateValues}
                 @viewChange=${(e: any) =>
                     this.onMonthChange(e.detail.month, e.detail.year)}
                 @dateSelect=${(e: any) =>

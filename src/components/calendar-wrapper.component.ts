@@ -52,6 +52,19 @@ export class CalendarWrapperComponent extends MobxLitElement {
             ...(this.selectedDatesInitial.length > 0 && {
                 selectedDates: this.selectedDatesInitial,
             }),
+            onCreateDateEls: (self, dateEl) => {
+                const dateValues = this.dateValues;
+                const date = dateEl.getAttribute('data-vc-date') || '';
+                if (dateValues[date] !== undefined) {
+                    const btnEl = dateEl.querySelector(
+                        '[data-vc-date-btn]'
+                    ) as HTMLButtonElement;
+                    const day = btnEl.innerHTML;
+                    btnEl.style.flexDirection = 'column';
+                    btnEl.innerHTML = `<span>${day}</span>
+                      <span class="date-detail">${dateValues[date]}</span>`;
+                }
+            },
             onClickDate: (self: any, event: MouseEvent) => {
                 // Handle range selection - check if we have a complete range (2 dates, even if the same)
                 if (
@@ -74,12 +87,11 @@ export class CalendarWrapperComponent extends MobxLitElement {
                         console.warn('Error parsing selected dates:', e);
                     }
                 } else {
-                    // Single date selection
                     const dateEl = (event.target as HTMLElement).closest(
-                        '[data-date]'
+                        '[data-vc-date]'
                     );
                     if (dateEl) {
-                        const dateStr = dateEl.getAttribute('data-date');
+                        const dateStr = dateEl.getAttribute('data-vc-date');
                         if (dateStr) {
                             const date = parseISO(dateStr);
                             dispatchEvent(this, Events.dateSelect, {
@@ -90,9 +102,10 @@ export class CalendarWrapperComponent extends MobxLitElement {
                 }
             },
             onClickArrow: (self: any) => {
-                this.shownMonth = self.context.selectedMonth;
-                this.shownYear = self.context.selectedYear;
-                this.onViewChange();
+                dispatchEvent(this, Events.viewChange, {
+                    year: self.context.selectedYear,
+                    month: self.context.selectedMonth,
+                });
             },
             onClickMonth: (self: any) => {
                 // Use the calendar's current selected month and year
@@ -113,13 +126,19 @@ export class CalendarWrapperComponent extends MobxLitElement {
                     dispatchEvent(this, Events.monthSelect, {
                         date: new Date(year, month, 1),
                     });
-                    this.onViewChange();
+                    dispatchEvent(this, Events.viewChange, {
+                        year,
+                        month,
+                    });
                 }
             },
             onClickYear: (self: any) => {
                 this.shownMonth = self.context.selectedMonth;
                 this.shownYear = self.context.selectedYear;
-                this.onViewChange();
+                dispatchEvent(this, Events.viewChange, {
+                    year: this.shownYear,
+                    month: this.shownMonth,
+                });
             },
         };
 
@@ -132,16 +151,6 @@ export class CalendarWrapperComponent extends MobxLitElement {
             this.calendar.init();
         }
     }
-    private onViewChange() {
-        const month =
-            this.shownMonth !== undefined
-                ? this.shownMonth
-                : new Date().getMonth();
-        dispatchEvent(this, Events.viewChange, {
-            year: this.shownYear,
-            month,
-        });
-    }
     protected render() {
         return html`<input style="display:none" id="dateinput" />
             <div id="calendar"></div>`;
@@ -152,10 +161,10 @@ export class CalendarWrapperComponent extends MobxLitElement {
         unsafeCSS(calendarLight),
         unsafeCSS(calendarLayout),
         css`
-            .vanilla-calendar-day__btn {
+            .vc-date__btn {
                 margin: 1px;
             }
-            .vanilla-calendar-day__btn:has(.date-detail) {
+            .vc-date__btn:has(.date-detail) {
                 border: var(--pico-primary) 1px solid;
                 border-radius: 12px;
             }

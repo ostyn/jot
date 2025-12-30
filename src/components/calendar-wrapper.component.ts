@@ -50,7 +50,7 @@ export class CalendarWrapperComponent extends MobxLitElement {
             ...(this.selectedDatesInitial.length > 0 && {
                 selectedDates: this.selectedDatesInitial,
             }),
-            onCreateDateEls: (self, dateEl) => {
+            onCreateDateEls: (_self, dateEl) => {
                 const dateValues = this.dateValues;
                 const date = dateEl.getAttribute('data-vc-date') || '';
                 if (dateValues[date] !== undefined) {

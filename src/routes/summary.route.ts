@@ -48,6 +48,8 @@ export class SummaryRoute extends MobxLitElement {
         render?: (value: any) => unknown;
     }> = [];
     selectedActivity: Activity | undefined;
+    startingMaxDetailsToShow: number = 10;
+    detailsToShowPerActivity: Map<string, number> = new Map();
 
     setupSummarizers() {
         const moodsStore = moods;
@@ -573,7 +575,14 @@ export class SummaryRoute extends MobxLitElement {
                                                                   b.count -
                                                                   a.count
                                                           )
-                                                          .slice(0, 10),
+                                                          .slice(
+                                                              0,
+                                                              this.detailsToShowPerActivity.get(
+                                                                  activity.id
+                                                              ) ||
+                                                                  this
+                                                                      .startingMaxDetailsToShow
+                                                          ),
                                                       (detail) =>
                                                           html`<div>
                                                               <activity-detail
@@ -590,11 +599,44 @@ export class SummaryRoute extends MobxLitElement {
                                                                       )}
                                                                   >${detail.text}</activity-detail
                                                               >
-                                                              : ${detail.count}
-                                                              times
+
+                                                              ${detail.count > 1
+                                                                  ? html`:
+                                                                    ${detail.count}
+                                                                    times`
+                                                                  : html` <entry-link
+                                                                        .date=${detail
+                                                                            .dates[0]
+                                                                            .date}
+                                                                    ></entry-link>`}
                                                           </div>`
                                                   )}
                                               `
+                                            : nothing}
+                                        ${activityStats.detailsUsed &&
+                                        activityStats.detailsUsed.size >
+                                            (this.detailsToShowPerActivity.get(
+                                                activity.id
+                                            ) || this.startingMaxDetailsToShow)
+                                            ? html`<button
+                                                  @click=${() => {
+                                                      const current =
+                                                          this.detailsToShowPerActivity.get(
+                                                              activity.id
+                                                          ) ||
+                                                          this
+                                                              .startingMaxDetailsToShow;
+                                                      this.detailsToShowPerActivity.set(
+                                                          activity.id,
+                                                          current +
+                                                              this
+                                                                  .startingMaxDetailsToShow
+                                                      );
+                                                      this.requestUpdate();
+                                                  }}
+                                              >
+                                                  Show more
+                                              </button> `
                                             : nothing}
                                     </article>`
                                   : nothing;

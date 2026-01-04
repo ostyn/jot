@@ -112,18 +112,16 @@ class SearchStore {
                         this.selectedActivityId
                     ) && containsSearchQuery;
                 if (this.selectedActivityDetail) {
-                    containsSearchQuery =
-                        Array.from(Object.values(entry.activities))
-                            .filter((activity) => Array.isArray(activity))
-                            .some((activityDetail) =>
-                                (activityDetail as string[]).some(
-                                    (detail) =>
-                                        detail.toLocaleLowerCase() ===
-                                        (
-                                            this.selectedActivityDetail as any
-                                        ).toLocaleLowerCase()
-                                )
+                    const activityDetails =
+                        entry.activities[this.selectedActivityId];
+                    if (Array.isArray(activityDetails)) {
+                        containsSearchQuery =
+                            activityDetails.includes(
+                                this.selectedActivityDetail
                             ) && containsSearchQuery;
+                    } else {
+                        containsSearchQuery = false;
+                    }
                 }
             }
             return containsSearchQuery;

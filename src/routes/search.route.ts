@@ -345,7 +345,7 @@ export class SearchRoute
                         : nothing}
                 </span>
 
-                <span>
+                <span class="date-info">
                     ${this.store.startDate || this.store.endDate
                         ? html`<jot-icon
                               @click=${() => this.openDateRangeSelector()}
@@ -355,8 +355,6 @@ export class SearchRoute
                               @click=${() => this.openDateRangeSelector()}
                               name="CalendarPlus"
                           ></jot-icon>`}
-                </span>
-                <span class="date-info">
                     ${this.store.startDate || this.store.endDate
                         ? html`
                               <jot-icon

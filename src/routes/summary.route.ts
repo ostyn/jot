@@ -15,7 +15,10 @@ import '../components/mood.component';
 import { entryDao } from '../dao/EntryDao';
 import { Activity } from '../interfaces/activity.interface';
 import { Entry } from '../interfaces/entry.interface';
-import { StatsActivityEntry } from '../interfaces/stats.interface';
+import {
+    StatsActivityEntry,
+    StatsDetailEntry,
+} from '../interfaces/stats.interface';
 import {
     accumulateStatsFromEntries,
     activities,
@@ -410,7 +413,6 @@ export class SummaryRoute extends MobxLitElement {
             this.runSummaries(this.entries);
             this.requestUpdate();
         }
-        window.scrollTo({ top: 0 });
     }
     render() {
         return html` <div class="route-container">
@@ -584,32 +586,26 @@ export class SummaryRoute extends MobxLitElement {
                                                                       .startingMaxDetailsToShow
                                                           ),
                                                       (detail) =>
-                                                          html`<div>
+                                                          html`<div
+                                                              class="detail-entry"
+                                                          >
                                                               <activity-detail
-                                                                  @click=${() =>
-                                                                      go(
-                                                                          'search',
-                                                                          {
-                                                                              queryParams:
-                                                                                  {
-                                                                                      a: activity.id,
-                                                                                      detail: detail.text,
-                                                                                      startDate:
-                                                                                          this
-                                                                                              .selectedStartDate,
-                                                                                      endDate:
-                                                                                          this
-                                                                                              .selectedEndDate,
-                                                                                  },
-                                                                          }
-                                                                      )}
                                                                   >${detail.text}</activity-detail
                                                               >
 
                                                               ${detail.count > 1
-                                                                  ? html`:
-                                                                    ${detail.count}
-                                                                    times`
+                                                                  ? html` <a
+                                                                        href="${this.getUrlForHref(
+                                                                            activity.id,
+                                                                            detail
+                                                                        )}"
+                                                                    >
+                                                                        <jot-icon
+                                                                            name="Search"
+                                                                        ></jot-icon>
+                                                                        ${detail.count}
+                                                                        times</a
+                                                                    >`
                                                                   : html` <entry-link
                                                                         .date=${detail
                                                                             .dates[0]
@@ -651,6 +647,11 @@ export class SummaryRoute extends MobxLitElement {
                     : nothing}
             </div>
         </div>`;
+    }
+    getUrlForHref(activityId: string, detail: StatsDetailEntry): string {
+        return `/search?a=${activityId}&detail=${encodeURIComponent(
+            detail.text
+        )}&startDate=${this.selectedStartDate}&endDate=${this.selectedEndDate}`;
     }
     static styles = [
         base,
@@ -696,6 +697,11 @@ export class SummaryRoute extends MobxLitElement {
             .date-range-display {
                 font-size: 0.95rem;
                 color: var(--pico-secondary);
+            }
+            .detail-entry {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
             }
         `,
     ];

@@ -17,19 +17,25 @@ export class EntryLinkComponent extends LitElement {
         this.entry = (await entryDao.getEntriesFromDate(this.date))[0];
         this.requestUpdate();
     }
+    getUrlForHref() {
+        if (!this.entry) {
+            return '#';
+        }
+        return `/entries?year=${this.entry.date.split('-')[0]}&month=${this.entry.date.split('-')[1]}&day=${this.entry.date.split('-')[2]}`;
+    }
     render() {
         const mood: Mood | undefined = moods.getMood(this.entry?.mood || '');
-        return html` <a
-            href=""
-            @click=${() =>
-                go('entries', {
-                    queryParams: DateHelpers.getDateStringParts(
-                        this.entry.date
-                    ),
-                })}
-        >
+        return html` <a href="${this.getUrlForHref()}">
             #${this.date}${mood ? html`${mood.emoji}` : ''}
         </a>`;
     }
-    static styles = [base, css``];
+    static styles = [
+        base,
+        css`
+            :host {
+                min-width: 14ch;
+                text-align: right;
+            }
+        `,
+    ];
 }

@@ -65,6 +65,17 @@ export class DateSheet extends LitElement {
             this.selectionMode === 'range' ? 'multiple-ranged' : 'single';
         return html`
             <div class="date-sheet-container">
+                <span class="selected-dates-info">
+                    ${this.selectionMode === 'range'
+                        ? this.selectedDates.length === 2
+                            ? `From: ${this.selectedDates[0]} To: ${this.selectedDates[1]}`
+                            : this.selectedDates.length === 1
+                              ? `Selected: ${this.selectedDates[0]}`
+                              : 'Select start and end dates'
+                        : this.selectedDates.length === 1
+                          ? `Selected date: ${this.selectedDates[0]}`
+                          : 'No date selected'}
+                </span>
                 <calendar-wrapper
                     .startingDate=${this.date}
                     .type=${this.type}

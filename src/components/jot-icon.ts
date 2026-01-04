@@ -6,6 +6,8 @@ import {
     AlignJustify,
     ArrowRight,
     BookOpen,
+    CalendarCheck,
+    CalendarPlus,
     ChartBar,
     ChevronLeft,
     ChevronRight,
@@ -51,6 +53,8 @@ import {
 
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
+    CalendarCheck,
+    CalendarPlus,
     Filter,
     FilterX,
     ChartBar,

@@ -3,6 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { WebComponentInterface } from '@vaadin/router';
+import { format } from 'date-fns';
 import escapeRegExp from 'escape-string-regexp';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 import { base } from '../baseStyles';
@@ -10,6 +11,7 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailSelectSheet } from '../components/action-sheets/activity-detail-select.sheet';
 import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
+import { DateSheet } from '../components/action-sheets/date.sheet';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
@@ -27,6 +29,10 @@ class SearchStore {
     selectedActivityId?: string = '';
     @observable
     selectedActivityDetail?: string = '';
+    @observable
+    startDate: string = '';
+    @observable
+    endDate: string = '';
     @action.bound
     public nextPage() {
         this.currentPage++;
@@ -45,6 +51,14 @@ class SearchStore {
         this.searchTerm = newTerm || '';
     }
     @action.bound
+    public setStartDate(newTerm: string) {
+        this.startDate = newTerm;
+    }
+    @action.bound
+    public setEndDate(newTerm: string) {
+        this.endDate = newTerm;
+    }
+    @action.bound
     public setSelectedActivity(id?: string, detail?: any) {
         this.currentPage = 0;
         this.selectedActivityId = id || '';
@@ -52,7 +66,13 @@ class SearchStore {
     }
     @computed
     get resultsText() {
-        if (!this.searchTerm && !this.selectedActivityId) return;
+        if (
+            !this.searchTerm &&
+            !this.selectedActivityId &&
+            !this.startDate &&
+            !this.endDate
+        )
+            return;
         return this.pageData.numberOfResults
             ? `Results ${this.pageData.firstEntryIndex + 1}-${
                   this.pageData.lastEntryIndex
@@ -88,8 +108,21 @@ class SearchStore {
     }
     @computed
     private get filteredEntries(): Entry[] {
-        if (!this.searchTerm && !this.selectedActivityId) return [];
-        const filteredEntries = entries.all.filter((entry) => {
+        if (
+            !this.searchTerm &&
+            !this.selectedActivityId &&
+            this.startDate === '' &&
+            this.endDate === ''
+        )
+            return [];
+        let filteredEntries;
+        const startDate = this.startDate !== '' ? this.startDate : '0000-01-01';
+        const endDate = this.endDate !== '' ? this.endDate : '9999-12-31';
+        filteredEntries = entries.all.filter(
+            (entry) => entry.date >= startDate && entry.date <= endDate
+        );
+
+        filteredEntries = filteredEntries.filter((entry) => {
             let regex = new RegExp(escapeRegExp(this?.searchTerm || ''), 'i');
             let containsSearchQuery =
                 regex.test(entry.note) ||
@@ -148,10 +181,17 @@ export class SearchRoute
                 selectedActivityId: this.store.selectedActivityId,
                 selectedActivityDetail: this.store.selectedActivityDetail,
                 searchTerm: this.store.searchTerm,
+                startDate: this.store.startDate,
+                endDate: this.store.endDate,
             }),
             (data) => {
                 // Avoids redirecting from `/search` to /search?a=&detail=&p=&q=
-                if (data.selectedActivityId || data.searchTerm) {
+                if (
+                    data.selectedActivityId ||
+                    data.searchTerm ||
+                    data.startDate ||
+                    data.endDate
+                ) {
                     window.scrollTo({ top: 0 });
 
                     go('search', {
@@ -160,6 +200,8 @@ export class SearchRoute
                             detail: data.selectedActivityDetail,
                             p: data.currentPage,
                             q: data.searchTerm,
+                            startDate: data.startDate,
+                            endDate: data.endDate,
                         },
                     });
                 } else {
@@ -177,6 +219,8 @@ export class SearchRoute
             const urlParams = new URLSearchParams(window.location.search);
             const searchTerm = urlParams.get('q') || '';
             const activityId = urlParams.get('a') || '';
+            const startDate = urlParams.get('startDate') || '';
+            const endDate = urlParams.get('endDate') || '';
             const activityDetail = urlParams.get('detail');
             const currentPage = Number.parseInt(urlParams.get('p') || '0');
 
@@ -187,6 +231,9 @@ export class SearchRoute
                 activityDetail !== this.store.selectedActivityDetail
             )
                 this.store.setSelectedActivity(activityId, activityDetail);
+            if (startDate !== this.store.startDate)
+                this.store.setStartDate(startDate);
+            if (endDate !== this.store.endDate) this.store.setEndDate(endDate);
             this.store.setCurrentPage(currentPage);
         }
     };
@@ -225,6 +272,29 @@ export class SearchRoute
         } else {
             this.store.setSearchTerm();
         }
+    }
+    openDateRangeSelector() {
+        Sheet.open({
+            type: DateSheet,
+            data: {
+                date: this.store.startDate || new Date(),
+                selectionMode: 'range',
+                selectedDates:
+                    this.store.startDate && this.store.endDate
+                        ? [this.store.startDate, this.store.endDate]
+                        : [],
+            },
+            onClose: (data: any) => {
+                if (data && data.startDate) {
+                    this.store.setStartDate(
+                        format(data.startDate, 'yyyy-MM-dd')
+                    );
+                }
+                if (data && data.endDate) {
+                    this.store.setEndDate(format(data.endDate, 'yyyy-MM-dd'));
+                }
+            },
+        });
     }
     render() {
         return html` <section class="search-bar">
@@ -272,6 +342,31 @@ export class SearchRoute
                               @click=${this.clearSelection}
                               name="XCircle"
                           ></jot-icon>`
+                        : nothing}
+                </span>
+
+                <span>
+                    ${this.store.startDate || this.store.endDate
+                        ? html`<jot-icon
+                              @click=${() => this.openDateRangeSelector()}
+                              name="CalendarCheck"
+                          ></jot-icon>`
+                        : html`<jot-icon
+                              @click=${() => this.openDateRangeSelector()}
+                              name="CalendarPlus"
+                          ></jot-icon>`}
+                </span>
+                <span class="date-info">
+                    ${this.store.startDate || this.store.endDate
+                        ? html`
+                              <jot-icon
+                                  @click=${() => {
+                                      this.store.setStartDate('');
+                                      this.store.setEndDate('');
+                                  }}
+                                  name="XCircle"
+                              ></jot-icon>
+                          `
                         : nothing}
                 </span>
                 <span>

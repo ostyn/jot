@@ -212,6 +212,8 @@ export class SearchRoute
     }
     protected firstUpdated(): void {
         this.inputRef?.value?.focus();
+
+        window.scrollTo({ top: 0 });
     }
     // Updating state based on initial URL and back/forward browser buttons
     private getParamsAndUpdate = () => {

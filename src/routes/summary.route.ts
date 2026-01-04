@@ -594,6 +594,12 @@ export class SummaryRoute extends MobxLitElement {
                                                                                   {
                                                                                       a: activity.id,
                                                                                       detail: detail.text,
+                                                                                      startDate:
+                                                                                          this
+                                                                                              .selectedStartDate,
+                                                                                      endDate:
+                                                                                          this
+                                                                                              .selectedEndDate,
                                                                                   },
                                                                           }
                                                                       )}

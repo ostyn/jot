@@ -6,6 +6,7 @@ import { RouterLocation } from '@vaadin/router';
 import { parseISO } from 'date-fns';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
+import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { DateSheet } from '../components/action-sheets/date.sheet';
 import '../components/calendar-wrapper.component';
@@ -484,6 +485,14 @@ export class SummaryRoute extends MobxLitElement {
                                   activityStats
                                   ? html`<article>
                                         <activity-component
+                                            @click=${() =>
+                                                Sheet.open({
+                                                    type: ActivityInfoSheet,
+                                                    data: {
+                                                        id: activity.id,
+                                                        date: new Date(),
+                                                    },
+                                                })}
                                             .activity=${activity}
                                             .showName=${true}
                                         ></activity-component>
@@ -553,7 +562,7 @@ export class SummaryRoute extends MobxLitElement {
                                         </p>
                                         ${activityStats.detailsUsed?.size
                                             ? html`
-                                                  <p>Top 10 details used:</p>
+                                                  <p>Top details used:</p>
                                                   ${map(
                                                       Array.from(
                                                           activityStats.detailsUsed?.values() ||
@@ -568,6 +577,17 @@ export class SummaryRoute extends MobxLitElement {
                                                       (detail) =>
                                                           html`<div>
                                                               <activity-detail
+                                                                  @click=${() =>
+                                                                      go(
+                                                                          'search',
+                                                                          {
+                                                                              queryParams:
+                                                                                  {
+                                                                                      a: activity.id,
+                                                                                      detail: detail.text,
+                                                                                  },
+                                                                          }
+                                                                      )}
                                                                   >${detail.text}</activity-detail
                                                               >
                                                               : ${detail.count}

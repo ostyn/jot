@@ -123,12 +123,12 @@ export class ActivityInfoSheet extends LitElement {
                             });
                         }}
                     ></activity-component
-                    ><span>
-                        <div>This month: ${this.daysWithActivity}</div>
-                        <div>Percent of days: ${this.percentOfDays}%</div>
-                        <div>Total Count: ${this.totalActivity}</div>
+                    ><span class="activity-info-stats">
+                        <div>Days: ${this.daysWithActivity}</div>
+                        <div>Percent: ${this.percentOfDays}%</div>
+                        <div>Total: ${this.totalActivity}</div>
                         <div>
-                            Average per day:
+                            Average:
                             ${(
                                 this.totalActivity / this.daysWithActivity
                             ).toFixed(2)}
@@ -211,8 +211,7 @@ export class ActivityInfoSheet extends LitElement {
                 padding-left: 0;
             }
             .activity-info-header {
-                display: flex;
-                flex-direction: column;
+                font-size: 0.75rem;
             }
             .activity-info-container {
                 display: flex;
@@ -220,6 +219,11 @@ export class ActivityInfoSheet extends LitElement {
                 justify-content: center;
                 gap: 1rem;
                 padding-bottom: 1rem;
+            }
+            .activity-info-stats {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
             }
             .activity-info-recent {
                 margin-top: 0.5rem;

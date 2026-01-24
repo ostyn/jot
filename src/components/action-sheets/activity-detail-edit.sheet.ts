@@ -114,20 +114,36 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                       }}
                                       >${item}</activity-detail
                                   >`
-                                : html`<input
-                                          class="inline"
-                                          type="text"
+                                : html`<textarea
+                                          type="textarea"
                                           .value=${Array.isArray(detail)
                                               ? detail[index]
                                               : ''}
-                                          @input=${(e: any) =>
+                                      ></textarea>
+                                      <button
+                                          @click=${() => {
+                                              const inputEl =
+                                                  this.renderRoot.querySelector(
+                                                      'textarea'
+                                                  ) as HTMLTextAreaElement;
+                                              if (!inputEl) return;
+                                              const newValue =
+                                                  inputEl.value.trim();
+                                              if (newValue === '') {
+                                                  return;
+                                              }
                                               this.store?.updateArrayActivityDetail(
                                                   this.activityId,
                                                   index,
-                                                  e.target.value
-                                              )}
-                                      /><button
-                                          class="inline"
+                                                  newValue
+                                              );
+                                              this.currentlySelectedIndex =
+                                                  undefined;
+                                          }}
+                                      >
+                                          ✅
+                                      </button>
+                                      <button
                                           @click=${() => {
                                               this.store?.removeArrayActivityDetail(
                                                   this.activityId,

@@ -213,7 +213,6 @@ export class QuickSet2 extends MobxLitElement {
                 align-items: center;
                 bottom: 62px;
                 width: 100%;
-                max-width: 36rem;
                 justify-self: anchor-center;
                 left: 0;
                 z-index: 99;

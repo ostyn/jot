@@ -39,8 +39,8 @@ export default defineConfig({
                         description: 'Basic note taking',
                     },
                 ],
-                theme_color: '#000000',
-                background_color: '#000000',
+                theme_color: 'transparent',
+                background_color: 'transparent',
                 description: 'A daily tracker and journaling PWA',
                 icons: [
                     {

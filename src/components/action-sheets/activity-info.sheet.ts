@@ -111,32 +111,42 @@ export class ActivityInfoSheet extends LitElement {
     }
     render() {
         return html`
-            <header class="activity-info-header">
-                <activity-component
-                    .showName=${true}
-                    .activity=${activities.getActivity(this.activityId)}
-                ></activity-component
-                ><span>
-                    <div>This month: ${this.daysWithActivity}</div>
-                    <div>Percent of days: ${this.percentOfDays}%</div>
-                    <div>Total Count: ${this.totalActivity}</div>
-                    <div>
-                        Average per day:
-                        ${(this.totalActivity / this.daysWithActivity).toFixed(
-                            2
+            <div class="activity-info-container">
+                <header class="activity-info-header">
+                    <activity-component
+                        .showName=${true}
+                        .activity=${activities.getActivity(this.activityId)}
+                        @click=${() => {
+                            Sheet.close();
+                            go('search', {
+                                queryParams: { a: this.activityId },
+                            });
+                        }}
+                    ></activity-component
+                    ><span>
+                        <div>This month: ${this.daysWithActivity}</div>
+                        <div>Percent of days: ${this.percentOfDays}%</div>
+                        <div>Total Count: ${this.totalActivity}</div>
+                        <div>
+                            Average per day:
+                            ${(
+                                this.totalActivity / this.daysWithActivity
+                            ).toFixed(2)}
+                        </div>
+                    </span>
+                </header>
+                <calendar-wrapper
+                    class="inline"
+                    .startingDate=${this.date}
+                    .dateValues=${this.dateValues}
+                    @viewChange=${(e: any) =>
+                        this.onMonthChange(e.detail.month, e.detail.year)}
+                    @dateSelect=${(e: any) =>
+                        this.onDateSelect(
+                            DateHelpers.getDateString(e.detail.date)
                         )}
-                    </div>
-                </span>
-            </header>
-            <calendar-wrapper
-                class="inline"
-                .startingDate=${this.date}
-                .dateValues=${this.dateValues}
-                @viewChange=${(e: any) =>
-                    this.onMonthChange(e.detail.month, e.detail.year)}
-                @dateSelect=${(e: any) =>
-                    this.onDateSelect(DateHelpers.getDateString(e.detail.date))}
-            ></calendar-wrapper>
+                ></calendar-wrapper>
+            </div>
 
             <ul>
                 ${Array.from(this.relatedEntryMap?.entries() || []).map(
@@ -202,6 +212,14 @@ export class ActivityInfoSheet extends LitElement {
             }
             .activity-info-header {
                 display: flex;
+                flex-direction: column;
+            }
+            .activity-info-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                gap: 1rem;
+                padding-bottom: 1rem;
             }
             .activity-info-recent {
                 margin-top: 0.5rem;

@@ -103,6 +103,7 @@ export class ActivityComponent extends LitElement {
                 -webkit-user-select: none;
                 -ms-user-select: none;
                 user-select: none;
+                cursor: pointer;
             }
             :host {
                 display: inline-flex;

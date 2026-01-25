@@ -19,6 +19,8 @@ export class EntryComponent extends MobxLitElement {
     public entry: Entry = {} as Entry;
     @property()
     public scrollToSelf = false;
+    @property()
+    public hideFooter = false;
     updated() {
         if (this.scrollToSelf) {
             setTimeout(
@@ -105,15 +107,19 @@ export class EntryComponent extends MobxLitElement {
             ${this.entry.note != ''
                 ? html`<section class="entry-note">${this.entry.note}</section>`
                 : nothing}
-            <footer class="entry-footer">
-                <button
-                    class="inline outline contrast"
-                    @click=${this.editEntry}
-                >
-                    edit
-                </button>
-                <edit-log-dates .editLog=${this.entry.editLog}></edit-log-dates>
-            </footer>
+            ${this.hideFooter
+                ? nothing
+                : html` <footer class="entry-footer">
+                      <button
+                          class="inline outline contrast"
+                          @click=${this.editEntry}
+                      >
+                          edit
+                      </button>
+                      <edit-log-dates
+                          .editLog=${this.entry.editLog}
+                      ></edit-log-dates>
+                  </footer>`}
         </article>`;
     }
     static styles = [

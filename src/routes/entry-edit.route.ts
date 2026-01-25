@@ -3,10 +3,11 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation } from '@vaadin/router';
 import { format } from 'date-fns';
-import { action, makeObservable, observable, toJS } from 'mobx';
+import { autorun, makeAutoObservable, toJS } from 'mobx';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
+import { DraftPreviewSheet } from '../components/action-sheets/draft-preview-sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import '../components/mood.component';
@@ -23,65 +24,63 @@ import { go } from './route-config';
 
 export class EntryEditStore {
     constructor() {
-        makeObservable(this);
+        makeAutoObservable(this);
+        autorun(() => {
+            if (this.initialized && this.date) this.draftTime = Date.now();
+            if (this.date && this.pendingChanges)
+                localStorage.setItem(
+                    `entry-edit-draft-${this.date}`,
+                    JSON.stringify(toJS(this))
+                );
+        });
     }
-    @observable
-    note: string = '';
-    @observable
-    activities: { [key: string]: ActivityDetail } = {};
-    @observable
-    mood: string = '';
-    @observable
-    location: { coords?: { lat: number; lon: number } } = {};
-    @observable
-    date: string = '';
-    @observable
-    pendingChanges = false;
     initialized = false;
-    @action.bound
-    public setEntry(entry?: Entry) {
+    draftTime?: number;
+    note: string = '';
+    activities: { [key: string]: ActivityDetail } = {};
+    mood: string = '';
+    location: { coords?: { lat: number; lon: number } } = {};
+    date: string = '';
+    pendingChanges = false;
+    public setEntry(
+        entry?: Entry,
+        pendingChanges: boolean = this.pendingChanges
+    ) {
         this.setActivities(entry?.activities);
         this.setDate(entry?.date);
         this.setMood(entry?.mood);
         this.setNote(entry?.note);
         this.setLocation(entry?.location);
         this.initialized = true;
+        this.pendingChanges = pendingChanges;
     }
-    @action.bound
     public unmarkPendingChanges() {
         this.pendingChanges = false;
     }
-    @action.bound
     public setNote(note?: string) {
         this.note = note || '';
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public setActivities(activities?: { [key: string]: ActivityDetail }) {
         this.activities = activities || {};
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public setMood(mood?: string) {
         this.mood = mood || '0';
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public setLocation(location?: { lat: number; lon: number }) {
         this.location.coords = location;
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public setDate(date?: string) {
         this.date = date || format(new Date(), 'yyyy-MM-dd');
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public setActivityDetail(activityId: string, detail: ActivityDetail) {
         this.activities[activityId] = detail;
         this.pendingChanges = this.initialized;
     }
-    @action.bound
     public clearActivityDetail(activityId: string) {
         if (this.activities[activityId]) delete this.activities[activityId];
         this.pendingChanges = this.initialized;
@@ -89,7 +88,6 @@ export class EntryEditStore {
     public getActivityDetail(activityId: string): ActivityDetail {
         return this.activities[activityId];
     }
-    @action.bound
     public addToNumericActivityDetail(activityId: string, amount: number) {
         let detail = this.getActivityDetail(activityId);
         if (!Array.isArray(detail)) {
@@ -97,14 +95,12 @@ export class EntryEditStore {
             this.setActivityDetail(activityId, detail + amount);
         }
     }
-    @action.bound
     public addToArrayActivityDetail(activityId: string, newDetail: string) {
         let details = this.getActivityDetail(activityId) || [];
         if (Array.isArray(details)) {
             this.setActivityDetail(activityId, [...details, newDetail.trim()]);
         }
     }
-    @action.bound
     public updateArrayActivityDetail(
         activityId: string,
         index: number,
@@ -117,7 +113,6 @@ export class EntryEditStore {
             this.setActivityDetail(activityId, newDetails);
         }
     }
-    @action.bound
     public removeArrayActivityDetail(activityId: string, index: number) {
         let details = this.getActivityDetail(activityId);
         if (Array.isArray(details)) {
@@ -131,26 +126,48 @@ export class EntryEditStore {
 @customElement('entry-edit-route')
 export class EntryEditRoute extends MobxLitElement {
     store = new EntryEditStore();
-    originalEntry?: Partial<Entry>;
+    originalEntry!: Partial<Entry>;
     startEditTime = 0;
     async onAfterEnter(location: RouterLocation) {
         window.scrollTo({ top: 0 });
         this.startEditTime = new Date().getTime();
-        if (location.params.id) {
-            this.originalEntry = await entries.getEntry(
+        try {
+            this.originalEntry = (await entries.getEntry(
                 location.params.id as string
-            );
-        } else {
+            )) as Entry;
+        } catch (e) {
             this.originalEntry = {
                 activities: {},
-                date: '',
+                date: format(new Date(), 'yyyy-MM-dd'),
                 mood: '0',
                 note: '',
                 editLog: [],
             };
         }
-        this.store.setEntry(this.originalEntry as Entry);
+
+        const draft = localStorage.getItem(
+            `entry-edit-draft-${this.originalEntry.date}`
+        );
+        if (draft) {
+            Sheet.open({
+                type: DraftPreviewSheet,
+                data: JSON.parse(draft),
+                onClose: (acceptDraft: boolean) => {
+                    if (acceptDraft) {
+                        this.store.setEntry(JSON.parse(draft), true);
+                    } else {
+                        localStorage.removeItem(
+                            `entry-edit-draft-${this.originalEntry?.date}`
+                        );
+                        this.store.setEntry(this.originalEntry as Entry);
+                    }
+                },
+            });
+        } else {
+            this.store.setEntry(this.originalEntry as Entry);
+        }
     }
+
     onBeforeLeave(_location: any, commands: any, _router: any) {
         if (
             !Sheet.isShown &&
@@ -158,6 +175,9 @@ export class EntryEditRoute extends MobxLitElement {
             !confirm('Lose unsaved changes?')
         ) {
             return commands.prevent();
+        } else if (!Sheet.isShown) {
+            localStorage.removeItem(`entry-edit-draft-${this.store.date}`);
+            QuickSet2.close();
         }
     }
     onClick(e: CustomEvent) {

@@ -1,8 +1,10 @@
 import { createContext } from '@lit/context';
 import { Route, Router } from '@vaadin/router';
+import '../components/action-sheets/map.sheet';
 import { JotIconName } from '../components/jot-icon';
 import './activities.route';
 import './backup.route';
+import './cycle-station.route';
 import './cycle.route';
 import './entries.route';
 import './entry-edit.route';
@@ -47,6 +49,13 @@ export const routes = [
         path: '/cycle',
         component: 'cycle-route',
         name: 'cycle',
+        children: [
+            {
+                name: 'cycle/station',
+                path: '/:id',
+                component: 'cycle-station-route',
+            },
+        ],
     },
     {
         path: '/',
@@ -101,9 +110,18 @@ export const routes = [
         name: 'today',
     },
 ] as const satisfies JotRoute[];
-type RouteName = (typeof routes)[number]['name'];
+
+type ExtractRouteNames<T> = T extends { name: infer N; children?: infer C }
+    ? N | (C extends readonly Route[] ? ExtractRouteNames<C[number]> : never)
+    : never;
+
+type RouteName = ExtractRouteNames<(typeof routes)[number]>;
+
 export type JotRoute = Route & {
-    options?: { iconName?: JotIconName; menuItem?: boolean };
+    options?: {
+        iconName?: JotIconName;
+        menuItem?: boolean;
+    };
 };
 export function go(
     route: RouteName,

@@ -2,10 +2,11 @@ import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import '@lit-labs/virtualizer';
 import { base } from '../baseStyles';
+import '../components/action-sheets/action-sheet-host';
 import '../components/station.component';
 import { Station } from '../components/station.component';
 import { locationService } from '../services/location.service';
-import { xmlToJson } from '../utils/Helpers';
+import { stations } from '../stores/stations.store';
 
 @customElement('cycle-route')
 export class CycleRoute extends LitElement {
@@ -49,35 +50,22 @@ export class CycleRoute extends LitElement {
 
     async fetchStations(): Promise<void> {
         this.loading = true;
-        try {
-            const response = await fetch(
-                'https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml'
-            );
-            const xml = await response.text();
-            const resp: Station[] = xmlToJson(xml).stations.station;
-            resp.forEach((station) => {
-                if (this.favoriteIds.includes(station.id)) {
-                    station.isFavorite = true;
-                }
-                if (station.installDate)
-                    station.installDate = new Date(
-                        Number.parseInt(
-                            station.installDate as unknown as string
-                        )
-                    );
-                if (station.removalDate)
-                    station.removalDate = new Date(
-                        Number.parseInt(
-                            station.removalDate as unknown as string
-                        )
-                    );
-            });
+        this.stations = stations.all.slice();
+        stations.all.forEach((station) => {
+            if (this.favoriteIds.includes(station.id)) {
+                station.isFavorite = true;
+            }
+            if (station.installDate)
+                station.installDate = new Date(
+                    Number.parseInt(station.installDate as unknown as string)
+                );
+            if (station.removalDate)
+                station.removalDate = new Date(
+                    Number.parseInt(station.removalDate as unknown as string)
+                );
+        });
 
-            this.stations = resp;
-            this.setDistanceOnStations();
-        } catch (error) {
-            console.error('Error fetching stations:', error);
-        }
+        this.setDistanceOnStations();
         this.loading = false;
     }
 
@@ -179,6 +167,7 @@ export class CycleRoute extends LitElement {
         );
 
         return html`
+            <slot></slot>
             <article class="header">
                 <header class="station">
                     <input

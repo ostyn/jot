@@ -2,9 +2,8 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { format } from 'date-fns';
 import { base } from '../baseStyles';
+import { go } from '../routes/route-config';
 import { DateHelpers } from '../utils/DateHelpers';
-import { Sheet } from './action-sheets/action-sheet';
-import { MapSheet } from './action-sheets/map.sheet';
 
 export interface Station {
     id: string; // Unique identifier for the station
@@ -70,9 +69,8 @@ export class StationComponent extends LitElement {
         return html`
             <article
                 @click="${() => {
-                    Sheet.open({
-                        type: MapSheet,
-                        data: { lat: this.station.lat, lon: this.station.long },
+                    go('cycle', {
+                        pathParams: [`${this.station.id}`],
                     });
                 }}"
             >

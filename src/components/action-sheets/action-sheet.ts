@@ -62,7 +62,7 @@ export class ActionSheet extends LitElement {
             }
     };
     private escapeHandler = (event: any) => {
-        if (event.key === 'Escape') {
+        if (this.isShown && event.key === 'Escape') {
             history.back();
         }
     };

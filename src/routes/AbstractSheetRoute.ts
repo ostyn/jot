@@ -1,42 +1,39 @@
-import { css, html, LitElement, PropertyValueMap } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { css, html, LitElement, PropertyValueMap, TemplateResult } from 'lit';
+import { property, state } from 'lit/decorators.js';
 import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { styleMap } from 'lit/directives/style-map.js';
+import { RouterLocation } from '@vaadin/router';
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock-upgrade';
 import TinyGesture from 'tinygesture';
-import { base } from '../../baseStyles';
+import { base } from '../baseStyles.ts';
+import { timer } from '../utils/Helpers.ts';
+import { go } from './route-config.ts';
 
-@customElement('action-sheet-host')
-export class ActionSheetHost extends LitElement {
+export abstract class AbstractSheetRoute extends LitElement {
     @state() dragPosition: number | undefined;
     @state() isClosing: boolean = false;
-    @property({ type: Number }) sheetHeight: number = 0; // in vh
+    @state() sheetHeight: number = 0; // in vh
+    openedHeight: number = 50; // in vh
+    parentRouteName: string = '';
     sheetContents: Ref<HTMLInputElement> = createRef();
     controls: Ref<HTMLInputElement> = createRef();
-    @state()
-    data: any;
-    onClose?: (data?: any) => void;
+    parentRoute: any;
 
-    public setSheetHeight = (value: number) => {
-        this.sheetHeight = Math.max(0, Math.min(100, value));
-        if (this.sheetContents.value)
-            if (this.sheetHeight === 100) {
-                this.sheetContents.value.classList.add('fullscreen');
-            } else {
-                this.sheetContents.value.classList.remove('fullscreen');
-            }
-    };
-    escapeHandler = (event: any) => {
-        if (event.key === 'Escape') {
-            this.closePage();
-        }
-    };
+    async onBeforeEnter(location: RouterLocation) {
+        this.parentRoute = location.route?.parent;
+        this.parentRouteName = this.parentRoute?.name || '';
+    }
+
+    async onBeforeLeave(_location: any, _commands: any, _router: any) {
+        this.setSheetHeight(0);
+        await timer(300);
+    }
 
     protected firstUpdated(
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
         disableBodyScroll(this, { allowTouchMove: () => true });
-        this.setSheetHeight(50);
+        this.setSheetHeight(this.openedHeight);
 
         const gesture = new TinyGesture(this.controls.value || this, {});
 
@@ -86,21 +83,42 @@ export class ActionSheetHost extends LitElement {
         });
     }
 
+    private escapeHandler = (event: any) => {
+        if (event.key === 'Escape') {
+            this.closePage();
+        }
+    };
+
+    public setSheetHeight = (value: number) => {
+        this.sheetHeight = Math.max(0, Math.min(100, value));
+        if (this.sheetContents.value)
+            if (this.sheetHeight === 100) {
+                this.sheetContents.value.classList.add('fullscreen');
+            } else {
+                this.sheetContents.value.classList.remove('fullscreen');
+            }
+    };
+
     closePage() {
         console.log('Closing sheet');
         if (!this.isClosing) {
             this.isClosing = true;
             this.setSheetHeight(0);
             setTimeout(() => {
-                history.back();
+                if (this.parentRouteName) {
+                    go(this.parentRouteName as any);
+                }
             }, 300);
         }
     }
+
     disconnectedCallback(): void {
         this.setSheetHeight(0);
         window.removeEventListener('keyup', this.escapeHandler);
         enableBodyScroll(this);
     }
+
+    abstract renderSheetContent(): TemplateResult;
 
     render() {
         return html`<span>
@@ -118,13 +136,12 @@ export class ActionSheetHost extends LitElement {
                         </div>
                     </header>
 
-                    <main class="body">
-                        <slot></slot>
-                    </main>
+                    <main class="body">${this.renderSheetContent()}</main>
                 </div>
             </div>
         </span>`;
     }
+
     static styles = [
         base,
         css`

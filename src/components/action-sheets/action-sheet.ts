@@ -61,17 +61,18 @@ export class ActionSheet extends LitElement {
                 this.sheetContents.value.classList.remove('fullscreen');
             }
     };
+    private escapeHandler = (event: any) => {
+        if (event.key === 'Escape') {
+            history.back();
+        }
+    };
 
     protected firstUpdated(
         _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
     ): void {
         const gesture = new TinyGesture(this.controls.value || this, {});
 
-        window.addEventListener('keyup', (event: any) => {
-            if (event.key === 'Escape') {
-                history.back();
-            }
-        });
+        window.addEventListener('keyup', this.escapeHandler);
 
         const touchPosition = (event: any) =>
             event.touches ? event.touches[0] : event;
@@ -120,6 +121,9 @@ export class ActionSheet extends LitElement {
         enableBodyScroll(this);
         this.isShown = false;
         if (submittingData && this.onClose) this.onClose(data);
+    }
+    disconnectedCallback(): void {
+        window.removeEventListener('keyup', this.escapeHandler);
     }
     private getActionSheet() {
         return this.type.getActionSheet(this.data, (data: any) => {
@@ -205,7 +209,8 @@ export class ActionSheet extends LitElement {
 
                 overflow-y: hidden;
 
-                --default-transitions: transform 0.3s, border-radius 0.3s;
+                --default-transitions: transform 0.3s, border-radius 0.3s,
+                    height 0.3s;
 
                 transition: var(--default-transitions);
                 transform: translateY(0);

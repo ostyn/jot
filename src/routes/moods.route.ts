@@ -16,7 +16,7 @@ export class MoodsRoute extends MobxLitElement {
         return html`<slot></slot>
             <article>
                 <header>Moods</header>
-                <section>
+                <section class="moods-list">
                     ${moods.userCreated.map((mood) => {
                         return html`
                             <mood-component
@@ -43,6 +43,10 @@ export class MoodsRoute extends MobxLitElement {
             .moods-mood {
                 font-size: 2rem;
                 cursor: pointer;
+            }
+            .moods-list {
+                display: flex;
+                justify-content: space-around;
             }
         `,
     ];

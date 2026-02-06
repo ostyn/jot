@@ -27,6 +27,9 @@ button {
     user-select: none;
     --pico-line-height: 1;
 }
+article > section {
+    padding: 0.5rem;
+}
 section {
     margin-bottom: 0;
 }

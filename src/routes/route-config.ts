@@ -164,7 +164,7 @@ export function betterGo(
                 return { route: r, fullPath };
             }
 
-            if (r.children) {
+            if (r.children && Array.isArray(r.children)) {
                 const found = findRoute(r.children, fullPath);
                 if (found) return found;
             }

@@ -1,5 +1,5 @@
 import { css, html, LitElement, PropertyValueMap, TemplateResult } from 'lit';
-import { property, state } from 'lit/decorators.js';
+import { state } from 'lit/decorators.js';
 import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { RouterLocation } from '@vaadin/router';

@@ -39,6 +39,9 @@ class NotesStore {
         });
         return sortedNotesByPath;
     }
+    public getNoteById(id: string): Note | undefined {
+        return this.all.find((note) => note.id === id);
+    }
     public getNotePaths(): string[] {
         return Array.from(new Set(this.all.map((note) => note.path)));
     }

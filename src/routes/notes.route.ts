@@ -1,76 +1,23 @@
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { toJS } from 'mobx';
 import { base } from '../baseStyles';
-import { Sheet } from '../components/action-sheets/action-sheet';
-import { TextSheet } from '../components/action-sheets/text.sheet';
 import '../components/calendar-wrapper.component';
-import { EditTools } from '../interfaces/entry.interface';
 import { notes } from '../stores/notes.store';
+import { betterGo } from './route-config';
 
 @customElement('notes-route')
 export class NotesRoute extends MobxLitElement {
     private handleNoteClick(note: any) {
-        const startEdit = new Date();
-        Sheet.open({
-            type: TextSheet,
-            data: note.content,
-            onClose: (content: string) =>
-                this.handleNoteClose(note, content, startEdit),
-        });
-    }
-
-    private handleNoteClose(note: any, content: string, startEdit: Date) {
-        const endEdit = new Date();
-        const updatedNote = {
-            id: note.id,
-            path: note.path,
-            content,
-            editLog: [
-                ...toJS(note.editLog),
-                {
-                    date: endEdit,
-                    duration: endEdit.getTime() - startEdit.getTime(),
-                    tool: EditTools.JOT,
-                },
-            ],
-        };
-        if (updatedNote.content === '') {
-            notes.removeNote(updatedNote.id);
-        } else if (updatedNote.content !== note.content) {
-            notes.upsertNote(updatedNote);
-        }
+        betterGo('note-edit', { pathParams: { id: note.id } });
     }
 
     private handleNewNoteClick() {
-        const startEdit = new Date();
-        Sheet.open({
-            type: TextSheet,
-            data: '',
-            onClose: (content: string) =>
-                this.handleNewNoteClose(content, startEdit),
-        });
-    }
-
-    private handleNewNoteClose(content: string, startEdit: Date) {
-        const endEdit = new Date();
-        if (content !== '') {
-            notes.insertNote({
-                path: '',
-                content,
-                editLog: [
-                    {
-                        date: endEdit,
-                        duration: endEdit.getTime() - startEdit.getTime(),
-                        tool: EditTools.JOT,
-                    },
-                ],
-            });
-        }
+        betterGo('note-edit');
     }
     render() {
-        return html`<article class="notesHeader">
+        return html` <slot></slot>
+            <article class="notesHeader">
                 <header>Notes</header>
             </article>
             <hr />

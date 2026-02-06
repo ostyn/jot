@@ -7,12 +7,13 @@ import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock-upgrade';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles.ts';
 import { timer } from '../utils/Helpers.ts';
-import { go } from './route-config.ts';
+import { betterGo } from './route-config.ts';
 
 export abstract class AbstractSheetRoute extends LitElement {
     @state() dragPosition: number | undefined;
     @state() isClosing: boolean = false;
     @state() sheetHeight: number = 0; // in vh
+    @state() closeBehavior: 'back' | 'parent' = 'back';
     openedHeight: number = 50; // in vh
     parentRouteName: string = '';
     sheetContents: Ref<HTMLInputElement> = createRef();
@@ -104,11 +105,13 @@ export abstract class AbstractSheetRoute extends LitElement {
     };
 
     protected closePage() {
-        console.log('Closing sheet');
         if (!this.isClosing) {
             this.isClosing = true;
-
-            go(this.parentRouteName as any);
+            if (this.closeBehavior === 'parent' && this.parentRouteName) {
+                betterGo(this.parentRouteName as any);
+            } else {
+                history.back();
+            }
         }
     }
 

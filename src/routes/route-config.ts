@@ -13,6 +13,7 @@ import './import-daylio.route';
 import './import.route';
 import './mood-edit.route';
 import './moods.route';
+import './note-edit.route';
 import './notes.route';
 import './search.route';
 import './settings.route';
@@ -52,6 +53,13 @@ export const routes = [
         component: 'notes-route',
         name: 'notes',
         options: { menuItem: true, iconName: 'StickyNote' },
+        children: [
+            {
+                name: 'note-edit',
+                path: '/edit/:id?',
+                component: 'note-edit-route',
+            },
+        ],
     },
     {
         path: '/cycle',
@@ -146,6 +154,26 @@ export function go(
     }
 }
 
+export function findRoute(
+    routes: readonly JotRoute[],
+    routeName: RouteName,
+    parentPath = ''
+): { route: JotRoute; fullPath: string } | undefined {
+    for (const r of routes) {
+        const fullPath = `${parentPath}${r.path}`.replace(/\/+/g, '/');
+
+        if (r.name === routeName) {
+            return { route: r, fullPath };
+        }
+
+        if (r.children && Array.isArray(r.children)) {
+            const found = findRoute(r.children, routeName, fullPath);
+            if (found) return found;
+        }
+    }
+    return undefined;
+}
+
 export function betterGo(
     routeName: RouteName,
     options?: {
@@ -153,26 +181,7 @@ export function betterGo(
         queryParams?: Record<string, string | number | boolean | undefined>;
     }
 ) {
-    const findRoute = (
-        routes: readonly JotRoute[],
-        parentPath = ''
-    ): { route: JotRoute; fullPath: string } | undefined => {
-        for (const r of routes) {
-            const fullPath = `${parentPath}${r.path}`.replace(/\/+/g, '/');
-
-            if (r.name === routeName) {
-                return { route: r, fullPath };
-            }
-
-            if (r.children && Array.isArray(r.children)) {
-                const found = findRoute(r.children, fullPath);
-                if (found) return found;
-            }
-        }
-        return undefined;
-    };
-
-    const result = findRoute(routes);
+    const result = findRoute(routes, routeName);
 
     if (!result) {
         console.error(`Route with name "${routeName}" not found`);

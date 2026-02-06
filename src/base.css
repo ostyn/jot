@@ -12,11 +12,6 @@
     border-radius: 9999px;
 }
 
-:root {
-    --pico-spacing: 0.25rem;
-    --pico-line-height: 1.25;
-    --pico-text-decoration: none !important;
-}
 .inline,
 input.inline {
     display: inline-block;
@@ -28,7 +23,7 @@ button {
     --pico-line-height: 1;
 }
 article > section {
-    padding: 0.5rem;
+    padding: 0.5rem 0;
 }
 section {
     margin-bottom: 0;

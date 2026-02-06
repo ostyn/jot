@@ -2,7 +2,6 @@ import { css, html, LitElement, nothing, TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import '@lit-labs/virtualizer';
 import { base } from '../baseStyles';
-import '../components/action-sheets/action-sheet-host';
 import '../components/station.component';
 import { Station } from '../components/station.component';
 import { locationService } from '../services/location.service';

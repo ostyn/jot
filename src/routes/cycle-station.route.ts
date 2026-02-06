@@ -1,7 +1,6 @@
 import { html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { RouterLocation } from '@vaadin/router';
-import '../components/action-sheets/action-sheet-host';
 import { MapSheet } from '../components/action-sheets/map.sheet';
 import { Station } from '../components/station.component.ts';
 import { stations } from '../stores/stations.store.ts';

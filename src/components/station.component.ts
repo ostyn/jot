@@ -2,7 +2,7 @@ import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { format } from 'date-fns';
 import { base } from '../baseStyles';
-import { go } from '../routes/route-config';
+import { betterGo } from '../routes/route-config';
 import { DateHelpers } from '../utils/DateHelpers';
 
 export interface Station {
@@ -69,8 +69,8 @@ export class StationComponent extends LitElement {
         return html`
             <article
                 @click="${() => {
-                    go('cycle', {
-                        pathParams: [`${this.station.id}`],
+                    betterGo('cycle-station', {
+                        pathParams: { id: this.station.id },
                     });
                 }}"
             >

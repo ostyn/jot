@@ -25,7 +25,11 @@ export abstract class AbstractSheetRoute extends LitElement {
     }
 
     async onBeforeLeave(_location: any, _commands: any, _router: any) {
+        window.removeEventListener('keyup', this.escapeHandler);
+        enableBodyScroll(this);
+        //Start closing animation
         this.setSheetHeight(0);
+        //Wait for animation to finish
         await timer(300);
     }
 
@@ -99,23 +103,13 @@ export abstract class AbstractSheetRoute extends LitElement {
             }
     };
 
-    closePage() {
+    protected closePage() {
         console.log('Closing sheet');
         if (!this.isClosing) {
             this.isClosing = true;
-            this.setSheetHeight(0);
-            setTimeout(() => {
-                if (this.parentRouteName) {
-                    go(this.parentRouteName as any);
-                }
-            }, 300);
-        }
-    }
 
-    disconnectedCallback(): void {
-        this.setSheetHeight(0);
-        window.removeEventListener('keyup', this.escapeHandler);
-        enableBodyScroll(this);
+            go(this.parentRouteName as any);
+        }
     }
 
     abstract renderSheetContent(): TemplateResult;

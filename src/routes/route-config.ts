@@ -11,6 +11,7 @@ import './entry-edit.route';
 import './game.route';
 import './import-daylio.route';
 import './import.route';
+import './mood-edit.route';
 import './moods.route';
 import './notes.route';
 import './search.route';
@@ -32,6 +33,13 @@ export const routes = [
         component: 'moods-route',
         name: 'moods',
         options: { menuItem: true, iconName: 'Smile' },
+        children: [
+            {
+                name: 'mood-edit',
+                path: '/edit/:id?',
+                component: 'mood-edit-route',
+            },
+        ],
     },
     {
         path: '/activities',
@@ -51,7 +59,7 @@ export const routes = [
         name: 'cycle',
         children: [
             {
-                name: 'cycle/station',
+                name: 'cycle-station',
                 path: '/:id',
                 component: 'cycle-station-route',
             },
@@ -136,4 +144,66 @@ export function go(
     } else {
         Router.go(`${route}${pathParamsText}`);
     }
+}
+
+export function betterGo(
+    routeName: RouteName,
+    options?: {
+        pathParams?: Record<string, string | number>;
+        queryParams?: Record<string, string | number | boolean | undefined>;
+    }
+) {
+    const findRoute = (
+        routes: readonly JotRoute[],
+        parentPath = ''
+    ): { route: JotRoute; fullPath: string } | undefined => {
+        for (const r of routes) {
+            const fullPath = `${parentPath}${r.path}`.replace(/\/+/g, '/');
+
+            if (r.name === routeName) {
+                return { route: r, fullPath };
+            }
+
+            if (r.children) {
+                const found = findRoute(r.children, fullPath);
+                if (found) return found;
+            }
+        }
+        return undefined;
+    };
+
+    const result = findRoute(routes);
+
+    if (!result) {
+        console.error(`Route with name "${routeName}" not found`);
+        return;
+    }
+
+    let path = result.fullPath;
+
+    // Replace path params (:id, :id?)
+    if (options?.pathParams) {
+        for (const [key, value] of Object.entries(options.pathParams)) {
+            path = path.replace(
+                new RegExp(`:${key}\\??`),
+                encodeURIComponent(String(value))
+            );
+        }
+    }
+
+    // Remove unresolved optional params
+    path = path.replace(/\/?:\w+\?/g, '');
+
+    // Append query params
+    if (options?.queryParams) {
+        const search = new URLSearchParams(
+            Object.entries(options.queryParams)
+                .filter(([, v]) => v !== undefined)
+                .map(([k, v]) => [k, String(v)])
+        ).toString();
+
+        if (search) path += `?${search}`;
+    }
+
+    Router.go(path);
 }

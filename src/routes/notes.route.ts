@@ -11,6 +11,64 @@ import { notes } from '../stores/notes.store';
 
 @customElement('notes-route')
 export class NotesRoute extends MobxLitElement {
+    private handleNoteClick(note: any) {
+        const startEdit = new Date();
+        Sheet.open({
+            type: TextSheet,
+            data: note.content,
+            onClose: (content: string) =>
+                this.handleNoteClose(note, content, startEdit),
+        });
+    }
+
+    private handleNoteClose(note: any, content: string, startEdit: Date) {
+        const endEdit = new Date();
+        const updatedNote = {
+            id: note.id,
+            path: note.path,
+            content,
+            editLog: [
+                ...toJS(note.editLog),
+                {
+                    date: endEdit,
+                    duration: endEdit.getTime() - startEdit.getTime(),
+                    tool: EditTools.JOT,
+                },
+            ],
+        };
+        if (updatedNote.content === '') {
+            notes.removeNote(updatedNote.id);
+        } else if (updatedNote.content !== note.content) {
+            notes.upsertNote(updatedNote);
+        }
+    }
+
+    private handleNewNoteClick() {
+        const startEdit = new Date();
+        Sheet.open({
+            type: TextSheet,
+            data: '',
+            onClose: (content: string) =>
+                this.handleNewNoteClose(content, startEdit),
+        });
+    }
+
+    private handleNewNoteClose(content: string, startEdit: Date) {
+        const endEdit = new Date();
+        if (content !== '') {
+            notes.insertNote({
+                path: '',
+                content,
+                editLog: [
+                    {
+                        date: endEdit,
+                        duration: endEdit.getTime() - startEdit.getTime(),
+                        tool: EditTools.JOT,
+                    },
+                ],
+            });
+        }
+    }
     render() {
         return html`<article class="notesHeader">
                 <header>Notes</header>
@@ -26,50 +84,8 @@ export class NotesRoute extends MobxLitElement {
                                 ${notesInFolder.map(
                                     (note) =>
                                         html` <article
-                                            @click=${() => {
-                                                const startEdit = new Date();
-                                                Sheet.open({
-                                                    type: TextSheet,
-                                                    data: note.content,
-                                                    onClose: (
-                                                        content: string
-                                                    ) => {
-                                                        const endEdit =
-                                                            new Date();
-                                                        const updatedNote = {
-                                                            id: note.id,
-                                                            path: note.path,
-                                                            content,
-                                                            editLog: [
-                                                                ...toJS(
-                                                                    note.editLog
-                                                                ),
-                                                                {
-                                                                    date: endEdit,
-                                                                    duration:
-                                                                        endEdit.getTime() -
-                                                                        startEdit.getTime(),
-                                                                    tool: EditTools.JOT,
-                                                                },
-                                                            ],
-                                                        };
-                                                        if (
-                                                            updatedNote.content ===
-                                                            ''
-                                                        )
-                                                            notes.removeNote(
-                                                                updatedNote.id
-                                                            );
-                                                        else if (
-                                                            updatedNote.content !==
-                                                            note.content
-                                                        )
-                                                            notes.upsertNote(
-                                                                updatedNote
-                                                            );
-                                                    },
-                                                });
-                                            }}
+                                            @click=${() =>
+                                                this.handleNoteClick(note)}
                                         >
                                             <header>
                                                 ${note.content.split('\n')[0]}
@@ -96,30 +112,7 @@ export class NotesRoute extends MobxLitElement {
             <div class="sticky-buttons">
                 <button
                     class="inline"
-                    @click=${() => {
-                        const startEdit = new Date();
-                        Sheet.open({
-                            type: TextSheet,
-                            data: '',
-                            onClose: (content: string) => {
-                                const endEdit = new Date();
-                                if (content !== '')
-                                    notes.insertNote({
-                                        path: '',
-                                        content,
-                                        editLog: [
-                                            {
-                                                date: endEdit,
-                                                duration:
-                                                    endEdit.getTime() -
-                                                    startEdit.getTime(),
-                                                tool: EditTools.JOT,
-                                            },
-                                        ],
-                                    });
-                            },
-                        });
-                    }}
+                    @click=${() => this.handleNewNoteClick()}
                 >
                     <jot-icon name="PenLine"></jot-icon>
                 </button>

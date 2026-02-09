@@ -58,93 +58,110 @@ export class QuickSet2 extends MobxLitElement {
 
         return html`
             <div class="menu">
-                <jot-icon
-                    class="close-button"
-                    name="XCircle"
-                    @click=${QuickSet2.close}
-                ></jot-icon>
-                <activity-component
-                    class="activity"
-                    .detail=${detail}
-                    .showName=${true}
-                    .activity=${activities.getActivity(this.activityId)}
-                ></activity-component>
-                <span
-                    class="clear-button"
-                    @click=${() => {
-                        this.store.clearActivityDetail(this.activityId);
-                        this.disconnectedCallback();
-                    }}
-                >
-                    <jot-icon name="Trash2"></jot-icon>
-                </span>
-                <div class="activities">
-                    ${this.mruDetails?.map(
-                        (detail) =>
-                            html`<div
-                                @click=${() => {
-                                    if (
-                                        !Array.isArray(
-                                            this.store.getActivityDetail(
-                                                this.activityId
+                <div class="menu-content">
+                    <jot-icon
+                        class="close-button"
+                        name="XCircle"
+                        @click=${QuickSet2.close}
+                    ></jot-icon>
+                    <activity-component
+                        class="activity"
+                        .detail=${detail}
+                        .showName=${true}
+                        .activity=${activities.getActivity(this.activityId)}
+                    ></activity-component>
+                    <span
+                        class="clear-button"
+                        @click=${() => {
+                            this.store.clearActivityDetail(this.activityId);
+                            this.disconnectedCallback();
+                        }}
+                    >
+                        <jot-icon name="Trash2"></jot-icon>
+                    </span>
+                    <div class="activities">
+                        ${this.mruDetails?.map(
+                            (detail) =>
+                                html`<div
+                                    @click=${() => {
+                                        if (
+                                            !Array.isArray(
+                                                this.store.getActivityDetail(
+                                                    this.activityId
+                                                )
                                             )
                                         )
-                                    )
-                                        this.store.clearActivityDetail(
-                                            this.activityId
+                                            this.store.clearActivityDetail(
+                                                this.activityId
+                                            );
+                                        this.store.addToArrayActivityDetail(
+                                            this.activityId,
+                                            detail.text
                                         );
-                                    this.store.addToArrayActivityDetail(
-                                        this.activityId,
-                                        detail.text
-                                    );
-                                }}
-                                class="stats-entry"
-                            >
-                                <activity-detail
-                                    >${detail.text}</activity-detail
+                                    }}
+                                    class="stats-entry"
                                 >
-                            </div>`
-                    )}
+                                    <activity-detail
+                                        >${detail.text}</activity-detail
+                                    >
+                                </div>`
+                        )}
+                    </div>
+                    <span class="positive-buttons">
+                        <span class="amount-button" @click=${() => this.add(1)}>
+                            +1
+                        </span>
+
+                        <span
+                            class="amount-button"
+                            @click=${() => this.add(0.25)}
+                        >
+                            +¼
+                        </span>
+                        <span
+                            class="amount-button"
+                            @click=${() => this.add(10)}
+                        >
+                            +10
+                        </span>
+                    </span>
+                    <span class="negative-buttons">
+                        <span
+                            class="amount-button"
+                            @click=${() => this.add(-1)}
+                        >
+                            -1
+                        </span>
+                        <span
+                            class="amount-button"
+                            @click=${() => this.add(-0.25)}
+                        >
+                            -¼
+                        </span>
+
+                        <span
+                            class="amount-button"
+                            @click=${() => this.add(-10)}
+                        >
+                            -10
+                        </span>
+                    </span>
+
+                    <jot-icon
+                        class="text-button"
+                        name="PenLine"
+                        @click=${() => {
+                            Sheet.open({
+                                type: ActivityDetailEditSheet,
+                                data: {
+                                    id: this.activityId,
+                                    store: this.store,
+                                },
+                            });
+                            this.disconnectedCallback();
+                        }}
+                    ></jot-icon>
                 </div>
-                <span class="positive-buttons">
-                    <span class="amount-button" @click=${() => this.add(1)}>
-                        +1
-                    </span>
-
-                    <span class="amount-button" @click=${() => this.add(0.25)}>
-                        +¼
-                    </span>
-                    <span class="amount-button" @click=${() => this.add(10)}>
-                        +10
-                    </span>
-                </span>
-                <span class="negative-buttons">
-                    <span class="amount-button" @click=${() => this.add(-1)}>
-                        -1
-                    </span>
-                    <span class="amount-button" @click=${() => this.add(-0.25)}>
-                        -¼
-                    </span>
-
-                    <span class="amount-button" @click=${() => this.add(-10)}>
-                        -10
-                    </span>
-                </span>
-
-                <jot-icon
-                    class="text-button"
-                    name="PenLine"
-                    @click=${() => {
-                        Sheet.open({
-                            type: ActivityDetailEditSheet,
-                            data: {
-                                id: this.activityId,
-                                store: this.store,
-                            },
-                        });
-                        this.disconnectedCallback();
-                    }}
-                ></jot-icon>
             </div>
         `;
     }
@@ -162,7 +179,7 @@ export class QuickSet2 extends MobxLitElement {
                 flex-wrap: wrap;
             }
             .amount-button {
-                width: 16px;
+                width: 24px;
                 user-select: none;
                 cursor: pointer;
                 font-size: 16px;
@@ -202,24 +219,29 @@ export class QuickSet2 extends MobxLitElement {
                 display: flex;
             }
             .menu {
-                display: grid;
-                grid-template-areas:
-                    'activity clear-button positive-buttons close-button'
-                    'activity clear-button  negative-buttons text-button'
-                    'activities activities activities activities';
-                place-content: center space-around;
                 padding: 8px;
                 position: fixed;
-                align-items: center;
                 bottom: 62px;
                 width: 100%;
-                justify-self: anchor-center;
                 left: 0;
                 z-index: 99;
                 border-radius: 1rem 1rem 0 0;
                 background: var(--pico-card-background-color);
                 border-top: var(--pico-contrast) 1px solid;
-                justify-content: space-between;
+            }
+            .menu-content {
+                width: 100%;
+                display: grid;
+                grid-template-areas:
+                    'activity clear-button positive-buttons close-button'
+                    'activity clear-button negative-buttons text-button'
+                    'activity - - -'
+                    'activity - - -'
+                    'activities activities activities activities';
+                align-items: center;
+                gap: 8px;
+                overflow-y: auto;
+                max-height: calc(-100px + 100vh);
             }
         `,
     ];

@@ -12,25 +12,30 @@ import { Sheet } from './action-sheet';
 
 @customElement('activity-info-sheet')
 export class ActivityInfoSheet extends LitElement {
+    activityStats: any;
     @property()
     activityId!: string;
     @property()
     date!: Date;
     @property()
     onChange!: (a: any) => {};
+    @state()
     daysWithActivity: number = 0;
+    @state()
     percentOfDays: string = '';
+    @state()
     totalActivity: number = 0;
     @state()
-    selectedTextItem?: string;
     relatedEntryMap: Map<string, Entry> = new Map();
+    @state()
     daysElapsed?: number;
+    @state()
     month?: number;
+    @state()
     year?: number;
     @state()
-    dateValues: any = {};
-    @state()
     filter = '';
+    calendarData: any = {};
     onActivityDetailClick = (activityId: string, detail: string) => {
         Sheet.close();
         go('search', {
@@ -50,22 +55,20 @@ export class ActivityInfoSheet extends LitElement {
         ></activity-info-sheet>`;
     }
     protected firstUpdated(): void {
+        this.activityStats = activities.stats.get(this.activityId);
         this.onMonthChange(this.date.getMonth(), this.date.getFullYear());
+        this.activityStats?.dates.forEach((dateStat: any) => {
+            const activityDetail: ActivityDetail =
+                dateStat.entry.activities[this.activityId];
+            this.calendarData[dateStat.date] = Array.isArray(activityDetail)
+                ? activityDetail.length
+                : activityDetail;
+        });
     }
     public onMonthChange = (month: number, year: number) => {
-        // Reset values in dateValues without recreating the object to keep reactivity working, because we can't reassign dateValues directly
-        for (let key in this.dateValues) {
-            delete this.dateValues[key];
-        }
-
         this.month = month;
         this.year = year;
-        let activityStats = activities.stats.get(this.activityId);
-        let affectedDates = activityStats?.dates;
-        if (activityStats && activityStats.detailsUsed && this.selectedTextItem)
-            affectedDates = activityStats.detailsUsed.get(
-                this.selectedTextItem
-            )?.dates;
+        let affectedDates = this.activityStats?.dates;
         const entryDates = affectedDates?.filter((date: any) => {
             return (
                 Number.parseInt(date.entry.date.split('-')[1]) == month + 1 &&
@@ -81,16 +84,12 @@ export class ActivityInfoSheet extends LitElement {
             this.totalActivity += Array.isArray(activityDetail)
                 ? activityDetail.length
                 : activityDetail;
-            this.dateValues[entryDate.date] = Array.isArray(activityDetail)
-                ? activityDetail.length
-                : activityDetail;
         }
         this.daysElapsed = this.getDaysElapsedInMonth(month, year);
         this.daysWithActivity = this.relatedEntryMap.size;
         this.percentOfDays = this.daysElapsed
             ? ((this.daysWithActivity / this.daysElapsed) * 100).toFixed(2)
             : '0.00';
-        this.requestUpdate();
     };
     private getDaysElapsedInMonth(month: number, year: number): number {
         const currentDate = new Date();
@@ -138,7 +137,7 @@ export class ActivityInfoSheet extends LitElement {
                 <calendar-wrapper
                     class="inline"
                     .startingDate=${this.date}
-                    .dateValues=${this.dateValues}
+                    .dateValues=${this.calendarData}
                     @viewChange=${(e: any) =>
                         this.onMonthChange(e.detail.month, e.detail.year)}
                     @dateSelect=${(e: any) =>

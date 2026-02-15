@@ -259,7 +259,7 @@ export class GameRoute extends MobxLitElement {
                 text-align: right;
             }
             .scoreboard {
-                padding-top: 0.5rem;
+                padding-top: 4rem;
                 padding-bottom: 4rem;
                 display: flex;
                 justify-content: space-between;

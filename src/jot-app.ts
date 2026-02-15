@@ -59,7 +59,7 @@ export class JotApp extends LitElement {
                 display: block;
                 max-width: 36rem;
                 margin: auto;
-                padding-bottom: 12rem;
+                padding-bottom: 3rem;
                 width: calc(100% - 2rem);
                 margin: 1rem;
                 margin-top: 0;

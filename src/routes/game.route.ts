@@ -163,19 +163,31 @@ export class GameRoute extends MobxLitElement {
 
     render() {
         return html`
-            <h1 class="title">2048</h1>
             <div class="scoreboard">
-                <div>Score: ${this.score}</div>
-                <div>High Score: ${this.highScore}</div>
+                <div class="title-container">
+                    <div class="title">
+                        <div class="tile" data-value="2">2</div>
+                        <div class="tile" data-value="2048">0</div>
+                        <div class="tile" data-value="4">4</div>
+                        <div class="tile" data-value="8">8</div>
+                    </div>
+                </div>
+                <span class="controls">
+                    <hgroup>
+                        <h2>Score: ${this.score}</h2>
+                        <h2>High Score: ${this.highScore}</h2>
+                    </hgroup>
+                    <button
+                        @click="${() => {
+                            this.newGame();
+                            this.newGame();
+                        }}"
+                    >
+                        Restart
+                    </button>
+                </span>
             </div>
-            <button
-                @click="${() => {
-                    this.newGame();
-                    this.newGame();
-                }}"
-            >
-                New Game
-            </button>
+
             <div class="game-container">
                 ${this.defeated
                     ? html`
@@ -237,16 +249,22 @@ export class GameRoute extends MobxLitElement {
                 gap: 0.5rem;
                 align-items: start;
             }
-            .title {
-                text-align: center;
-                width: 100%;
-                font-size: 3rem;
+            .title-container {
+                width: 120px;
+            }
+            .controls {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: right;
             }
             .scoreboard {
+                padding: 0.5rem;
                 display: flex;
                 justify-content: space-between;
                 font-size: 1.5rem;
                 width: 100%;
+                align-items: center;
             }
             .game-container {
                 width: 100%;
@@ -259,6 +277,17 @@ export class GameRoute extends MobxLitElement {
                 background-color: #bbada0;
                 border-radius: 6px;
                 padding: 10px;
+                margin: auto;
+                position: relative;
+            }
+            .title {
+                display: inline-grid;
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                gap: 4px;
+                background-color: #bbada0;
+                border-radius: 6px;
+                padding: 4px;
                 margin: auto;
                 position: relative;
             }

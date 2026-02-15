@@ -259,7 +259,8 @@ export class GameRoute extends MobxLitElement {
                 text-align: right;
             }
             .scoreboard {
-                padding: 0.5rem;
+                padding-top: 0.5rem;
+                padding-bottom: 4rem;
                 display: flex;
                 justify-content: space-between;
                 font-size: 1.5rem;
@@ -277,7 +278,6 @@ export class GameRoute extends MobxLitElement {
                 background-color: #bbada0;
                 border-radius: 6px;
                 padding: 10px;
-                margin: auto;
                 position: relative;
             }
             .title {

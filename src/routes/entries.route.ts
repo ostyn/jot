@@ -1,4 +1,4 @@
-import { css, html, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { Router, WebComponentInterface } from '@vaadin/router';
@@ -23,6 +23,8 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
     @state() scrollToDate?: number;
     @state() filteredEntries: Entry[] = [];
     gesture?: TinyGesture<this>;
+    showAnnualSummaryButton: any =
+        new Date().getMonth() === 11 || new Date().getMonth() === 0;
     onAfterEnter() {
         window.addEventListener('jot-navigate', this.getParamsAndUpdate);
         this.getParamsAndUpdate();
@@ -179,16 +181,18 @@ export class EntriesRoute extends LitElement implements WebComponentInterface {
                             </article>`}
                   </section>`}
             <div class="sticky-buttons">
-                <button
-                    aria-label="search"
-                    class="inline contrast"
-                    @click=${() =>
-                        go('summary', {
-                            pathParams: this.getAnnualSummaryUrl(),
-                        })}
-                >
-                    <jot-icon name="PartyPopper"></jot-icon>
-                </button>
+                ${this.showAnnualSummaryButton
+                    ? html`<button
+                          aria-label="search"
+                          class="inline contrast"
+                          @click=${() =>
+                              go('summary', {
+                                  pathParams: this.getAnnualSummaryUrl(),
+                              })}
+                      >
+                          <jot-icon name="PartyPopper"></jot-icon>
+                      </button>`
+                    : nothing}
                 <button
                     aria-label="search"
                     class="inline contrast"

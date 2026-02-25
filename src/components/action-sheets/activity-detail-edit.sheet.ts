@@ -3,64 +3,88 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
+import { ActivityDetail } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
-import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
-import { QuickSet2 } from '../quick-set2.component';
+import { dispatchEvent, Events } from '../../utils/Helpers';
 import { Sheet } from './action-sheet';
 
 @customElement('activity-detail-edit-sheet')
 export class ActivityDetailEditSheet extends MobxLitElement {
     inputRef: Ref<HTMLElement> = createRef();
-    @property()
-    public store!: EntryEditStore;
+    @property({ attribute: false })
+    public detail?: ActivityDetail;
     @property()
     public activityId!: string;
+    @property()
+    public closeMethod!: () => {};
+    @state()
+    workingDetail?: ActivityDetail;
     @state()
     newItem: string = '';
     @state()
     currentlySelectedIndex?: number = undefined;
+    public hasDisconnected = false;
     static getActionSheet(
         data: any,
-        _submit: (data: any) => void
+        submit: (data: any) => void
     ): TemplateResult {
         return html`<activity-detail-edit-sheet
             .activityId=${data.id}
-            .store=${data.store}
+            .detail=${data.detail}
+            .closeMethod=${data.close}
+            @activityDetailSheetDismissed=${(e: any) => submit(e.detail)}
         ></activity-detail-edit-sheet>`;
     }
     protected firstUpdated(): void {
-        let detail = this.store?.getActivityDetail(this.activityId);
-        if (!Array.isArray(detail)) {
-            this.store?.clearActivityDetail(this.activityId);
-            if (detail && detail !== 1) {
-                this.store?.addToArrayActivityDetail(
-                    this.activityId,
-                    `${detail}`
-                );
+        // Initialize workingDetail: if detail is not an array and not 1, convert it
+        if (!Array.isArray(this.detail)) {
+            if (this.detail && this.detail !== 1) {
+                this.workingDetail = [`${this.detail}`];
+            } else {
+                this.workingDetail = [];
             }
+        } else {
+            this.workingDetail = [...this.detail];
         }
         setTimeout(() => {
             this.inputRef?.value?.focus();
         }, 1);
     }
+    disconnectedCallback() {
+        // Emit the updated detail when sheet is dismissed
+        if (!this.hasDisconnected) {
+            this.hasDisconnected = true;
+            dispatchEvent(
+                this,
+                Events.activityDetailSheetDismissed,
+                this.workingDetail
+            );
+        }
+    }
     add(amount: number) {
-        this.store?.addToNumericActivityDetail(this.activityId, amount);
+        const current =
+            typeof this.workingDetail === 'number' ? this.workingDetail : 0;
+        this.workingDetail = current + amount;
     }
     clear() {
-        this.store?.clearActivityDetail(this.activityId);
+        this.workingDetail = undefined;
+        this.closeMethod();
     }
     addItemOrSubmit(e: any) {
         e.preventDefault();
         if (this.newItem !== '') {
-            this.store?.addToArrayActivityDetail(this.activityId, this.newItem);
+            const items = Array.isArray(this.workingDetail)
+                ? this.workingDetail
+                : [];
+            this.workingDetail = [...items, this.newItem];
             this.newItem = '';
         } else {
             Sheet.close();
         }
     }
     render() {
-        const detail = this.store?.getActivityDetail(this.activityId) || [];
+        const detail = this.workingDetail || [];
 
         const lowerCaseDetails = (Array.isArray(detail) ? detail : []).map(
             (str) => str.toLowerCase()
@@ -80,18 +104,13 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                     <button
                         class="inline contrast"
                         @click=${() => {
-                            const existingDetail =
-                                this.store?.getActivityDetail(this.activityId);
                             if (
-                                (Array.isArray(existingDetail) &&
-                                    !existingDetail.length) ||
+                                (Array.isArray(this.workingDetail) &&
+                                    !this.workingDetail.length) ||
                                 confirm('Continuing will clear existing detail')
                             ) {
-                                this.store?.clearActivityDetail(
-                                    this.activityId
-                                );
+                                this.workingDetail = [];
                                 Sheet.close();
-                                QuickSet2.open(this.store, this.activityId);
                             }
                         }}
                     >
@@ -132,11 +151,22 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                               if (newValue === '') {
                                                   return;
                                               }
-                                              this.store?.updateArrayActivityDetail(
-                                                  this.activityId,
-                                                  index,
-                                                  newValue
-                                              );
+                                              if (
+                                                  Array.isArray(
+                                                      this.workingDetail
+                                                  )
+                                              ) {
+                                                  this.workingDetail = [
+                                                      ...this.workingDetail.slice(
+                                                          0,
+                                                          index
+                                                      ),
+                                                      newValue,
+                                                      ...this.workingDetail.slice(
+                                                          index + 1
+                                                      ),
+                                                  ];
+                                              }
                                               this.currentlySelectedIndex =
                                                   undefined;
                                           }}
@@ -145,11 +175,24 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                                       </button>
                                       <button
                                           @click=${() => {
-                                              this.store?.removeArrayActivityDetail(
-                                                  this.activityId,
-                                                  this
-                                                      .currentlySelectedIndex as number
-                                              );
+                                              if (
+                                                  Array.isArray(
+                                                      this.workingDetail
+                                                  )
+                                              ) {
+                                                  this.workingDetail = [
+                                                      ...this.workingDetail.slice(
+                                                          0,
+                                                          this
+                                                              .currentlySelectedIndex as number
+                                                      ),
+                                                      ...this.workingDetail.slice(
+                                                          (this
+                                                              .currentlySelectedIndex as number) +
+                                                              1
+                                                      ),
+                                                  ];
+                                              }
                                               this.currentlySelectedIndex =
                                                   undefined;
                                           }}
@@ -184,10 +227,12 @@ export class ActivityDetailEditSheet extends MobxLitElement {
                 </div>
                 <activity-detail-stats
                     @activityDetailClick=${(e: any) => {
-                        this.store?.addToArrayActivityDetail(
-                            this.activityId,
-                            e.detail.text
-                        );
+                        const items = Array.isArray(this.workingDetail)
+                            ? this.workingDetail
+                            : [];
+                        if (!items.includes(e.detail.text)) {
+                            this.workingDetail = [...items, e.detail.text];
+                        }
                         this.newItem = '';
                     }}
                     .activityId=${this.activityId}

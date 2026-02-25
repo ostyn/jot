@@ -42,8 +42,11 @@ export class ActionSheet extends LitElement {
         };
         data?: any;
         onClose?: (data?: any) => void;
+        ignoreHistory?: boolean;
     }) {
-        history.pushState({ sheetOpen: true }, 'Sheet Open', '#sheet');
+        if (!options.ignoreHistory) {
+            history.pushState({ sheetOpen: true }, 'Sheet Open', '#sheet');
+        }
         if (this.isShown) this.close();
         disableBodyScroll(this, { allowTouchMove: () => true });
         this.data = options.data;

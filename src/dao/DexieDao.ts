@@ -19,7 +19,11 @@ export class DexieDao implements JotDao {
         return this.sortItems(items);
     }
     saveItem(passedEntry: any): Promise<any> {
-        if (passedEntry.id === undefined || !passedEntry.id) {
+        if (
+            passedEntry.id === undefined ||
+            !passedEntry.id ||
+            passedEntry.id === 'new'
+        ) {
             passedEntry.id = crypto.randomUUID
                 ? crypto.randomUUID()
                 : Math.random();

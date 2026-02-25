@@ -1,5 +1,5 @@
 export type Entry = {
-    id?: string;
+    id: string;
     date: string;
     mood: string;
     location?: { lat: number; lon: number };

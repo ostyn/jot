@@ -3,6 +3,7 @@ import { Route, Router } from '@vaadin/router';
 import '../components/action-sheets/map.sheet';
 import { JotIconName } from '../components/jot-icon';
 import './activities.route';
+import './activity-detail-edit.route';
 import './backup.route';
 import './cycle-station.route';
 import './cycle.route';
@@ -79,9 +80,20 @@ export const routes = [
         name: 'entries',
     },
     {
-        path: '/entry/:id?',
+        path: '/entry',
+        redirect: '/entry/new',
+    },
+    {
+        path: '/entry/:id',
         component: 'entry-edit-route',
         name: 'entry',
+        children: [
+            {
+                name: 'activity-detail-edit',
+                path: '/activity/:activityId',
+                component: 'activity-edit-detail-route',
+            },
+        ],
     },
     {
         path: '/summary/:start?/:end?',

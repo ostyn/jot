@@ -6,12 +6,10 @@ import { format } from 'date-fns';
 import { autorun, makeAutoObservable, toJS } from 'mobx';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
-import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet';
 import { DraftPreviewSheet } from '../components/action-sheets/draft-preview-sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import '../components/mood.component';
-import { QuickSet2 } from '../components/quick-set2.component';
 import {
     ActivityDetail,
     EditTools,
@@ -20,10 +18,16 @@ import {
 import { entries } from '../stores/entries.store';
 import { moods } from '../stores/moods.store';
 import { DateHelpers } from '../utils/DateHelpers';
-import { go } from './route-config';
+import { betterGo, go } from './route-config';
 
 export class EntryEditStore {
+    id: string | undefined;
+    storeReady: Promise<void>;
+    private resolveStoreReady: (() => void) | undefined;
     constructor() {
+        this.storeReady = new Promise((resolve) => {
+            this.resolveStoreReady = resolve;
+        });
         makeAutoObservable(this);
         autorun(() => {
             if (this.initialized && this.date) this.draftTime = Date.now();
@@ -52,6 +56,7 @@ export class EntryEditStore {
         this.setNote(entry?.note);
         this.setLocation(entry?.location);
         this.initialized = true;
+        this.id = entry?.id || 'new';
         this.pendingChanges = pendingChanges;
     }
     public unmarkPendingChanges() {
@@ -121,87 +126,112 @@ export class EntryEditStore {
             this.setActivityDetail(activityId, newDetails);
         }
     }
+    public reset() {
+        this.id = undefined;
+        this.initialized = false;
+        this.draftTime = undefined;
+        this.note = '';
+        this.activities = {};
+        this.mood = '0';
+        this.location = {};
+        this.date = '';
+        this.pendingChanges = false;
+        // Reset the storeReady promise for next use
+        this.storeReady = new Promise((resolve) => {
+            this.resolveStoreReady = resolve;
+        });
+    }
+    public markReady() {
+        this.resolveStoreReady?.();
+    }
 }
+export let store: EntryEditStore = new EntryEditStore();
 
 @customElement('entry-edit-route')
 export class EntryEditRoute extends MobxLitElement {
-    store = new EntryEditStore();
     originalEntry!: Partial<Entry>;
     startEditTime = 0;
     async onAfterEnter(location: RouterLocation) {
+        //If the store was already used for another entry, reset it ASAP
+        if (store?.id != location.params.id) store.reset();
         window.scrollTo({ top: 0 });
         this.startEditTime = new Date().getTime();
         try {
             this.originalEntry = (await entries.getEntry(
                 location.params.id as string
             )) as Entry;
-        } catch (e) {
+        } catch {}
+        if (!this.originalEntry) {
             this.originalEntry = {
                 activities: {},
                 date: format(new Date(), 'yyyy-MM-dd'),
                 mood: '0',
                 note: '',
                 editLog: [],
+                id: 'new',
             };
         }
-
-        const draft = localStorage.getItem(
-            `entry-edit-draft-${this.originalEntry.date}`
-        );
-        if (draft) {
-            Sheet.open({
-                type: DraftPreviewSheet,
-                data: JSON.parse(draft),
-                onClose: (acceptDraft: boolean) => {
-                    if (acceptDraft) {
-                        this.store.setEntry(JSON.parse(draft), true);
-                    } else {
-                        localStorage.removeItem(
-                            `entry-edit-draft-${this.originalEntry?.date}`
-                        );
-                        this.store.setEntry(this.originalEntry as Entry);
-                    }
-                },
-            });
+        if (
+            store?.id != location.params.id &&
+            'undefined' != location.params.id
+        ) {
+            const draft = localStorage.getItem(
+                `entry-edit-draft-${this.originalEntry.date}`
+            );
+            if (draft) {
+                Sheet.open({
+                    type: DraftPreviewSheet,
+                    data: JSON.parse(draft),
+                    onClose: (acceptDraft: boolean) => {
+                        if (acceptDraft) {
+                            store.setEntry(JSON.parse(draft), true);
+                        } else {
+                            localStorage.removeItem(
+                                `entry-edit-draft-${this.originalEntry?.date}`
+                            );
+                            store.setEntry(this.originalEntry as Entry);
+                        }
+                        store.markReady();
+                    },
+                    ignoreHistory: true,
+                });
+            } else {
+                store.setEntry(this.originalEntry as Entry);
+                store.markReady();
+            }
         } else {
-            this.store.setEntry(this.originalEntry as Entry);
+            store.setEntry(this.originalEntry as Entry);
+            store.markReady();
         }
     }
-
-    onBeforeLeave(_location: any, commands: any, _router: any) {
+    onBeforeLeave(location: any, commands: any, _router: any) {
         if (
+            location.routes[0].component !== 'entry-edit-route' &&
             !Sheet.isShown &&
-            this.store.pendingChanges &&
+            store.pendingChanges &&
             !confirm('Lose unsaved changes?')
         ) {
             return commands.prevent();
         } else if (!Sheet.isShown) {
-            localStorage.removeItem(`entry-edit-draft-${this.store.date}`);
-            QuickSet2.close();
+            localStorage.removeItem(`entry-edit-draft-${store.date}`);
         }
     }
     onClick(e: CustomEvent) {
         const { id } = e.detail;
         if (navigator.vibrate) navigator?.vibrate(50);
-        if (
-            Array.isArray(this.store.getActivityDetail(id)) ||
-            QuickSet2.latestValue?.activityId !== id
-        )
-            QuickSet2.open(this.store, id);
+        if (Array.isArray(store.getActivityDetail(id)))
+            this.editActivityDetail(id);
         else {
-            this.store.addToNumericActivityDetail(id, 1);
-            QuickSet2.open(this.store, id);
+            store.addToNumericActivityDetail(id, 1);
         }
     }
     onLongClick(id: string) {
-        QuickSet2.close();
         if (navigator.vibrate) navigator?.vibrate(100);
         this.editActivityDetail(id);
     }
     editActivityDetail(id: string) {
-        Sheet.open({
-            type: ActivityDetailEditSheet,
-            data: { id, store: this.store },
+        betterGo('activity-detail-edit', {
+            pathParams: { id: this.originalEntry.id as string, activityId: id },
         });
     }
     deleteEntry(): void {
@@ -212,37 +242,37 @@ export class EntryEditRoute extends MobxLitElement {
     }
     render() {
         return html`
+            <slot></slot>
             <section class="entry-editor-buttons">
                 <article
                     class="note-preview"
                     @click=${() =>
                         Sheet.open({
                             type: TextSheet,
-                            data: this.store.note,
-                            onClose: (data) => this.store.setNote(data),
+                            data: store.note,
+                            onClose: (data) => store.setNote(data),
                         })}
                 >
-                    <span>${this.store.note || 'Notes about your day?'}</span>
+                    <span>${store.note || 'Notes about your day?'}</span>
                     <jot-icon class="note-icon" name="FileText"></jot-icon>
                 </article>
                 <div class="right-column">
                     <input
                         type="date"
                         class="inline date-control"
-                        @change=${(e: any) =>
-                            this.store.setDate(e.target.value)}
-                        .value=${this.store.date}
+                        @change=${(e: any) => store.setDate(e.target.value)}
+                        .value=${store.date}
                         name=""
                     />
                     <span class="icons">
                         <mood-component
                             class="entry-header-emoji"
-                            .mood=${moods.getMood(this.store.mood)}
+                            .mood=${moods.getMood(store.mood)}
                             @click=${() =>
                                 Sheet.open({
                                     type: MoodsSheet,
-                                    data: this.store.mood || 0,
-                                    onClose: (data) => this.store.setMood(data),
+                                    data: store.mood || 0,
+                                    onClose: (data) => store.setMood(data),
                                 })}
                         >
                         </mood-component>
@@ -253,15 +283,15 @@ export class EntryEditRoute extends MobxLitElement {
                             Sheet.open({
                                 type: MapSheet,
                                 data: {
-                                    ...this.store.location.coords,
+                                    ...store.location.coords,
                                     updatable: true,
                                 },
                                 onClose: (data) => {
-                                    this.store.setLocation(data);
+                                    store.setLocation(data);
                                 },
                             })}
                             ><jot-icon
-                                .name=\${this.store.location.coords?.lat
+                                .name=\${store.location.coords?.lat
                             ? 'MapPin'
                             : 'MapPinOff'}
                             ></jot-icon>
@@ -272,11 +302,11 @@ export class EntryEditRoute extends MobxLitElement {
             <activity-grid
                 @activityClick=${this.onClick}
                 @activityLongClick=${(e: any) => this.onLongClick(e.detail.id)}
-                .selectedActivityInfo=${this.store.activities}
+                .selectedActivityInfo=${store.activities}
                 .showFilterUnused=${true}
             ></activity-grid>
             <div class="sticky-buttons">
-                ${this.originalEntry?.id
+                ${this.originalEntry?.id && this.originalEntry.id !== 'new'
                     ? html`<button
                           class="inline secondary"
                           @click=${this.deleteEntry}
@@ -357,18 +387,18 @@ export class EntryEditRoute extends MobxLitElement {
             ...(this.originalEntry?.editLog || []),
             { date: now, duration: timeSpentEditing, tool: EditTools.JOT },
         ];
-        this.store.unmarkPendingChanges();
+        store.unmarkPendingChanges();
         entries.upsertEntry({
             ...this.originalEntry,
-            activities: toJS(this.store.activities),
-            note: this.store.note,
-            mood: this.store.mood,
-            date: this.store.date,
-            // location: toJS(this.store.location.coords),
+            activities: toJS(store.activities),
+            note: store.note,
+            mood: store.mood,
+            date: store.date,
+            // location: toJS(store.location.coords),
             editLog,
         });
         go('entries', {
-            queryParams: DateHelpers.getDateStringParts(this.store.date),
+            queryParams: DateHelpers.getDateStringParts(store.date),
         });
     }
 }

@@ -1,15 +1,24 @@
-import { html, nothing } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
+import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { RouterLocation } from '@vaadin/router';
-import { ActivityDetailEditSheet } from '../components/action-sheets/activity-detail-edit.sheet.ts';
 import { ActivityDetail } from '../interfaces/entry.interface.ts';
+import { StatsDetailEntry } from '../interfaces/stats.interface.ts';
+import { activities } from '../stores/activities.store';
 import { AbstractSheetRoute } from './AbstractSheetRoute.ts';
 import { store } from './entry-edit.route.ts';
 
 @customElement('activity-edit-detail-route')
 export class ActivityDetailEditRoute extends AbstractSheetRoute {
-    activityId?: string;
+    activityId!: string;
     @state() activityDetail?: ActivityDetail;
+    inputRef: Ref<HTMLElement> = createRef();
+    @state()
+    workingDetail?: ActivityDetail;
+    @state()
+    newItem: string = '';
+    @state()
+    currentlySelectedIndex?: number = undefined;
     isLoaded = false;
 
     async onAfterEnter(location: RouterLocation) {
@@ -18,11 +27,25 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         // Wait for store to be fully initialized (including draft decision if applicable)
         await store?.storeReady;
         this.activityDetail = store?.getActivityDetail(this.activityId);
+        // initialize workingDetail from loaded detail
+        if (!Array.isArray(this.activityDetail)) {
+            if (this.activityDetail && this.activityDetail !== 1) {
+                this.workingDetail = [`${this.activityDetail}`];
+            } else {
+                this.workingDetail = [];
+            }
+        } else {
+            this.workingDetail = [...this.activityDetail];
+        }
         this.isLoaded = true;
+        setTimeout(() => this.inputRef?.value?.focus(), 1);
+    }
+    async onBeforeLeave(_location: any, _commands: any, _router: any) {
+        super.onBeforeLeave(_location, _commands, _router);
+        this.handleActivityDetailUpdate(this.workingDetail);
     }
 
-    private handleActivityDetailUpdate(updatedDetail: ActivityDetail) {
-        console.log(this.activityId, updatedDetail);
+    private handleActivityDetailUpdate(updatedDetail?: ActivityDetail) {
         if (!this.activityId) return;
         if (
             updatedDetail === undefined ||
@@ -35,17 +58,201 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         }
     }
 
-    renderSheetContent() {
-        return this.isLoaded
-            ? html`${ActivityDetailEditSheet.getActionSheet(
-                  {
-                      id: this.activityId,
-                      detail: this.activityDetail,
-                      close: () => this.closePage(),
-                  },
-                  (updatedDetail: ActivityDetail) =>
-                      this.handleActivityDetailUpdate(updatedDetail)
-              )}`
-            : html`${nothing}`;
+    add(amount: number) {
+        const current =
+            typeof this.workingDetail === 'number' ? this.workingDetail : 0;
+        this.workingDetail = current + amount;
     }
+
+    clear() {
+        this.workingDetail = undefined;
+        this.closePage();
+    }
+
+    addItemOrSubmit(e: any) {
+        e.preventDefault();
+        if (this.newItem !== '') {
+            const items = Array.isArray(this.workingDetail)
+                ? this.workingDetail
+                : [];
+            this.workingDetail = [...items, this.newItem];
+            this.newItem = '';
+        } else {
+            this.closePage();
+        }
+    }
+
+    renderSheetContent() {
+        if (!this.isLoaded) return html`${nothing}`;
+
+        const detail = this.workingDetail || [];
+
+        const lowerCaseDetails = (Array.isArray(detail) ? detail : []).map(
+            (str) => str.toLowerCase()
+        );
+        const filter = (d: StatsDetailEntry) =>
+            !lowerCaseDetails.includes(d.text.toLowerCase()) &&
+            d.text.toLowerCase().includes(this.newItem.toLowerCase());
+
+        return html`
+            <header class="header-with-buttons">
+                <activity-component
+                    .detail=${Array.isArray(detail) ? undefined : detail}
+                    .showName=${true}
+                    .activity=${activities.getActivity(this.activityId)}
+                ></activity-component>
+                <div>
+                    <button
+                        class="inline contrast"
+                        @click=${() => {
+                            if (
+                                (Array.isArray(this.workingDetail) &&
+                                    !this.workingDetail.length) ||
+                                confirm('Continuing will clear existing detail')
+                            ) {
+                                this.workingDetail = [];
+                                this.closePage();
+                            }
+                        }}
+                    >
+                        ${'use number'}
+                    </button>
+                    <button
+                        class="inline secondary"
+                        @click=${() => this.clear()}
+                    >
+                        clear
+                    </button>
+                </div>
+            </header>
+            <h2>Details</h2>
+            <div class="activity-details">
+                ${(Array.isArray(detail) ? detail : []).map(
+                    (item, index) => html`
+                        ${this.currentlySelectedIndex !== index
+                            ? html`<activity-detail
+                                  @click=${() =>
+                                      (this.currentlySelectedIndex = index)}
+                                  >${item}</activity-detail
+                              >`
+                            : html`<textarea
+                                      type="textarea"
+                                      .value=${Array.isArray(detail)
+                                          ? detail[index]
+                                          : ''}
+                                  ></textarea>
+                                  <button
+                                      @click=${() => {
+                                          const inputEl =
+                                              this.renderRoot.querySelector(
+                                                  'textarea'
+                                              ) as HTMLTextAreaElement;
+                                          if (!inputEl) return;
+                                          const newValue = inputEl.value.trim();
+                                          if (newValue === '') return;
+                                          if (
+                                              Array.isArray(this.workingDetail)
+                                          ) {
+                                              this.workingDetail = [
+                                                  ...this.workingDetail.slice(
+                                                      0,
+                                                      index
+                                                  ),
+                                                  newValue,
+                                                  ...this.workingDetail.slice(
+                                                      index + 1
+                                                  ),
+                                              ];
+                                          }
+                                          this.currentlySelectedIndex =
+                                              undefined;
+                                      }}
+                                  >
+                                      ✅
+                                  </button>
+                                  <button
+                                      @click=${() => {
+                                          if (
+                                              Array.isArray(this.workingDetail)
+                                          ) {
+                                              this.workingDetail = [
+                                                  ...this.workingDetail.slice(
+                                                      0,
+                                                      this
+                                                          .currentlySelectedIndex as number
+                                                  ),
+                                                  ...this.workingDetail.slice(
+                                                      (this
+                                                          .currentlySelectedIndex as number) +
+                                                          1
+                                                  ),
+                                              ];
+                                          }
+                                          this.currentlySelectedIndex =
+                                              undefined;
+                                      }}
+                                  >
+                                      ❌
+                                  </button>`}
+                    `
+                )}
+            </div>
+            <hr />
+            <div>
+                <form @submit=${this.addItemOrSubmit.bind(this)}>
+                    <input
+                        class="width-64 inline"
+                        ref="inputBox"
+                        ${ref(this.inputRef)}
+                        type="text"
+                        .value=${this.newItem}
+                        @input=${(e: any) => (this.newItem = e.target.value)}
+                        placeholder="add item"
+                    />
+                    ${this.newItem
+                        ? html`<button
+                              class="inline"
+                              @click=${this.addItemOrSubmit.bind(this)}
+                          >
+                              <jot-icon name="Play"></jot-icon>
+                          </button>`
+                        : nothing}
+                </form>
+            </div>
+            <activity-detail-stats
+                @activityDetailClick=${(e: any) => {
+                    const items = Array.isArray(this.workingDetail)
+                        ? this.workingDetail
+                        : [];
+                    if (!items.includes(e.detail.text)) {
+                        this.workingDetail = [...items, e.detail.text];
+                    }
+                    this.newItem = '';
+                }}
+                .activityId=${this.activityId}
+                .filter=${filter}
+            ></activity-detail-stats>
+        `;
+    }
+
+    static styles = [
+        ...AbstractSheetRoute.styles,
+        css`
+            .header-with-buttons {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                min-height: auto;
+            }
+
+            .activity-details {
+                display: flex;
+                flex-wrap: wrap;
+            }
+            form {
+                display: flex;
+                gap: 4px;
+            }
+        `,
+    ];
 }

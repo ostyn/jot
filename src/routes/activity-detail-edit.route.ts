@@ -11,6 +11,7 @@ import { store } from './entry-edit.route.ts';
 
 @customElement('activity-edit-detail-route')
 export class ActivityDetailEditRoute extends AbstractSheetRoute {
+    @state()
     editorType: DetailType = 'array';
     activityId!: string;
     @state() activityDetail?: ActivityDetail;
@@ -103,26 +104,75 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         return html`
             <header class="header-with-buttons">
                 <activity-component
-                    .detail=${Array.isArray(detail) ? undefined : detail}
+                    .detail=${this.editorType === 'number' ? detail : undefined}
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
                 <div>
-                    <button
-                        class="inline contrast"
-                        @click=${() => {
-                            if (
-                                (Array.isArray(this.workingDetail) &&
-                                    !this.workingDetail.length) ||
-                                confirm('Continuing will clear existing detail')
-                            ) {
-                                this.workingDetail = [];
-                                this.closePage();
-                            }
-                        }}
-                    >
-                        ${'use number'}
-                    </button>
+                    ${JSON.stringify(this.activityDetail) !==
+                    JSON.stringify(this.workingDetail)
+                        ? html`<button
+                              class="inline"
+                              @click=${() => {
+                                  this.workingDetail = this.activityDetail;
+                                  this.closePage();
+                              }}
+                          >
+                              revert
+                          </button>`
+                        : nothing}
+                    ${this.editorType !== 'number'
+                        ? html`<button
+                              class="inline contrast"
+                              @click=${() => {
+                                  if (
+                                      confirm(
+                                          'Continuing will clear existing detail'
+                                      )
+                                  ) {
+                                      this.workingDetail = undefined;
+                                      this.editorType = 'number';
+                                  }
+                              }}
+                          >
+                              ${'use number'}
+                          </button>`
+                        : nothing}
+                    ${this.editorType !== 'string'
+                        ? html`<button
+                              class="inline contrast"
+                              @click=${() => {
+                                  if (
+                                      confirm(
+                                          'Continuing will clear existing detail'
+                                      )
+                                  ) {
+                                      this.workingDetail = undefined;
+                                      this.editorType = 'string';
+                                  }
+                              }}
+                          >
+                              ${'use string'}
+                          </button>`
+                        : nothing}
+                    ${this.editorType !== 'array'
+                        ? html`<button
+                              class="inline contrast"
+                              @click=${() => {
+                                  if (
+                                      confirm(
+                                          'Continuing will clear existing detail'
+                                      )
+                                  ) {
+                                      this.workingDetail = undefined;
+                                      this.editorType = 'array';
+                                  }
+                              }}
+                          >
+                              ${'use array'}
+                          </button>`
+                        : nothing}
+
                     <button
                         class="inline secondary"
                         @click=${() => this.clear()}
@@ -132,112 +182,175 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                 </div>
             </header>
             <h2>Details</h2>
-            <div class="activity-details">
-                ${(Array.isArray(detail) ? detail : []).map(
-                    (item, index) => html`
-                        ${this.currentlySelectedIndex !== index
-                            ? html`<activity-detail
-                                  @click=${() =>
-                                      (this.currentlySelectedIndex = index)}
-                                  >${item}</activity-detail
-                              >`
-                            : html`<textarea
-                                      type="textarea"
-                                      .value=${Array.isArray(detail)
-                                          ? detail[index]
-                                          : ''}
-                                  ></textarea>
-                                  <button
-                                      @click=${() => {
-                                          const inputEl =
-                                              this.renderRoot.querySelector(
-                                                  'textarea'
-                                              ) as HTMLTextAreaElement;
-                                          if (!inputEl) return;
-                                          const newValue = inputEl.value.trim();
-                                          if (newValue === '') return;
-                                          if (
-                                              Array.isArray(this.workingDetail)
-                                          ) {
-                                              this.workingDetail = [
-                                                  ...this.workingDetail.slice(
-                                                      0,
-                                                      index
-                                                  ),
-                                                  newValue,
-                                                  ...this.workingDetail.slice(
-                                                      index + 1
-                                                  ),
-                                              ];
-                                          }
-                                          this.currentlySelectedIndex =
-                                              undefined;
-                                      }}
-                                  >
-                                      ✅
-                                  </button>
-                                  <button
-                                      @click=${() => {
-                                          if (
-                                              Array.isArray(this.workingDetail)
-                                          ) {
-                                              this.workingDetail = [
-                                                  ...this.workingDetail.slice(
-                                                      0,
-                                                      this
-                                                          .currentlySelectedIndex as number
-                                                  ),
-                                                  ...this.workingDetail.slice(
-                                                      (this
-                                                          .currentlySelectedIndex as number) +
-                                                          1
-                                                  ),
-                                              ];
-                                          }
-                                          this.currentlySelectedIndex =
-                                              undefined;
-                                      }}
-                                  >
-                                      ❌
-                                  </button>`}
-                    `
-                )}
-            </div>
-            <hr />
-            <div>
-                <form @submit=${this.addItemOrSubmit.bind(this)}>
-                    <input
-                        class="width-64 inline"
-                        ref="inputBox"
-                        ${ref(this.inputRef)}
-                        type="text"
-                        .value=${this.newItem}
-                        @input=${(e: any) => (this.newItem = e.target.value)}
-                        placeholder="add item"
-                    />
-                    ${this.newItem
-                        ? html`<button
-                              class="inline"
-                              @click=${this.addItemOrSubmit.bind(this)}
+            ${this.editorType === 'number'
+                ? html`<div class="number-editor">
+                      <span class="positive-buttons">
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(1)}
                           >
-                              <jot-icon name="Play"></jot-icon>
-                          </button>`
-                        : nothing}
-                </form>
-            </div>
-            <activity-detail-stats
-                @activityDetailClick=${(e: any) => {
-                    const items = Array.isArray(this.workingDetail)
-                        ? this.workingDetail
-                        : [];
-                    if (!items.includes(e.detail.text)) {
-                        this.workingDetail = [...items, e.detail.text];
-                    }
-                    this.newItem = '';
-                }}
-                .activityId=${this.activityId}
-                .filter=${filter}
-            ></activity-detail-stats>
+                              +1
+                          </span>
+
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(0.25)}
+                          >
+                              +¼
+                          </span>
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(10)}
+                          >
+                              +10
+                          </span>
+                      </span>
+                      <span class="negative-buttons">
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(-1)}
+                          >
+                              -1
+                          </span>
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(-0.25)}
+                          >
+                              -¼
+                          </span>
+
+                          <span
+                              class="amount-button"
+                              @click=${() => this.add(-10)}
+                          >
+                              -10
+                          </span>
+                      </span>
+                  </div>`
+                : nothing}
+            ${this.editorType === 'array' || this.editorType === 'string'
+                ? html`
+                      <div class="activity-details">
+                          ${(Array.isArray(detail) ? detail : []).map(
+                              (item, index) => html`
+                                  ${this.currentlySelectedIndex !== index
+                                      ? html`<activity-detail
+                                            @click=${() =>
+                                                (this.currentlySelectedIndex =
+                                                    index)}
+                                            >${item}</activity-detail
+                                        >`
+                                      : html`<textarea
+                                                type="textarea"
+                                                .value=${Array.isArray(detail)
+                                                    ? detail[index]
+                                                    : ''}
+                                            ></textarea>
+                                            <button
+                                                @click=${() => {
+                                                    const inputEl =
+                                                        this.renderRoot.querySelector(
+                                                            'textarea'
+                                                        ) as HTMLTextAreaElement;
+                                                    if (!inputEl) return;
+                                                    const newValue =
+                                                        inputEl.value.trim();
+                                                    if (newValue === '') return;
+                                                    if (
+                                                        Array.isArray(
+                                                            this.workingDetail
+                                                        )
+                                                    ) {
+                                                        this.workingDetail = [
+                                                            ...this.workingDetail.slice(
+                                                                0,
+                                                                index
+                                                            ),
+                                                            newValue,
+                                                            ...this.workingDetail.slice(
+                                                                index + 1
+                                                            ),
+                                                        ];
+                                                    }
+                                                    this.currentlySelectedIndex =
+                                                        undefined;
+                                                }}
+                                            >
+                                                ✅
+                                            </button>
+                                            <button
+                                                @click=${() => {
+                                                    if (
+                                                        Array.isArray(
+                                                            this.workingDetail
+                                                        )
+                                                    ) {
+                                                        this.workingDetail = [
+                                                            ...this.workingDetail.slice(
+                                                                0,
+                                                                this
+                                                                    .currentlySelectedIndex as number
+                                                            ),
+                                                            ...this.workingDetail.slice(
+                                                                (this
+                                                                    .currentlySelectedIndex as number) +
+                                                                    1
+                                                            ),
+                                                        ];
+                                                    }
+                                                    this.currentlySelectedIndex =
+                                                        undefined;
+                                                }}
+                                            >
+                                                ❌
+                                            </button>`}
+                              `
+                          )}
+                      </div>
+
+                      <hr />
+                      <div>
+                          <form @submit=${this.addItemOrSubmit.bind(this)}>
+                              <input
+                                  class="width-64 inline"
+                                  ref="inputBox"
+                                  ${ref(this.inputRef)}
+                                  type="text"
+                                  .value=${this.newItem}
+                                  @input=${(e: any) =>
+                                      (this.newItem = e.target.value)}
+                                  placeholder="add item"
+                              />
+                              ${this.newItem
+                                  ? html`<button
+                                        class="inline"
+                                        @click=${this.addItemOrSubmit.bind(
+                                            this
+                                        )}
+                                    >
+                                        <jot-icon name="Play"></jot-icon>
+                                    </button>`
+                                  : nothing}
+                          </form>
+                      </div>
+                      <activity-detail-stats
+                          @activityDetailClick=${(e: any) => {
+                              const items = Array.isArray(this.workingDetail)
+                                  ? this.workingDetail
+                                  : [];
+                              if (!items.includes(e.detail.text)) {
+                                  this.workingDetail = [
+                                      ...items,
+                                      e.detail.text,
+                                  ];
+                              }
+                              this.newItem = '';
+                          }}
+                          .activityId=${this.activityId}
+                          .filter=${filter}
+                      ></activity-detail-stats>
+                  `
+                : nothing}
         `;
     }
 
@@ -258,6 +371,30 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
             form {
                 display: flex;
                 gap: 4px;
+            }
+            .amount-button {
+                width: 24px;
+                user-select: none;
+                cursor: pointer;
+                font-size: 16px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .negative-buttons {
+                grid-area: negative-buttons;
+                justify-content: center;
+                display: flex;
+                width: 100%;
+                gap: 32px;
+            }
+            .positive-buttons {
+                grid-area: positive-buttons;
+                justify-content: center;
+                display: flex;
+                width: 100%;
+                gap: 32px;
             }
         `,
     ];

@@ -1,4 +1,5 @@
 import { LitElement } from 'lit';
+import { ActivityDetail } from '../interfaces/entry.interface';
 
 export class Helpers {
     public static isNumeric(str: any): boolean {
@@ -10,6 +11,14 @@ export class Helpers {
         ); // ...and ensure strings of whitespace fail
     }
 }
+export type DetailType = 'array' | 'string' | 'number' | 'undefined';
+export const getDetailType = (detail?: ActivityDetail): DetailType => {
+    if (detail === undefined || detail === null) return 'undefined';
+    if (typeof detail === 'string') return 'string';
+    if (Array.isArray(detail)) return 'array';
+    if (Helpers.isNumeric(detail)) return 'number';
+    return 'string';
+};
 
 export const setDarkModeFromState = (isDark: boolean) => {
     document.documentElement.setAttribute(

@@ -14,7 +14,7 @@ export type Entry_v3 = Omit<Entry, 'editLog'> & {
     createdBy?: EditTools;
     lastUpdatedBy?: EditTools;
 };
-export type ActivityDetail = number | string[];
+export type ActivityDetail = number | string[] | string; //string is legacy probably easier to remove and clean data
 export enum EditTools {
     'WEB' = 'WEB',
     'JOT' = 'JOT',

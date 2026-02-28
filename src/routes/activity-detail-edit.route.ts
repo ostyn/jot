@@ -5,11 +5,13 @@ import { RouterLocation } from '@vaadin/router';
 import { ActivityDetail } from '../interfaces/entry.interface.ts';
 import { StatsDetailEntry } from '../interfaces/stats.interface.ts';
 import { activities } from '../stores/activities.store';
+import { DetailType, getDetailType } from '../utils/Helpers.ts';
 import { AbstractSheetRoute } from './AbstractSheetRoute.ts';
 import { store } from './entry-edit.route.ts';
 
 @customElement('activity-edit-detail-route')
 export class ActivityDetailEditRoute extends AbstractSheetRoute {
+    editorType: DetailType = 'array';
     activityId!: string;
     @state() activityDetail?: ActivityDetail;
     inputRef: Ref<HTMLElement> = createRef();
@@ -27,15 +29,19 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         // Wait for store to be fully initialized (including draft decision if applicable)
         await store?.storeReady;
         this.activityDetail = store?.getActivityDetail(this.activityId);
+        const detailType = getDetailType(this.activityDetail);
+        this.editorType = detailType;
         // initialize workingDetail from loaded detail
-        if (!Array.isArray(this.activityDetail)) {
-            if (this.activityDetail && this.activityDetail !== 1) {
-                this.workingDetail = [`${this.activityDetail}`];
-            } else {
-                this.workingDetail = [];
-            }
-        } else {
-            this.workingDetail = [...this.activityDetail];
+        if (detailType === 'array') {
+            this.workingDetail = [...(this.activityDetail as string[])];
+        } else if (detailType === 'number') {
+            this.workingDetail = this.activityDetail;
+        } else if (detailType === 'string') {
+            //handling odd strings
+            this.workingDetail = [this.activityDetail as string];
+        } else if (detailType === 'undefined') {
+            this.editorType = 'array';
+            this.workingDetail = [];
         }
         this.isLoaded = true;
         setTimeout(() => this.inputRef?.value?.focus(), 1);

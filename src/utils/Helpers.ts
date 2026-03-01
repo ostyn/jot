@@ -11,7 +11,12 @@ export class Helpers {
         ); // ...and ensure strings of whitespace fail
     }
 }
-export type DetailType = 'array' | 'string' | 'number' | 'undefined';
+export type DetailType =
+    | 'array'
+    | 'string'
+    | 'number'
+    | 'locations'
+    | 'undefined';
 export const getDetailType = (detail?: ActivityDetail): DetailType => {
     if (detail === undefined || detail === null) return 'undefined';
     if (typeof detail === 'string') return 'string';

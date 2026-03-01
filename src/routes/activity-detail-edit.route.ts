@@ -32,13 +32,15 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         this.activityDetail = store?.getActivityDetail(this.activityId);
         const detailType = getDetailType(this.activityDetail);
         this.editorType = detailType;
+
         // initialize workingDetail from loaded detail
         if (detailType === 'array') {
             this.workingDetail = [...(this.activityDetail as string[])];
         } else if (detailType === 'number') {
             this.workingDetail = this.activityDetail;
         } else if (detailType === 'string') {
-            //handling odd strings
+            // Normalize string to single-element array
+            this.editorType = 'array';
             this.workingDetail = [this.activityDetail as string];
         } else if (detailType === 'undefined') {
             this.editorType = 'array';
@@ -67,7 +69,10 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
 
     add(amount: number) {
         const current =
-            typeof this.workingDetail === 'number' ? this.workingDetail : 0;
+            this.editorType === 'number' &&
+            typeof this.workingDetail === 'number'
+                ? this.workingDetail
+                : 0;
         this.workingDetail = current + amount;
     }
 
@@ -104,7 +109,9 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         return html`
             <header class="header-with-buttons">
                 <activity-component
-                    .detail=${this.editorType === 'number' ? detail : undefined}
+                    .detail=${this.editorType === 'number'
+                        ? this.workingDetail
+                        : undefined}
                     .showName=${true}
                     .activity=${activities.getActivity(this.activityId)}
                 ></activity-component>
@@ -141,8 +148,8 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                         }}
                     >
                         <option value="number">number</option>
-                        <option value="string">string</option>
                         <option value="array">array</option>
+                        <option value="locations">locations</option>
                     </select>
 
                     <button
@@ -200,7 +207,7 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                       </span>
                   </div>`
                 : nothing}
-            ${this.editorType === 'array' || this.editorType === 'string'
+            ${this.editorType === 'array' || this.editorType === 'locations'
                 ? html`
                       <div class="activity-details">
                           ${(Array.isArray(detail) ? detail : []).map(
@@ -212,7 +219,7 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                                                     (this.currentlySelectedIndex =
                                                         index)}
                                                 class="chip"
-                                            >${item}</activity-detail
+                                                >${item}</activity-detail
                                             >
                                             <button
                                                 class="chip-delete"

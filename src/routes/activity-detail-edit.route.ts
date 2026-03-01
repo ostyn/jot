@@ -121,57 +121,29 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                               revert
                           </button>`
                         : nothing}
-                    ${this.editorType !== 'number'
-                        ? html`<button
-                              class="inline contrast"
-                              @click=${() => {
-                                  if (
-                                      confirm(
-                                          'Continuing will clear existing detail'
-                                      )
-                                  ) {
-                                      this.workingDetail = undefined;
-                                      this.editorType = 'number';
-                                  }
-                              }}
-                          >
-                              ${'use number'}
-                          </button>`
-                        : nothing}
-                    ${this.editorType !== 'string'
-                        ? html`<button
-                              class="inline contrast"
-                              @click=${() => {
-                                  if (
-                                      confirm(
-                                          'Continuing will clear existing detail'
-                                      )
-                                  ) {
-                                      this.workingDetail = undefined;
-                                      this.editorType = 'string';
-                                  }
-                              }}
-                          >
-                              ${'use string'}
-                          </button>`
-                        : nothing}
-                    ${this.editorType !== 'array'
-                        ? html`<button
-                              class="inline contrast"
-                              @click=${() => {
-                                  if (
-                                      confirm(
-                                          'Continuing will clear existing detail'
-                                      )
-                                  ) {
-                                      this.workingDetail = undefined;
-                                      this.editorType = 'array';
-                                  }
-                              }}
-                          >
-                              ${'use array'}
-                          </button>`
-                        : nothing}
+                    <select
+                        class="inline"
+                        .value=${this.editorType}
+                        @change=${(e: any) => {
+                            const newType = e.target.value as DetailType;
+                            if (newType !== this.editorType) {
+                                if (
+                                    confirm(
+                                        'Continuing will clear existing detail'
+                                    )
+                                ) {
+                                    this.workingDetail = undefined;
+                                    this.editorType = newType;
+                                } else {
+                                    e.target.value = this.editorType;
+                                }
+                            }
+                        }}
+                    >
+                        <option value="number">number</option>
+                        <option value="string">string</option>
+                        <option value="array">array</option>
+                    </select>
 
                     <button
                         class="inline secondary"

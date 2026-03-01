@@ -206,12 +206,38 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                           ${(Array.isArray(detail) ? detail : []).map(
                               (item, index) => html`
                                   ${this.currentlySelectedIndex !== index
-                                      ? html`<activity-detail
-                                            @click=${() =>
-                                                (this.currentlySelectedIndex =
-                                                    index)}
+                                      ? html`<div class="chip-container">
+                                            <activity-detail
+                                                @click=${() =>
+                                                    (this.currentlySelectedIndex =
+                                                        index)}
+                                                class="chip"
                                             >${item}</activity-detail
-                                        >`
+                                            >
+                                            <button
+                                                class="chip-delete"
+                                                @click=${(e: any) => {
+                                                    e.stopPropagation();
+                                                    if (
+                                                        Array.isArray(
+                                                            this.workingDetail
+                                                        )
+                                                    ) {
+                                                        this.workingDetail = [
+                                                            ...this.workingDetail.slice(
+                                                                0,
+                                                                index
+                                                            ),
+                                                            ...this.workingDetail.slice(
+                                                                index + 1
+                                                            ),
+                                                        ];
+                                                    }
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>`
                                       : html`<textarea
                                                 type="textarea"
                                                 .value=${Array.isArray(detail)
@@ -339,7 +365,41 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
             .activity-details {
                 display: flex;
                 flex-wrap: wrap;
+                gap: 8px;
             }
+
+            .chip-container {
+                display: flex;
+                align-items: center;
+                gap: 0;
+                position: relative;
+            }
+
+            .chip {
+                cursor: pointer;
+                padding-right: 24px;
+            }
+
+            .chip-delete {
+                position: absolute;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                padding: 4px 8px;
+                cursor: pointer;
+                font-size: 18px;
+                line-height: 1;
+                color: inherit;
+                opacity: 0.6;
+                transition: opacity 0.2s;
+            }
+
+            .chip-delete:hover {
+                opacity: 1;
+            }
+
             form {
                 display: flex;
                 gap: 4px;

@@ -3,8 +3,11 @@ import { customElement, property } from 'lit/decorators.js';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
+import { Location } from '../interfaces/entry.interface';
 import { ActivityDetail } from '../interfaces/entry.interface';
 import { dispatchEvent, Events, Helpers } from '../utils/Helpers';
+import { Sheet } from './action-sheets/action-sheet';
+import { MapSheet } from './action-sheets/map.sheet';
 import './activity-detail.component';
 
 @customElement('activity-component')
@@ -71,6 +74,7 @@ export class ActivityComponent extends LitElement {
                       ${(this.detail as string[]).map(
                           (textItem) =>
                               html`<activity-detail
+                                  .detailValue=${textItem}
                                   @click=${(e: Event) => {
                                       dispatchEvent(
                                           this,
@@ -81,6 +85,17 @@ export class ActivityComponent extends LitElement {
                                               id: this.activity?.id,
                                           }
                                       );
+                                  }}
+                                  @location-pin-click=${(e: CustomEvent) => {
+                                      const location: Location = e.detail;
+                                      Sheet.open({
+                                          type: MapSheet,
+                                          data: {
+                                              lat: location.lat,
+                                              lng: location.lng,
+                                              updatable: false,
+                                          },
+                                      });
                                   }}
                                   >${textItem}</activity-detail
                               >`

@@ -1,13 +1,64 @@
-import { css, html, LitElement } from 'lit';
-import { customElement } from 'lit/decorators.js';
+import { css, html, LitElement, nothing } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
+import { Location } from '../interfaces/entry.interface';
+import { getLocationForDetailValue } from '../utils/ActivityDetailLocationHelpers';
 import './activity.component';
 
 @customElement('activity-detail')
 export class ActivityDetailComponent extends LitElement {
-    render() {
-        return html`<span class="activity-detail"><slot></slot></span>`;
+    @property()
+    public detailValue?: string | number;
+    @state()
+    private location?: Location;
+
+    async connectedCallback() {
+        super.connectedCallback();
+        if (this.detailValue) {
+            try {
+                this.location = await getLocationForDetailValue(
+                    this.detailValue
+                );
+            } catch (error) {
+                console.error(
+                    'Error loading location for detail:',
+                    this.detailValue,
+                    error
+                );
+            }
+        }
     }
+
+    private openLocationMap() {
+        if (!this.location) return;
+        // Dispatch event to parent to handle map opening
+        this.dispatchEvent(
+            new CustomEvent('location-pin-click', {
+                detail: this.location,
+                bubbles: true,
+                composed: true,
+            })
+        );
+    }
+
+    render() {
+        return html`<span class="activity-detail">
+            ${this.location
+                ? html`<button
+                      class="location-pin"
+                      title="Show location"
+                      @click=${(e: Event) => {
+                          e.stopPropagation();
+                          this.openLocationMap();
+                      }}
+                  >
+                      📍
+                  </button>`
+                : nothing}
+            <span class="detail-text"><slot></slot></span>
+        </span>`;
+    }
+
     static styles = [
         base,
         css`
@@ -26,6 +77,26 @@ export class ActivityDetailComponent extends LitElement {
                 white-space: pre-wrap;
                 align-items: center;
                 border-radius: 0.375rem;
+                gap: 4px;
+            }
+
+            .location-pin {
+                background: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                cursor: pointer;
+                font-size: 0.9em;
+                line-height: 1;
+                flex-shrink: 0;
+            }
+
+            .location-pin:hover {
+                opacity: 0.7;
+            }
+
+            .detail-text {
+                flex: 1;
             }
         `,
     ];

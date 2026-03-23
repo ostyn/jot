@@ -28,22 +28,23 @@ export class MapSheet extends LitElement {
     @property()
     public lon?: number;
     @property()
-    public updatable?: boolean = false;
+    public updatable?: boolean = true;
     hasDisconnected = false;
     map!: MapType;
     circle2!: Circle;
     circle3!: Circle;
     currentLocation1!: Circle;
     currentLocation2!: Circle;
+    locationName: any;
     static getActionSheet(
         data: any,
         submit: (data: any) => void
     ): TemplateResult {
         return html`<map-sheet
             @mapSheetDismissed=${(e: any) => submit(e.detail)}
-            lat=${data?.lat || nothing}
-            lon=${data?.lon || nothing}
-            updatable=${data?.updatable || nothing}
+            lat=${data?.lat}
+            lon=${data?.lng}
+            updatable=${data?.updatable}
         ></map-sheet>`;
     }
     protected firstUpdated(
@@ -51,7 +52,7 @@ export class MapSheet extends LitElement {
     ): void {
         if (!this.lat || !this.lon) {
             const latLng = locationService.getCachedLocation();
-            this.setupMap(latLng!.latitude, latLng!.longitude);
+            this.setupMap(latLng?.latitude || 0, latLng?.longitude || 0);
         } else {
             this.setupMap(this.lat, this.lon);
         }
@@ -147,6 +148,7 @@ export class MapSheet extends LitElement {
             dispatchEvent(this, Events.mapSheetDismissed, {
                 lat: this.lat,
                 lon: this.lon,
+                name: this.locationName,
             });
         }
     }
@@ -154,6 +156,13 @@ export class MapSheet extends LitElement {
         return html`
             ${this.updatable
                 ? html`<span class="buttons">
+                      <input
+                          class="inline"
+                          type="text"
+                          @change=${(e: any) => {
+                              this.locationName = e.target.value;
+                          }}
+                      />
                       <button
                           class="inline button"
                           @click=${() =>

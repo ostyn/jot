@@ -164,6 +164,7 @@ export class ActivityInfoSheet extends LitElement {
                                   ).map(
                                       (textItem) =>
                                           html`<activity-detail
+                                              .detailValue=${textItem}
                                               @click="${() =>
                                                   this.onActivityDetailClick(
                                                       this.activityId,
@@ -173,6 +174,9 @@ export class ActivityInfoSheet extends LitElement {
                                           >`
                                   )
                                 : html`<activity-detail
+                                      .detailValue=${value.activities[
+                                          this.activityId
+                                      ]}
                                       >${value.activities[
                                           this.activityId
                                       ]}</activity-detail

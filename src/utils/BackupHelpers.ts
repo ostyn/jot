@@ -1,6 +1,12 @@
 import { parseISO } from 'date-fns';
+import { activityDetailLocationMappingDao } from '../dao/ActivityDetailLocationMappingDao';
+import { locationDao } from '../dao/LocationDao';
 import { Activity } from '../interfaces/activity.interface';
-import { Entry } from '../interfaces/entry.interface';
+import {
+    ActivityDetailLocationMapping,
+    Entry,
+    Location,
+} from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
 import { Note } from '../interfaces/note.interface';
 import { db, versions } from '../services/Dexie';
@@ -14,14 +20,20 @@ export interface JsonExport {
     activities: Activity[];
     moods: Mood[];
     notes?: Note[];
+    locations?: Location[];
+    activityDetailLocationMappings?: ActivityDetailLocationMapping[];
     version: number;
 }
-export const createExportContents = (beautify = false) => {
+export const createExportContents = async (beautify = false) => {
+    const locations = await locationDao.getItems();
+    const mappings = await activityDetailLocationMappingDao.getItems();
     const fileContents: JsonExport = {
         entries: entries.all,
         activities: activities.all,
         moods: moods.userCreated,
         notes: notes.all,
+        locations,
+        activityDetailLocationMappings: mappings,
         version: db.verno,
     };
     return JSON.stringify(fileContents, undefined, beautify ? 2 : 0);

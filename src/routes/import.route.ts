@@ -1,8 +1,15 @@
 import { html, LitElement, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { base } from '../baseStyles';
+import { activityDetailLocationMappingDao } from '../dao/ActivityDetailLocationMappingDao';
+import { locationDao } from '../dao/LocationDao';
 import { Activity } from '../interfaces/activity.interface';
-import { EditTools, Entry } from '../interfaces/entry.interface';
+import {
+    ActivityDetailLocationMapping,
+    EditTools,
+    Entry,
+    Location,
+} from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
 import { Note } from '../interfaces/note.interface';
 import { activities } from '../stores/activities.store';
@@ -22,6 +29,10 @@ export class ImportRoute extends LitElement {
     @state()
     notes: Note[] = [];
     @state()
+    locations: Location[] = [];
+    @state()
+    activityDetailLocationMappings: ActivityDetailLocationMapping[] = [];
+    @state()
     isLoading = false;
     @state()
     importEntries = true;
@@ -31,6 +42,10 @@ export class ImportRoute extends LitElement {
     importActivities = true;
     @state()
     importNotes = true;
+    @state()
+    importLocations = true;
+    @state()
+    importMappings = true;
     @state()
     overwriteExistingData = true;
     handleFile() {
@@ -52,6 +67,9 @@ export class ImportRoute extends LitElement {
                     this.moods = data.moods;
                     this.activities = data.activities;
                     this.notes = data.notes || [];
+                    this.locations = data.locations || [];
+                    this.activityDetailLocationMappings =
+                        data.activityDetailLocationMappings || [];
                     this.isLoading = false;
                 }
             };
@@ -91,6 +109,27 @@ export class ImportRoute extends LitElement {
                     }
                     notes.bulkImport(this.notes, EditTools.JSON_IMPORT);
                 }
+                if (this.importLocations && this.locations.length) {
+                    if (this.overwriteExistingData) {
+                        locationDao.reset();
+                    }
+                    locationDao.saveItems(
+                        this.locations,
+                        EditTools.JSON_IMPORT
+                    );
+                }
+                if (
+                    this.importMappings &&
+                    this.activityDetailLocationMappings.length
+                ) {
+                    if (this.overwriteExistingData) {
+                        activityDetailLocationMappingDao.reset();
+                    }
+                    activityDetailLocationMappingDao.saveItems(
+                        this.activityDetailLocationMappings,
+                        EditTools.JSON_IMPORT
+                    );
+                }
                 this.isLoading = false;
             }, 1);
         }
@@ -105,7 +144,10 @@ export class ImportRoute extends LitElement {
                 accept=".json,.txt"
             />
 
-            ${this.entries.length || this.moods.length || this.activities.length
+            ${this.entries.length ||
+            this.moods.length ||
+            this.activities.length ||
+            this.locations.length
                 ? html` <p>
                       <label
                           ><input
@@ -139,6 +181,24 @@ export class ImportRoute extends LitElement {
                               @change=${() =>
                                   (this.importNotes = !this.importNotes)}
                           />Notes: ${this.notes.length}
+                      </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importLocations}
+                              @change=${() =>
+                                  (this.importLocations =
+                                      !this.importLocations)}
+                          />Locations: ${this.locations.length}
+                      </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importMappings}
+                              @change=${() =>
+                                  (this.importMappings = !this.importMappings)}
+                          />Location Mappings:
+                          ${this.activityDetailLocationMappings.length}
                       </label>
                       <hr />
                       <label

@@ -15,6 +15,26 @@ export type Entry_v3 = Omit<Entry, 'editLog'> & {
     lastUpdatedBy?: EditTools;
 };
 export type ActivityDetail = number | string[] | string; //string is legacy probably easier to remove and clean data
+
+// Location metadata (reusable across any activity detail)
+export type Location = {
+    id: string;
+    name?: string;
+    description?: string;
+    lat: number;
+    lng: number;
+    country?: string;
+    city?: string;
+};
+
+// Persistent mapping: activity detail value -> location
+// Allows retroactive and forward location associations for detail values
+export type ActivityDetailLocationMapping = {
+    id: string;
+    value: string | number; // The activity detail value being mapped
+    locationId: string; // References Location.id
+};
+
 export enum EditTools {
     'WEB' = 'WEB',
     'JOT' = 'JOT',

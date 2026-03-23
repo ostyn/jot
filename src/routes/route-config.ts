@@ -12,6 +12,7 @@ import './entry-edit.route';
 import './game.route';
 import './import-daylio.route';
 import './import.route';
+import './locations.route';
 import './mood-edit.route';
 import './moods.route';
 import './note-edit.route';
@@ -101,6 +102,12 @@ export const routes = [
         name: 'summary',
     },
 
+    {
+        path: '/locations',
+        component: 'locations-route',
+        name: 'locations',
+        options: { menuItem: true, iconName: 'MapPin' },
+    },
     {
         path: '/settings',
         component: 'settings-route',

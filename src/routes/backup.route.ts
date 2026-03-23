@@ -41,9 +41,10 @@ export class BackupRoute extends LitElement {
     };
     sync = async () => {
         this.isLoading = true;
+        const exportContents = await createExportContents();
         await this.gdrive.addFile(
             'Backup.json',
-            createExportContents(),
+            exportContents,
             `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}, Notes: ${notes.all.length}`
         );
         this.backups = await this.gdrive.listFolder();

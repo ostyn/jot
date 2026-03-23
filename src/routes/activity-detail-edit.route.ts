@@ -2,9 +2,12 @@ import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { createRef, Ref, ref } from 'lit/directives/ref.js';
 import { RouterLocation } from '@vaadin/router';
+import { Location } from '../interfaces/entry.interface';
 import { ActivityDetail } from '../interfaces/entry.interface.ts';
 import { StatsDetailEntry } from '../interfaces/stats.interface.ts';
+import { PhotonSearchResult, photonService } from '../services/photon.service';
 import { activities } from '../stores/activities.store';
+import { attachLocationToDetailValue } from '../utils/ActivityDetailLocationHelpers';
 import { DetailType, getDetailType } from '../utils/Helpers.ts';
 import { AbstractSheetRoute } from './AbstractSheetRoute.ts';
 import { store } from './entry-edit.route.ts';
@@ -22,6 +25,10 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
     newItem: string = '';
     @state()
     currentlySelectedIndex?: number = undefined;
+    @state()
+    locationSearchResults: PhotonSearchResult[] = [];
+    @state()
+    showLocationSearch = false;
     isLoaded = false;
 
     async onAfterEnter(location: RouterLocation) {
@@ -92,6 +99,35 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
         } else {
             this.closePage();
         }
+    }
+
+    async searchLocations(query: string) {
+        if (!query.trim()) {
+            this.locationSearchResults = [];
+            return;
+        }
+        const results = await photonService.search(query);
+        this.locationSearchResults = results;
+    }
+
+    async attachLocationToItem(
+        itemValue: string,
+        location: PhotonSearchResult
+    ) {
+        const locationObj: Location = {
+            id: crypto.randomUUID
+                ? crypto.randomUUID()
+                : Math.random().toString(),
+            name: location.name,
+            lat: location.lat,
+            lng: location.lng,
+            city: location.city,
+            country: location.country,
+        };
+        await attachLocationToDetailValue(itemValue, locationObj);
+        this.locationSearchResults = [];
+        this.showLocationSearch = false;
+        this.newItem = '';
     }
 
     renderSheetContent() {
@@ -322,11 +358,17 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                                   ${ref(this.inputRef)}
                                   type="text"
                                   .value=${this.newItem}
-                                  @input=${(e: any) =>
-                                      (this.newItem = e.target.value)}
-                                  placeholder="add item"
+                                  @input=${(e: any) => {
+                                      this.newItem = e.target.value;
+                                      if (this.editorType === 'locations') {
+                                          this.searchLocations(this.newItem);
+                                      }
+                                  }}
+                                  placeholder=${this.editorType === 'locations'
+                                      ? 'search location'
+                                      : 'add item'}
                               />
-                              ${this.newItem
+                              ${this.editorType !== 'locations' && this.newItem
                                   ? html`<button
                                         class="inline"
                                         @click=${this.addItemOrSubmit.bind(
@@ -337,6 +379,63 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                                     </button>`
                                   : nothing}
                           </form>
+                          ${this.editorType === 'locations' &&
+                          this.locationSearchResults.length > 0
+                              ? html`<div class="location-search-results">
+                                    ${this.locationSearchResults.map(
+                                        (result) => html`
+                                            <div class="location-result">
+                                                <div class="location-name">
+                                                    ${result.name}
+                                                </div>
+                                                ${result.city || result.country
+                                                    ? html`<div
+                                                          class="location-meta"
+                                                      >
+                                                          ${result.city}${result.city &&
+                                                          result.country
+                                                              ? ', '
+                                                              : ''}${result.country}
+                                                      </div>`
+                                                    : nothing}
+                                                <button
+                                                    class="location-select"
+                                                    @click=${async () => {
+                                                        const items = (
+                                                            Array.isArray(
+                                                                this
+                                                                    .workingDetail
+                                                            )
+                                                                ? this
+                                                                      .workingDetail
+                                                                : []
+                                                        ) as string[];
+                                                        const newItemName =
+                                                            result.name;
+                                                        if (
+                                                            !items.includes(
+                                                                newItemName
+                                                            )
+                                                        ) {
+                                                            this.workingDetail =
+                                                                [
+                                                                    ...items,
+                                                                    newItemName,
+                                                                ];
+                                                        }
+                                                        await this.attachLocationToItem(
+                                                            newItemName,
+                                                            result
+                                                        );
+                                                    }}
+                                                >
+                                                    Add with location
+                                                </button>
+                                            </div>
+                                        `
+                                    )}
+                                </div>`
+                              : nothing}
                       </div>
                       <activity-detail-stats
                           @activityDetailClick=${(e: any) => {
@@ -434,6 +533,41 @@ export class ActivityDetailEditRoute extends AbstractSheetRoute {
                 display: flex;
                 width: 100%;
                 gap: 32px;
+            }
+
+            .location-search-results {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 8px;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            .location-result {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px;
+                border: 1px solid var(--form-element-border-color);
+                border-radius: 4px;
+                background-color: var(--form-element-background-color);
+            }
+
+            .location-name {
+                font-weight: 500;
+                font-size: 14px;
+            }
+
+            .location-meta {
+                font-size: 12px;
+                opacity: 0.7;
+            }
+
+            .location-select {
+                font-size: 12px;
+                padding: 4px 8px;
+                margin-top: 4px;
             }
         `,
     ];

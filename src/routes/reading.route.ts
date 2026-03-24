@@ -21,6 +21,7 @@ export class ReadingRoute extends MobxLitElement {
     private deckIds: string[] = [];
 
     private previousActiveIds = new Set<string>();
+    private visibleItemId?: string;
 
     private gesture?: TinyGesture<HTMLElement>;
     private gestureHost?: HTMLElement;
@@ -42,6 +43,7 @@ export class ReadingRoute extends MobxLitElement {
     updated(): void {
         this.syncDeck();
         this.attachGesture();
+        void this.ensureVisibleItemMetadata();
     }
 
     private attachGesture() {
@@ -135,6 +137,13 @@ export class ReadingRoute extends MobxLitElement {
         const current = this.currentItem;
         if (!current) return;
         await reading.retryMetadata(current.id);
+    }
+
+    private async ensureVisibleItemMetadata() {
+        const current = this.currentItem;
+        if (!current || current.id === this.visibleItemId) return;
+        this.visibleItemId = current.id;
+        await reading.ensureMetadata(current.id);
     }
 
     render() {

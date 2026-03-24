@@ -17,6 +17,7 @@ class ReadingStore {
     all: ReadingItem[] = readingData;
 
     private enrichQueue = new Set<string>();
+    private autoRetryQueue = new Set<string>();
 
     constructor() {
         makeObservable(this);
@@ -146,6 +147,26 @@ class ReadingStore {
         });
         await this.refresh();
         await this.enrichItem(id);
+    }
+
+    @action.bound
+    async ensureMetadata(id: string) {
+        const current = this.all.find((item) => item.id === id);
+        if (!current) return;
+
+        if (current.fetchState === 'pending') {
+            await this.enrichItem(id);
+            return;
+        }
+
+        if (
+            current.fetchState === 'failed' &&
+            current.metadataSource === 'none' &&
+            !this.autoRetryQueue.has(id)
+        ) {
+            this.autoRetryQueue.add(id);
+            await this.retryMetadata(id);
+        }
     }
 
     async enrichItem(id: string) {

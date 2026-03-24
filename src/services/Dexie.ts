@@ -26,6 +26,13 @@ db.version(5).stores({
     entries: 'id, date',
     notes: 'id, date, path',
 });
+db.version(6).stores({
+    moods: 'id',
+    activities: 'id',
+    entries: 'id, date',
+    notes: 'id, date, path',
+    readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
+});
 export interface EntryVersion {
     version: number;
     description: string;

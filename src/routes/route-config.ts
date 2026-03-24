@@ -15,6 +15,7 @@ import './mood-edit.route';
 import './moods.route';
 import './note-edit.route';
 import './notes.route';
+import './reading.route';
 import './search.route';
 import './settings.route';
 import './summary.route';
@@ -60,6 +61,11 @@ export const routes = [
                 component: 'note-edit-route',
             },
         ],
+    },
+    {
+        path: '/reading',
+        component: 'reading-route',
+        name: 'reading',
     },
     {
         path: '/cycle',

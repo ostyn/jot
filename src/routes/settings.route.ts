@@ -107,6 +107,20 @@ export class SettingsRoute extends MobxLitElement {
                     </button>
                 </div>
             </section>
+            <section>
+                <h2>Tools</h2>
+                <div class="tool-grid">
+                    <button @click=${() => go('reading')}>
+                        <jot-icon name="BookOpen"></jot-icon>Reading Queue
+                    </button>
+                    <button @click=${() => go('cycle')}>
+                        <jot-icon name="MapPin"></jot-icon>Cycle Locator
+                    </button>
+                    <button @click=${() => go('game')}>
+                        <jot-icon name="Activity"></jot-icon>2048
+                    </button>
+                </div>
+            </section>
         </article>`;
     }
     resetAll() {
@@ -140,6 +154,11 @@ export class SettingsRoute extends MobxLitElement {
             }
             .full-width-button {
                 width: 100%;
+            }
+            .tool-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+                gap: 0.75rem;
             }
         `,
     ];

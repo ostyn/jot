@@ -26,6 +26,9 @@ export class ReadingRoute
     @state()
     private deckIds: string[] = [];
 
+    @state()
+    private swipeOffsetX = 0;
+
     private previousActiveIds = new Set<string>();
     private visibleItemId?: string;
     private pendingFocusId?: string;
@@ -65,21 +68,42 @@ export class ReadingRoute
     }
 
     private attachGesture() {
-        const card = this.renderRoot?.querySelector<HTMLElement>('.swipe-card');
-        if (!card) {
+        const stage = this.renderRoot?.querySelector<HTMLElement>('.swipe-stage');
+        if (!stage) {
             this.gesture?.destroy();
             this.gesture = undefined;
             this.gestureHost = undefined;
             return;
         }
-        if (this.gestureHost === card && this.gesture) return;
+        if (this.gestureHost === stage && this.gesture) return;
         this.gesture?.destroy();
-        this.gesture = new TinyGesture(card, {
+        this.gesture = new TinyGesture(stage, {
             threshold: () => Math.max(60, Math.floor(window.innerWidth * 0.16)),
+            mouseSupport: true,
         });
-        this.gestureHost = card;
-        this.gesture.on('swiperight', () => void this.keepForLater());
-        this.gesture.on('swipeleft', () => void this.removeCurrent());
+        this.gestureHost = stage;
+        this.gesture.on('panmove', () => {
+            if (
+                this.gesture?.swipingDirection === 'horizontal' ||
+                this.gesture?.swipingDirection === 'pre-horizontal'
+            ) {
+                const nextOffset = this.gesture.touchMoveX ?? 0;
+                this.swipeOffsetX = Math.max(-132, Math.min(132, nextOffset));
+            }
+        });
+        this.gesture.on('panend', () => {
+            window.requestAnimationFrame(() => {
+                this.swipeOffsetX = 0;
+            });
+        });
+        this.gesture.on('swiperight', () => {
+            this.swipeOffsetX = 0;
+            void this.keepForLater();
+        });
+        this.gesture.on('swipeleft', () => {
+            this.swipeOffsetX = 0;
+            void this.removeCurrent();
+        });
     }
 
     private syncDeck(forceReset = false) {
@@ -289,6 +313,12 @@ export class ReadingRoute
 
     render() {
         const current = this.currentItem;
+        const swipeIntent =
+            this.swipeOffsetX < -12
+                ? 'remove'
+                : this.swipeOffsetX > 12
+                  ? 'later'
+                  : '';
         return html`
             <utility-page-header title="Reading List">
                 <button
@@ -303,16 +333,21 @@ export class ReadingRoute
 
             <section class="current-stack">
                 ${current
-                    ? html`<reading-card
-                          class="swipe-card"
-                          .item=${current}
-                          .activeCount=${reading.active.length}
-                          @reading-open=${() => this.markCurrentOpened()}
-                          @reading-later=${() => this.keepForLater()}
-                          @reading-done=${() => this.markDone()}
-                          @reading-remove=${() => this.removeCurrent()}
-                          @reading-retry=${() => this.retryCurrentPreview()}
-                      ></reading-card>`
+                    ? html`<div class="swipe-stage ${swipeIntent}">
+                          <div class="swipe-hint swipe-hint-left">Remove</div>
+                          <div class="swipe-hint swipe-hint-right">Later</div>
+                          <reading-card
+                              class="swipe-card"
+                              style=${`transform: translateX(${this.swipeOffsetX}px) rotate(${this.swipeOffsetX * 0.04}deg);`}
+                              .item=${current}
+                              .activeCount=${reading.active.length}
+                              @reading-open=${() => this.markCurrentOpened()}
+                              @reading-later=${() => this.keepForLater()}
+                              @reading-done=${() => this.markDone()}
+                              @reading-remove=${() => this.removeCurrent()}
+                              @reading-retry=${() => this.retryCurrentPreview()}
+                          ></reading-card>
+                      </div>`
                     : html`<section class="empty-state">
                           <article>
                               <p class="empty-copy">
@@ -385,6 +420,55 @@ export class ReadingRoute
                 padding: 0 0.25rem;
                 color: var(--pico-muted-color);
                 font-size: 0.9rem;
+            }
+            .swipe-stage {
+                position: relative;
+                border-radius: var(--pico-border-radius);
+                overflow: hidden;
+                isolation: isolate;
+            }
+            .swipe-hint {
+                position: absolute;
+                top: 50%;
+                z-index: 0;
+                transform: translateY(-50%);
+                padding: 0.45rem 0.7rem;
+                border-radius: 999px;
+                font-size: 0.85rem;
+                font-weight: 700;
+                opacity: 0.28;
+                transition: opacity 120ms ease, transform 120ms ease;
+                pointer-events: none;
+            }
+            .swipe-hint-left {
+                left: 0.75rem;
+                color: var(--pico-del-color);
+                background: color-mix(
+                    in srgb,
+                    var(--pico-del-color) 14%,
+                    transparent
+                );
+            }
+            .swipe-hint-right {
+                right: 0.75rem;
+                color: var(--pico-primary);
+                background: color-mix(
+                    in srgb,
+                    var(--pico-primary) 14%,
+                    transparent
+                );
+            }
+            .swipe-stage.remove .swipe-hint-left,
+            .swipe-stage.later .swipe-hint-right {
+                opacity: 1;
+                transform: translateY(-50%) scale(1.02);
+            }
+            .swipe-card {
+                position: relative;
+                z-index: 1;
+                transition: transform 140ms ease;
+                will-change: transform;
+                touch-action: pan-y;
             }
             .done-stack {
                 margin-top: 1.25rem;

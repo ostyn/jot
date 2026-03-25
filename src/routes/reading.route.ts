@@ -31,6 +31,7 @@ export class ReadingRoute
     private pendingFocusId?: string;
     private lastHandledShareKey?: string;
     private shareHandlingPromise?: Promise<void>;
+    private recentItemIds: string[] = [];
 
     private gesture?: TinyGesture<HTMLElement>;
     private gestureHost?: HTMLElement;
@@ -93,7 +94,15 @@ export class ReadingRoute
 
         const preserved = this.deckIds.filter((id) => activeIdSet.has(id));
         const newIds = activeIds.filter((id) => !preserved.includes(id));
-        this.deckIds = [...preserved, ...shuffle(newIds)];
+        const recentSet = new Set(this.recentItemIds.filter((id) => activeIdSet.has(id)));
+        const cooledNewIds = newIds.filter((id) => !recentSet.has(id));
+        const deferredNewIds = newIds.filter((id) => recentSet.has(id));
+        this.deckIds = [
+            ...preserved,
+            ...shuffle(cooledNewIds),
+            ...shuffle(deferredNewIds),
+        ];
+        this.trimRecentHistory(activeIds.length);
         this.applyPendingFocus();
         this.previousActiveIds = activeIdSet;
     }
@@ -105,7 +114,12 @@ export class ReadingRoute
     private rotateDeck() {
         if (this.deckIds.length < 2) return;
         const [current, ...rest] = this.deckIds;
-        this.deckIds = [...rest, current];
+        this.rememberRecentItem(current);
+        const activeIdSet = new Set(reading.active.map((item) => item.id));
+        const recentSet = new Set(this.recentItemIds.filter((id) => activeIdSet.has(id)));
+        const cooledRest = rest.filter((id) => !recentSet.has(id));
+        const deferredRest = rest.filter((id) => recentSet.has(id));
+        this.deckIds = [...cooledRest, current, ...deferredRest];
     }
 
     private async importLinks(text: string) {
@@ -147,6 +161,7 @@ export class ReadingRoute
     private async markDone() {
         const current = this.currentItem;
         if (!current) return;
+        this.rememberRecentItem(current.id);
         this.deckIds = this.deckIds.filter((id) => id !== current.id);
         await reading.markDone(current.id);
     }
@@ -194,6 +209,17 @@ export class ReadingRoute
             ];
         }
         this.pendingFocusId = undefined;
+    }
+
+    private rememberRecentItem(id: string) {
+        this.recentItemIds = this.recentItemIds.filter((itemId) => itemId !== id);
+        this.recentItemIds.unshift(id);
+        this.trimRecentHistory(reading.active.length);
+    }
+
+    private trimRecentHistory(activeCount: number) {
+        const maxHistory = Math.max(5, Math.min(25, Math.floor(activeCount / 4)));
+        this.recentItemIds = this.recentItemIds.slice(0, maxHistory);
     }
 
     private focusItem(id: string) {

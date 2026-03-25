@@ -8,7 +8,12 @@ import './components/action-sheets/action-sheet';
 import { Sheet } from './components/action-sheets/action-sheet';
 import './components/jot-icon';
 import './components/nav-bar';
-import { JotRoute, routerContext, routes } from './routes/route-config';
+import {
+    JotRoute,
+    routerContext,
+    routes,
+    shouldHideNavBar,
+} from './routes/route-config';
 import { settings } from './stores/settings.store';
 
 @customElement('jot-app')
@@ -31,11 +36,14 @@ export class JotApp extends LitElement {
         settings.setShowArchivedFromStorage();
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
+        this.hideNavBar = shouldHideNavBar(window.location.pathname);
         window.addEventListener('vaadin-router-location-changed', (event: any) => {
             const activeRoute = event.detail?.location?.routes?.at(-1) as
                 | JotRoute
                 | undefined;
-            this.hideNavBar = Boolean(activeRoute?.options?.hideNavBar);
+            this.hideNavBar =
+                Boolean(activeRoute?.options?.hideNavBar) ||
+                shouldHideNavBar(event.detail?.location?.pathname || '/');
             if (Sheet.isShown) {
                 Sheet.close();
             } else {

@@ -41,58 +41,64 @@ export class ReadingCard extends LitElement {
                           </span>
                       </a>`
                     : nothing}
-                <div class="copy-block">
-                    <div class="meta-row">
-                        <span>${item.siteName || hostnameFromUrl(item.url)}</span>
-                        ${item.fetchState === 'failed'
-                            ? html`<button
-                                  class="inline subtle-link retry-inline"
-                                  @click=${() => this.emit('reading-retry')}
-                              >
-                                  Preview unavailable - Retry
-                              </button>`
-                            : itemStatus
-                              ? html`<span>${itemStatus}</span>`
-                              : nothing}
+                <div class="content">
+                    <div class="copy-block">
+                        <div class="meta-row">
+                            <span>${item.siteName || hostnameFromUrl(item.url)}</span>
+                            ${item.fetchState === 'failed'
+                                ? html`<button
+                                      class="inline subtle-link retry-inline"
+                                      @click=${() => this.emit('reading-retry')}
+                                  >
+                                      Preview unavailable - Retry
+                                  </button>`
+                                : itemStatus
+                                  ? html`<span>${itemStatus}</span>`
+                                  : nothing}
+                        </div>
+                        <a
+                            class="copy-link"
+                            href=${item.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            @click=${() => this.emit('reading-open')}
+                        >
+                            <h3>${title}</h3>
+                            ${item.description
+                                ? html`<p class="description">${item.description}</p>`
+                                : nothing}
+                            <p class="url meta-text">${item.url}</p>
+                        </a>
                     </div>
-                    <a
-                        class="copy-link"
-                        href=${item.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        @click=${() => this.emit('reading-open')}
-                    >
-                        <h3>${title}</h3>
-                        ${item.description ? html`<p>${item.description}</p>` : nothing}
-                        <p class="url meta-text">${item.url}</p>
-                    </a>
+                    <div class="card-footer">
+                        <div class="action-row" role="group" aria-label="Reading actions">
+                            <button
+                                class="outline action-button"
+                                @click=${() => this.emit('reading-later')}
+                            >
+                                <jot-icon name="ChevronRight"></jot-icon>
+                                Later
+                            </button>
+                            <button
+                                class="outline action-button"
+                                @click=${() => this.emit('reading-done')}
+                            >
+                                <jot-icon name="CalendarCheck"></jot-icon>
+                                Read
+                            </button>
+                            <button
+                                class="outline action-button danger-action"
+                                @click=${() => this.emit('reading-remove')}
+                            >
+                                <jot-icon name="Trash2"></jot-icon>
+                                Remove
+                            </button>
+                        </div>
+                        <footer>
+                            <small class="meta-text">${this.activeCount} active</small>
+                        </footer>
+                    </div>
                 </div>
-                <div class="action-row" role="group" aria-label="Reading actions">
-                    <button
-                        class="outline action-button"
-                        @click=${() => this.emit('reading-later')}
-                    >
-                        <jot-icon name="ChevronRight"></jot-icon>
-                        Later
-                    </button>
-                    <button
-                        class="outline action-button"
-                        @click=${() => this.emit('reading-done')}
-                    >
-                        <jot-icon name="CalendarCheck"></jot-icon>
-                        Read
-                    </button>
-                    <button
-                        class="outline action-button danger-action"
-                        @click=${() => this.emit('reading-remove')}
-                    >
-                        <jot-icon name="Trash2"></jot-icon>
-                        Remove
-                    </button>
-                </div>
-                <footer>
-                    <small class="meta-text">${this.activeCount} active</small>
-                </footer>
             </article>
         `;
     }
@@ -129,6 +135,7 @@ export class ReadingCard extends LitElement {
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
+                min-height: 28rem;
             }
             article.broken {
                 box-shadow: inset 0 0 0 1px var(--pico-del-color);
@@ -173,6 +180,13 @@ export class ReadingCard extends LitElement {
                 flex-direction: column;
                 gap: 0.5rem;
             }
+            .content {
+                display: flex;
+                flex: 1;
+                flex-direction: column;
+                gap: 0.75rem;
+                min-height: 0;
+            }
             .meta-row,
             footer {
                 color: var(--pico-muted-color);
@@ -192,9 +206,27 @@ export class ReadingCard extends LitElement {
             .copy-link p {
                 margin: 0;
             }
-            .copy-link p {
+            .description,
+            .url {
                 white-space: pre-wrap;
                 word-break: break-word;
+            }
+            .description {
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .url {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .card-footer {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                margin-top: auto;
             }
             .action-row {
                 display: grid;
@@ -209,6 +241,9 @@ export class ReadingCard extends LitElement {
                 border-top: 1px solid var(--pico-muted-border-color);
             }
             @media (max-width: 640px) {
+                article {
+                    min-height: 0;
+                }
                 .action-row {
                     grid-template-columns: 1fr;
                 }

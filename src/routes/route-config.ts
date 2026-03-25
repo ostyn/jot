@@ -238,3 +238,14 @@ export function betterGo(
 
     Router.go(path);
 }
+
+export function shouldHideNavBar(pathname: string): boolean {
+    return routes.some((route) => {
+        const routeOptions = ('options' in route
+            ? route.options
+            : undefined) as JotRoute['options'] | undefined;
+        if (!routeOptions?.hideNavBar) return false;
+        if (route.path === pathname) return true;
+        return route.path !== '/' && pathname.startsWith(`${route.path}/`);
+    });
+}

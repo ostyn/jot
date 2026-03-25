@@ -112,14 +112,19 @@ export class ReadingRoute
     }
 
     private rotateDeck() {
-        if (this.deckIds.length < 2) return;
+        if (!this.deckIds.length) return;
         const [current, ...rest] = this.deckIds;
         this.rememberRecentItem(current);
+        if (!rest.length) {
+            this.deckIds = [current];
+            return;
+        }
         const activeIdSet = new Set(reading.active.map((item) => item.id));
         const recentSet = new Set(this.recentItemIds.filter((id) => activeIdSet.has(id)));
         const cooledRest = rest.filter((id) => !recentSet.has(id));
         const deferredRest = rest.filter((id) => recentSet.has(id));
-        this.deckIds = [...cooledRest, current, ...deferredRest];
+        const nextDeck = [...cooledRest, ...deferredRest];
+        this.deckIds = nextDeck.length ? [...nextDeck, current] : [current];
     }
 
     private async importLinks(text: string) {

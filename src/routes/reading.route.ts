@@ -11,9 +11,32 @@ import '../components/reading-done-row.component';
 import '../components/utility-page-header.component';
 import '../components/action-sheets/text.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
+import { ReadingItem } from '../interfaces/reading-item.interface';
 import { reading } from '../stores/reading.store';
 import { shuffle } from '../utils/reading-helpers';
 import { betterGo } from './route-config';
+
+type UndoEntry = {
+    action: 'later' | 'read' | 'remove';
+    deckIds: string[];
+    itemSnapshot?: ReadingItem;
+    recentItemIds: string[];
+};
+
+const UNDO_STACK_STORAGE_KEY = 'reading-undo-stack-v1';
+const MAX_UNDO_ENTRIES = 25;
+
+function isUndoEntry(entry: unknown): entry is UndoEntry {
+    if (!entry || typeof entry !== 'object') return false;
+    const candidate = entry as Partial<UndoEntry>;
+    return Boolean(
+        (candidate.action === 'later' ||
+            candidate.action === 'read' ||
+            candidate.action === 'remove') &&
+            Array.isArray(candidate.deckIds) &&
+            Array.isArray(candidate.recentItemIds)
+    );
+}
 
 @customElement('reading-route')
 export class ReadingRoute
@@ -21,7 +44,10 @@ export class ReadingRoute
     implements WebComponentInterface
 {
     @state()
-    private importMessage = '';
+    private statusMessage = '';
+
+    @state()
+    private showUndo = false;
 
     @state()
     private deckIds: string[] = [];
@@ -45,9 +71,15 @@ export class ReadingRoute
     private gesture?: TinyGesture<HTMLElement>;
     private gestureHost?: HTMLElement;
     private swipeActionTimer?: number;
+    private undoStack: UndoEntry[] = [];
 
     connectedCallback(): void {
         super.connectedCallback();
+        this.restoreUndoStack();
+        if (this.undoStack.length) {
+            this.statusMessage = 'Undo available';
+            this.showUndo = true;
+        }
         this.syncDeck(true);
     }
 
@@ -173,9 +205,10 @@ export class ReadingRoute
 
     private async importLinks(text: string) {
         const importedItems = await reading.importFromText(text);
-        this.importMessage = importedItems.length
+        this.statusMessage = importedItems.length
             ? `Imported ${importedItems.length} link${importedItems.length === 1 ? '' : 's'}`
             : 'No new links found';
+        this.showUndo = false;
     }
 
     private openImportSheet() {
@@ -191,16 +224,26 @@ export class ReadingRoute
     }
 
     private keepForLater() {
+        this.pushUndoEntry({ action: 'later', deckIds: [...this.deckIds] });
         this.resetSwipeState();
         this.rotateDeck();
+        this.statusMessage = 'Saved for later';
+        this.showUndo = true;
     }
 
     private async removeCurrent() {
         const current = this.currentItem;
         if (!current) return;
+        this.pushUndoEntry({
+            action: 'remove',
+            deckIds: [...this.deckIds],
+            itemSnapshot: { ...current },
+        });
         this.resetSwipeState();
         this.deckIds = this.deckIds.filter((id) => id !== current.id);
         await reading.deleteItem(current.id);
+        this.statusMessage = 'Removed from your list';
+        this.showUndo = true;
     }
 
     private async markCurrentOpened() {
@@ -212,10 +255,17 @@ export class ReadingRoute
     private async markDone() {
         const current = this.currentItem;
         if (!current) return;
+        this.pushUndoEntry({
+            action: 'read',
+            deckIds: [...this.deckIds],
+            itemSnapshot: { ...current },
+        });
         this.resetSwipeState();
         this.rememberRecentItem(current.id);
         this.deckIds = this.deckIds.filter((id) => id !== current.id);
         await reading.markDone(current.id);
+        this.statusMessage = 'Marked as read';
+        this.showUndo = true;
     }
 
     private async retryCurrentPreview() {
@@ -305,6 +355,61 @@ export class ReadingRoute
         }, 150);
     }
 
+    private pushUndoEntry(entry: {
+        action: UndoEntry['action'];
+        deckIds: string[];
+        itemSnapshot?: ReadingItem;
+    }) {
+        this.undoStack.push({
+            ...entry,
+            recentItemIds: [...this.recentItemIds],
+        });
+        this.undoStack = this.undoStack.slice(-MAX_UNDO_ENTRIES);
+        this.persistUndoStack();
+    }
+
+    private async undoLastAction() {
+        const entry = this.undoStack.pop();
+        if (!entry) return;
+
+        this.persistUndoStack();
+        this.resetSwipeState();
+        this.recentItemIds = [...entry.recentItemIds];
+
+        if (entry.itemSnapshot) {
+            await reading.restoreItem(entry.itemSnapshot);
+        }
+
+        this.deckIds = [...entry.deckIds];
+        this.showUndo = this.undoStack.length > 0;
+        this.statusMessage = `Undid ${entry.action}`;
+        this.requestUpdate();
+    }
+
+    private persistUndoStack() {
+        try {
+            window.sessionStorage.setItem(
+                UNDO_STACK_STORAGE_KEY,
+                JSON.stringify(this.undoStack)
+            );
+        } catch (_error) {
+            // Ignore storage failures; undo remains session-local best effort.
+        }
+    }
+
+    private restoreUndoStack() {
+        try {
+            const raw = window.sessionStorage.getItem(UNDO_STACK_STORAGE_KEY);
+            if (!raw) return;
+            const parsed: unknown = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return;
+            this.undoStack = parsed.filter(isUndoEntry);
+        } catch (_error) {
+            this.undoStack = [];
+        }
+        this.showUndo = this.undoStack.length > 0;
+    }
+
     private async handleSharedRoute() {
         const currentPath = window.location.pathname;
         if (!currentPath.endsWith('/reading/share')) return;
@@ -328,27 +433,31 @@ export class ReadingRoute
 
             if (result.importedActiveItemIds.length) {
                 const [focusId] = result.importedActiveItemIds;
-                this.importMessage = `Imported ${result.importedActiveItemIds.length} shared link${
+                this.statusMessage = `Imported ${result.importedActiveItemIds.length} shared link${
                     result.importedActiveItemIds.length === 1 ? '' : 's'
                 }`;
+                this.showUndo = false;
                 this.focusItem(focusId);
                 return;
             }
 
             if (result.existingActiveItemIds.length) {
                 const [focusId] = result.existingActiveItemIds;
-                this.importMessage = 'Link already in your reading list';
+                this.statusMessage = 'Link already in your reading list';
+                this.showUndo = false;
                 this.focusItem(focusId);
                 return;
             }
 
             if (result.existingDoneItemIds.length) {
-                this.importMessage = 'Link already in Read';
+                this.statusMessage = 'Link already in Read';
+                this.showUndo = false;
                 betterGo('reading');
                 return;
             }
 
-            this.importMessage = 'No links found';
+            this.statusMessage = 'No links found';
+            this.showUndo = false;
             betterGo('reading');
         })();
         try {
@@ -407,10 +516,18 @@ export class ReadingRoute
                               </p>
                           </article>
                       </section>`}
-                ${this.importMessage
-                    ? html`<p class="status-note" role="status">
-                          ${this.importMessage}
-                      </p>`
+                ${this.statusMessage
+                    ? html`<div class="status-note" role="status">
+                          <span>${this.statusMessage}</span>
+                          ${this.showUndo
+                              ? html`<button
+                                    class="inline subtle-action"
+                                    @click=${() => void this.undoLastAction()}
+                                >
+                                    Undo
+                                </button>`
+                              : nothing}
+                      </div>`
                     : nothing}
             </section>
 
@@ -467,10 +584,23 @@ export class ReadingRoute
                 padding-top: 0.25rem;
             }
             .status-note {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
                 margin: 0.625rem 0 0;
                 padding: 0 0.25rem;
                 color: var(--pico-muted-color);
                 font-size: 0.9rem;
+            }
+            .subtle-action {
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: var(--pico-primary);
+                text-decoration: underline;
+                margin-bottom: 0;
+                white-space: nowrap;
             }
             .swipe-stage {
                 position: relative;

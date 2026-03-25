@@ -118,6 +118,12 @@ class ReadingStore {
     }
 
     @action.bound
+    async restoreItem(item: ReadingItem) {
+        await readingItemDao.saveItem(item);
+        await this.refresh();
+    }
+
+    @action.bound
     async markOpened(id: string) {
         const current = this.all.find((item) => item.id === id);
         if (!current) return;

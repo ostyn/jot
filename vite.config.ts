@@ -17,6 +17,16 @@ export default defineConfig({
                 name: 'Jot',
                 short_name: 'Jot',
                 start_url: '/entries',
+                share_target: {
+                    action: '/reading/share',
+                    method: 'GET',
+                    enctype: 'application/x-www-form-urlencoded',
+                    params: {
+                        title: 'title',
+                        text: 'text',
+                        url: 'url',
+                    },
+                },
                 shortcuts: [
                     {
                         name: 'Today',
@@ -37,6 +47,11 @@ export default defineConfig({
                         name: 'Notes',
                         url: '/notes',
                         description: 'Basic note taking',
+                    },
+                    {
+                        name: 'Reading List',
+                        url: '/reading',
+                        description: 'Swipe through saved links',
                     },
                 ],
                 theme_color: 'transparent',

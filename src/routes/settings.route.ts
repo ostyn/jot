@@ -111,7 +111,7 @@ export class SettingsRoute extends MobxLitElement {
                 <h2>Tools</h2>
                 <div class="tool-grid">
                     <button @click=${() => go('reading')}>
-                        <jot-icon name="BookOpen"></jot-icon>Reading Queue
+                        <jot-icon name="BookOpen"></jot-icon>Reading List
                     </button>
                     <button @click=${() => go('cycle')}>
                         <jot-icon name="MapPin"></jot-icon>Cycle Locator

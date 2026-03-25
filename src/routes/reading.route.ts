@@ -29,6 +29,12 @@ export class ReadingRoute
     @state()
     private swipeOffsetX = 0;
 
+    @state()
+    private swipeIntent: 'later' | 'remove' | '' = '';
+
+    @state()
+    private swipeSettling = false;
+
     private previousActiveIds = new Set<string>();
     private visibleItemId?: string;
     private pendingFocusId?: string;
@@ -38,6 +44,7 @@ export class ReadingRoute
 
     private gesture?: TinyGesture<HTMLElement>;
     private gestureHost?: HTMLElement;
+    private swipeActionTimer?: number;
 
     connectedCallback(): void {
         super.connectedCallback();
@@ -51,6 +58,9 @@ export class ReadingRoute
     disconnectedCallback(): void {
         super.disconnectedCallback();
         this.gesture?.destroy();
+        if (this.swipeActionTimer) {
+            window.clearTimeout(this.swipeActionTimer);
+        }
     }
 
     async onAfterEnter(location: RouterLocation) {
@@ -83,26 +93,36 @@ export class ReadingRoute
         });
         this.gestureHost = stage;
         this.gesture.on('panmove', () => {
+            if (this.swipeSettling) return;
             if (
                 this.gesture?.swipingDirection === 'horizontal' ||
                 this.gesture?.swipingDirection === 'pre-horizontal'
             ) {
                 const nextOffset = this.gesture.touchMoveX ?? 0;
                 this.swipeOffsetX = Math.max(-132, Math.min(132, nextOffset));
+                this.swipeIntent =
+                    this.swipeOffsetX < -12
+                        ? 'remove'
+                        : this.swipeOffsetX > 12
+                          ? 'later'
+                          : '';
             }
         });
         this.gesture.on('panend', () => {
-            window.requestAnimationFrame(() => {
-                this.swipeOffsetX = 0;
-            });
+            if (this.swipeSettling) return;
+            const releaseOffset = this.swipeOffsetX;
+            const releaseIntent = this.swipeIntent;
+            if (Math.abs(releaseOffset) >= 72 && releaseIntent) {
+                this.commitSwipe(releaseIntent);
+                return;
+            }
+            window.requestAnimationFrame(() => this.resetSwipeState());
         });
         this.gesture.on('swiperight', () => {
-            this.swipeOffsetX = 0;
-            void this.keepForLater();
+            this.commitSwipe('later');
         });
         this.gesture.on('swipeleft', () => {
-            this.swipeOffsetX = 0;
-            void this.removeCurrent();
+            this.commitSwipe('remove');
         });
     }
 
@@ -171,12 +191,14 @@ export class ReadingRoute
     }
 
     private keepForLater() {
+        this.resetSwipeState();
         this.rotateDeck();
     }
 
     private async removeCurrent() {
         const current = this.currentItem;
         if (!current) return;
+        this.resetSwipeState();
         this.deckIds = this.deckIds.filter((id) => id !== current.id);
         await reading.deleteItem(current.id);
     }
@@ -190,6 +212,7 @@ export class ReadingRoute
     private async markDone() {
         const current = this.currentItem;
         if (!current) return;
+        this.resetSwipeState();
         this.rememberRecentItem(current.id);
         this.deckIds = this.deckIds.filter((id) => id !== current.id);
         await reading.markDone(current.id);
@@ -258,6 +281,30 @@ export class ReadingRoute
         betterGo('reading-item', { pathParams: { id } });
     }
 
+    private resetSwipeState() {
+        this.swipeOffsetX = 0;
+        this.swipeIntent = '';
+        this.swipeSettling = false;
+    }
+
+    private commitSwipe(intent: 'later' | 'remove') {
+        if (this.swipeSettling) return;
+        this.swipeSettling = true;
+        this.swipeIntent = intent;
+        this.swipeOffsetX = intent === 'later' ? 220 : -220;
+        if (this.swipeActionTimer) {
+            window.clearTimeout(this.swipeActionTimer);
+        }
+        this.swipeActionTimer = window.setTimeout(() => {
+            this.swipeActionTimer = undefined;
+            if (intent === 'later') {
+                this.keepForLater();
+            } else {
+                void this.removeCurrent();
+            }
+        }, 150);
+    }
+
     private async handleSharedRoute() {
         const currentPath = window.location.pathname;
         if (!currentPath.endsWith('/reading/share')) return;
@@ -313,12 +360,7 @@ export class ReadingRoute
 
     render() {
         const current = this.currentItem;
-        const swipeIntent =
-            this.swipeOffsetX < -12
-                ? 'remove'
-                : this.swipeOffsetX > 12
-                  ? 'later'
-                  : '';
+        const swipeProgress = Math.min(Math.abs(this.swipeOffsetX) / 132, 1);
         return html`
             <utility-page-header title="Reading List">
                 <button
@@ -333,9 +375,18 @@ export class ReadingRoute
 
             <section class="current-stack">
                 ${current
-                    ? html`<div class="swipe-stage ${swipeIntent}">
-                          <div class="swipe-hint swipe-hint-left">Remove</div>
-                          <div class="swipe-hint swipe-hint-right">Later</div>
+                    ? html`<div
+                          class="swipe-stage ${this.swipeIntent}"
+                          style=${`--swipe-progress:${swipeProgress};`}
+                      >
+                          <div class="swipe-hint swipe-hint-later">
+                              <jot-icon name="ChevronRight"></jot-icon>
+                              <span>Later</span>
+                          </div>
+                          <div class="swipe-hint swipe-hint-remove">
+                              <jot-icon name="Trash2"></jot-icon>
+                              <span>Remove</span>
+                          </div>
                           <reading-card
                               class="swipe-card"
                               style=${`transform: translateX(${this.swipeOffsetX}px) rotate(${this.swipeOffsetX * 0.04}deg);`}
@@ -426,47 +477,81 @@ export class ReadingRoute
                 border-radius: var(--pico-border-radius);
                 overflow: hidden;
                 isolation: isolate;
+                --swipe-progress: 0;
+                background:
+                    linear-gradient(
+                        90deg,
+                        color-mix(
+                                in srgb,
+                                var(--pico-primary)
+                                    calc(var(--swipe-progress) * 28%),
+                                transparent
+                            )
+                            0%,
+                        transparent 34%,
+                        transparent 66%,
+                        color-mix(
+                                in srgb,
+                                var(--pico-del-color)
+                                    calc(var(--swipe-progress) * 28%),
+                                transparent
+                            )
+                            100%
+                    );
             }
             .swipe-hint {
                 position: absolute;
                 top: 50%;
                 z-index: 0;
                 transform: translateY(-50%);
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
                 padding: 0.45rem 0.7rem;
                 border-radius: 999px;
                 font-size: 0.85rem;
                 font-weight: 700;
-                opacity: 0.28;
-                transition: opacity 120ms ease, transform 120ms ease;
+                opacity: calc(0.16 + var(--swipe-progress) * 0.54);
+                transition: opacity 120ms ease, transform 120ms ease,
+                    background 120ms ease;
                 pointer-events: none;
             }
-            .swipe-hint-left {
-                left: 0.75rem;
-                color: var(--pico-del-color);
-                background: color-mix(
-                    in srgb,
-                    var(--pico-del-color) 14%,
-                    transparent
-                );
+            .swipe-hint jot-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 1rem;
+                height: 1rem;
+                align-self: center;
             }
-            .swipe-hint-right {
-                right: 0.75rem;
+            .swipe-hint-later {
+                left: 0.75rem;
                 color: var(--pico-primary);
                 background: color-mix(
                     in srgb,
-                    var(--pico-primary) 14%,
+                    var(--pico-primary) calc(10% + var(--swipe-progress) * 18%),
                     transparent
                 );
             }
-            .swipe-stage.remove .swipe-hint-left,
-            .swipe-stage.later .swipe-hint-right {
+            .swipe-hint-remove {
+                right: 0.75rem;
+                color: var(--pico-del-color);
+                background: color-mix(
+                    in srgb,
+                    var(--pico-del-color) calc(10% + var(--swipe-progress) * 18%),
+                    transparent
+                );
+            }
+            .swipe-stage.remove .swipe-hint-remove,
+            .swipe-stage.later .swipe-hint-later {
                 opacity: 1;
-                transform: translateY(-50%) scale(1.02);
+                transform: translateY(-50%) scale(1.1);
             }
             .swipe-card {
                 position: relative;
+                display: block;
                 z-index: 1;
-                transition: transform 140ms ease;
+                transition: transform 180ms ease;
                 will-change: transform;
                 touch-action: pan-y;
             }

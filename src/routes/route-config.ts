@@ -66,6 +66,7 @@ export const routes = [
         path: '/reading',
         component: 'reading-route',
         name: 'reading',
+        options: { hideNavBar: true },
         children: [
             {
                 name: 'reading-share',
@@ -83,6 +84,7 @@ export const routes = [
         path: '/cycle',
         component: 'cycle-route',
         name: 'cycle',
+        options: { hideNavBar: true },
         children: [
             {
                 name: 'cycle-station',
@@ -137,6 +139,7 @@ export const routes = [
         path: '/game',
         component: 'game-route',
         name: 'game',
+        options: { hideNavBar: true },
     },
     {
         path: '/today',
@@ -155,6 +158,7 @@ export type JotRoute = Route & {
     options?: {
         iconName?: JotIconName;
         menuItem?: boolean;
+        hideNavBar?: boolean;
     };
 };
 export function go(

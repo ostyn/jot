@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import '@lit-labs/virtualizer';
 import { base } from '../baseStyles';
 import '../components/station.component';
+import '../components/utility-page-header.component';
 import { Station } from '../components/station.component';
 import { locationService } from '../services/location.service';
 import { stations } from '../stores/stations.store';
@@ -166,7 +167,7 @@ export class CycleRoute extends LitElement {
         );
 
         return html`
-            <slot></slot>
+            <utility-page-header title="Cycle Locator"></utility-page-header>
             <article class="header">
                 <header class="station">
                     <input

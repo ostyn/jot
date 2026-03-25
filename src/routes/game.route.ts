@@ -3,6 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
+import '../components/utility-page-header.component';
 
 @customElement('game-route')
 export class GameRoute extends MobxLitElement {
@@ -163,6 +164,7 @@ export class GameRoute extends MobxLitElement {
 
     render() {
         return html`
+            <utility-page-header title="2048"></utility-page-header>
             <div class="scoreboard">
                 <div class="title-container">
                     <div class="title">

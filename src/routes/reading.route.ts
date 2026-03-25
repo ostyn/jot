@@ -8,6 +8,7 @@ import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import '../components/reading-card.component';
 import '../components/reading-done-row.component';
+import '../components/utility-page-header.component';
 import '../components/action-sheets/text.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import { reading } from '../stores/reading.store';
@@ -258,13 +259,23 @@ export class ReadingRoute
     render() {
         const current = this.currentItem;
         return html`
+            <utility-page-header title="Reading List">
+                <button
+                    slot="actions"
+                    class="inline icon-only"
+                    aria-label="Add links"
+                    @click=${() => this.openImportSheet()}
+                >
+                    <jot-icon name="Plus"></jot-icon>
+                </button>
+            </utility-page-header>
+
             <section class="current-stack">
                 ${current
                     ? html`<reading-card
                           class="swipe-card"
                           .item=${current}
                           .activeCount=${reading.active.length}
-                          @reading-add-links=${() => this.openImportSheet()}
                           @reading-open=${() => this.markCurrentOpened()}
                           @reading-later=${() => this.keepForLater()}
                           @reading-done=${() => this.markDone()}
@@ -273,16 +284,6 @@ export class ReadingRoute
                       ></reading-card>`
                     : html`<section class="empty-state">
                           <article>
-                              <header class="topbar">
-                                  <h2>Reading List</h2>
-                                  <button
-                                      class="inline icon-only"
-                                      aria-label="Add links"
-                                      @click=${() => this.openImportSheet()}
-                                  >
-                                      <jot-icon name="Plus"></jot-icon>
-                                  </button>
-                              </header>
                               <p class="empty-copy">
                                   Work through your reading list, one link per
                                   line. Read it, shelve it, forget it.
@@ -330,19 +331,6 @@ export class ReadingRoute
                 margin-bottom: 0.75rem;
             }
             .page-header h2 {
-                margin: 0;
-                font-size: 1rem;
-            }
-            .topbar {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-                margin-bottom: 0;
-                padding-bottom: 0.75rem;
-                border-bottom: 1px solid var(--pico-muted-border-color);
-            }
-            .topbar h2 {
                 margin: 0;
                 font-size: 1rem;
             }

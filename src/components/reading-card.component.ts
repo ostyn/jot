@@ -26,16 +26,6 @@ export class ReadingCard extends LitElement {
 
         return html`
             <article class=${item.httpStatus === 404 ? 'broken' : ''}>
-                <header class="topbar">
-                    <h2>Reading List</h2>
-                    <button
-                        class="inline icon-only"
-                        aria-label="Add links"
-                        @click=${() => this.emit('reading-add-links')}
-                    >
-                        <jot-icon name="Plus"></jot-icon>
-                    </button>
-                </header>
                 ${item.image
                     ? html`<a
                           class="image-link"
@@ -124,18 +114,6 @@ export class ReadingCard extends LitElement {
                 color: var(--pico-del-color);
                 border-color: var(--pico-del-color);
             }
-            .icon-only {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 2.25rem;
-                height: 2.25rem;
-                padding: 0;
-                border-radius: 999px;
-                border-color: var(--pico-muted-border-color);
-                background: var(--pico-card-background-color);
-                color: var(--pico-color);
-            }
             .subtle-link {
                 padding: 0;
                 border: 0;
@@ -155,21 +133,8 @@ export class ReadingCard extends LitElement {
             article.broken {
                 box-shadow: inset 0 0 0 1px var(--pico-del-color);
             }
-            .topbar {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 1rem;
-                margin-bottom: 0;
-                padding-bottom: 0.75rem;
-                border-bottom: 1px solid var(--pico-muted-border-color);
-            }
-            .topbar h2,
             .copy-link h3 {
                 margin: 0;
-            }
-            .topbar h2 {
-                font-size: 1rem;
             }
             .image-link,
             .copy-link {

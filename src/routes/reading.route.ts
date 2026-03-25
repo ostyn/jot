@@ -2,6 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
@@ -11,9 +12,13 @@ import '../components/action-sheets/text.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import { reading } from '../stores/reading.store';
 import { shuffle } from '../utils/reading-helpers';
+import { betterGo } from './route-config';
 
 @customElement('reading-route')
-export class ReadingRoute extends MobxLitElement {
+export class ReadingRoute
+    extends MobxLitElement
+    implements WebComponentInterface
+{
     @state()
     private importMessage = '';
 
@@ -22,6 +27,9 @@ export class ReadingRoute extends MobxLitElement {
 
     private previousActiveIds = new Set<string>();
     private visibleItemId?: string;
+    private pendingFocusId?: string;
+    private lastHandledShareKey?: string;
+    private shareHandlingPromise?: Promise<void>;
 
     private gesture?: TinyGesture<HTMLElement>;
     private gestureHost?: HTMLElement;
@@ -40,9 +48,17 @@ export class ReadingRoute extends MobxLitElement {
         this.gesture?.destroy();
     }
 
+    async onAfterEnter(location: RouterLocation) {
+        this.pendingFocusId = location.params.id as string | undefined;
+        this.applyPendingFocus();
+        this.requestUpdate();
+        await this.handleSharedRoute();
+    }
+
     updated(): void {
         this.syncDeck();
         this.attachGesture();
+        this.syncUrlWithCurrentItem();
         void this.ensureVisibleItemMetadata();
     }
 
@@ -77,6 +93,7 @@ export class ReadingRoute extends MobxLitElement {
         const preserved = this.deckIds.filter((id) => activeIdSet.has(id));
         const newIds = activeIds.filter((id) => !preserved.includes(id));
         this.deckIds = [...preserved, ...shuffle(newIds)];
+        this.applyPendingFocus();
         this.previousActiveIds = activeIdSet;
     }
 
@@ -146,13 +163,101 @@ export class ReadingRoute extends MobxLitElement {
         await reading.ensureMetadata(current.id);
     }
 
+    private syncUrlWithCurrentItem() {
+        const currentPath = window.location.pathname;
+        if (currentPath.endsWith('/reading/share')) return;
+
+        const focusId = this.pendingFocusId || this.currentItem?.id;
+        const nextPath = focusId
+            ? `/reading/${encodeURIComponent(focusId)}`
+            : '/reading';
+
+        if (currentPath === nextPath && !window.location.search) return;
+
+        window.history.replaceState(window.history.state, '', nextPath);
+    }
+
+    private applyPendingFocus() {
+        if (!this.pendingFocusId) return;
+        const focusId = this.pendingFocusId;
+        const focusIndex = this.deckIds.indexOf(focusId);
+        if (focusIndex === -1) {
+            this.pendingFocusId = undefined;
+            return;
+        }
+        if (focusIndex > 0) {
+            this.deckIds = [
+                focusId,
+                ...this.deckIds.slice(0, focusIndex),
+                ...this.deckIds.slice(focusIndex + 1),
+            ];
+        }
+        this.pendingFocusId = undefined;
+    }
+
+    private focusItem(id: string) {
+        this.pendingFocusId = id;
+        this.applyPendingFocus();
+        this.requestUpdate();
+        betterGo('reading-item', { pathParams: { id } });
+    }
+
+    private async handleSharedRoute() {
+        const currentPath = window.location.pathname;
+        if (!currentPath.endsWith('/reading/share')) return;
+
+        const shareKey = `${currentPath}${window.location.search}`;
+        if (!window.location.search || this.lastHandledShareKey === shareKey) {
+            return;
+        }
+        if (this.shareHandlingPromise) {
+            await this.shareHandlingPromise;
+            return;
+        }
+        this.lastHandledShareKey = shareKey;
+        this.shareHandlingPromise = (async () => {
+            const searchParams = new URLSearchParams(window.location.search);
+            const result = await reading.importSharedPayload({
+                title: searchParams.get('title') || undefined,
+                text: searchParams.get('text') || undefined,
+                url: searchParams.get('url') || undefined,
+            });
+
+            if (result.importedActiveItemIds.length) {
+                const [focusId] = result.importedActiveItemIds;
+                this.importMessage = `Imported ${result.importedActiveItemIds.length} shared link${
+                    result.importedActiveItemIds.length === 1 ? '' : 's'
+                }`;
+                this.focusItem(focusId);
+                return;
+            }
+
+            if (result.existingActiveItemIds.length) {
+                const [focusId] = result.existingActiveItemIds;
+                this.importMessage = 'Link already in your reading list';
+                this.focusItem(focusId);
+                return;
+            }
+
+            if (result.existingDoneItemIds.length) {
+                this.importMessage = 'Link already in Read';
+                betterGo('reading');
+                return;
+            }
+
+            this.importMessage = 'No links found';
+            betterGo('reading');
+        })();
+        try {
+            await this.shareHandlingPromise;
+        } finally {
+            this.shareHandlingPromise = undefined;
+        }
+    }
+
     render() {
         const current = this.currentItem;
         return html`
-            ${this.importMessage
-                ? html`<p class="import-message">${this.importMessage}</p>`
-                : nothing}
-
             <section class="current-stack">
                 ${current
                     ? html`<reading-card
@@ -166,24 +271,34 @@ export class ReadingRoute extends MobxLitElement {
                           @reading-remove=${() => this.removeCurrent()}
                           @reading-retry=${() => this.retryCurrentPreview()}
                       ></reading-card>`
-                    : nothing}
-                ${!current
-                    ? html`<section class="empty-state">
-                          <h2>Nothing queued</h2>
-                          <p>
-                              Add numbered links or one URL per line, then work
-                              through them here.
-                          </p>
-                          <button class="inline" @click=${() => this.openImportSheet()}>
-                              Add Links
-                          </button>
-                      </section>`
+                    : html`<section class="empty-state">
+                          <article>
+                              <header class="topbar">
+                                  <h2>Reading List</h2>
+                                  <button
+                                      class="inline icon-only"
+                                      aria-label="Add links"
+                                      @click=${() => this.openImportSheet()}
+                                  >
+                                      <jot-icon name="Plus"></jot-icon>
+                                  </button>
+                              </header>
+                              <p class="empty-copy">
+                                  Work through your reading list, one link per
+                                  line. Read it, shelve it, forget it.
+                              </p>
+                          </article>
+                      </section>`}
+                ${this.importMessage
+                    ? html`<p class="status-note" role="status">
+                          ${this.importMessage}
+                      </p>`
                     : nothing}
             </section>
 
             <article class="done-stack">
                 <header class="page-header">
-                    <h2>Done</h2>
+                    <h2>Read</h2>
                     <small>${reading.done.length}</small>
                 </header>
                 <div class="done-list">
@@ -198,7 +313,7 @@ export class ReadingRoute extends MobxLitElement {
                                       void reading.retryMetadata(item.id)}
                               ></reading-done-row>`
                           )
-                        : html`<p class="empty-copy">Nothing completed yet.</p>`}
+                        : html`<p class="empty-copy">Nothing read yet.</p>`}
                 </div>
             </article>
         `;
@@ -218,13 +333,39 @@ export class ReadingRoute extends MobxLitElement {
                 margin: 0;
                 font-size: 1rem;
             }
-            .import-message {
-                display: block;
-                color: var(--pico-muted-color);
-                margin: 0 0 1rem;
+            .topbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                margin-bottom: 0;
+                padding-bottom: 0.75rem;
+                border-bottom: 1px solid var(--pico-muted-border-color);
+            }
+            .topbar h2 {
+                margin: 0;
+                font-size: 1rem;
+            }
+            .icon-only {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.25rem;
+                height: 2.25rem;
+                padding: 0;
+                border-radius: 999px;
+                border-color: var(--pico-muted-border-color);
+                background: var(--pico-card-background-color);
+                color: var(--pico-color);
             }
             .current-stack {
                 padding-top: 0.25rem;
+            }
+            .status-note {
+                margin: 0.625rem 0 0;
+                padding: 0 0.25rem;
+                color: var(--pico-muted-color);
+                font-size: 0.9rem;
             }
             .done-stack {
                 margin-top: 1.25rem;
@@ -239,11 +380,12 @@ export class ReadingRoute extends MobxLitElement {
                 color: var(--pico-muted-color);
             }
             .empty-state {
+                padding-top: 0.25rem;
+            }
+            .empty-state article {
                 display: flex;
                 flex-direction: column;
-                align-items: flex-start;
                 gap: 0.75rem;
-                padding: 0.5rem 0;
             }
         `,
     ];

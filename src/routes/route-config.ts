@@ -66,6 +66,18 @@ export const routes = [
         path: '/reading',
         component: 'reading-route',
         name: 'reading',
+        children: [
+            {
+                name: 'reading-share',
+                path: '/share',
+                component: 'reading-route',
+            },
+            {
+                name: 'reading-item',
+                path: '/:id',
+                component: 'reading-route',
+            },
+        ],
     },
     {
         path: '/cycle',

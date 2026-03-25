@@ -90,7 +90,7 @@ export class ReadingCard extends LitElement {
                         @click=${() => this.emit('reading-done')}
                     >
                         <jot-icon name="CalendarCheck"></jot-icon>
-                        Done
+                        Read
                     </button>
                     <button
                         class="outline action-button danger-action"

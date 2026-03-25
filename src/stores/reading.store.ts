@@ -12,12 +12,19 @@ import {
 
 const readingData: ReadingItem[] = await readingItemDao.getItems();
 
+export type ShareImportResult = {
+    importedActiveItemIds: string[];
+    existingActiveItemIds: string[];
+    existingDoneItemIds: string[];
+};
+
 class ReadingStore {
     @observable
     all: ReadingItem[] = readingData;
 
     private enrichQueue = new Set<string>();
     private autoRetryQueue = new Set<string>();
+    private importQueue: Promise<void> = Promise.resolve();
 
     constructor() {
         makeObservable(this);
@@ -53,39 +60,27 @@ class ReadingStore {
 
     @action.bound
     async importFromText(text: string): Promise<ReadingItem[]> {
-        const urls = extractUrls(text);
-        const now = new Date().toISOString();
-        const existing = new Set(this.normalizedUrlSet);
-        const itemsToSave: ReadingItem[] = [];
+        const result = await this.importUrls(extractUrls(text));
+        return result.importedItems;
+    }
 
-        for (const urlText of urls) {
-            try {
-                const normalizedUrl = normalizeUrl(urlText);
-                if (existing.has(normalizedUrl)) continue;
-                existing.add(normalizedUrl);
-                itemsToSave.push({
-                    id: crypto.randomUUID(),
-                    url: urlText.trim(),
-                    normalizedUrl,
-                    fetchState: 'pending',
-                    metadataSource: 'none',
-                    queueStatus: 'active',
-                    createdAt: now,
-                    updatedAt: now,
-                });
-            } catch (_error) {
-                continue;
-            }
-        }
-
-        await readingItemDao.bulkPut(itemsToSave);
-        await this.refresh();
-
-        itemsToSave.forEach((item) => {
-            void this.enrichItem(item.id);
-        });
-
-        return itemsToSave;
+    @action.bound
+    async importSharedPayload(payload: {
+        title?: string;
+        text?: string;
+        url?: string;
+    }): Promise<ShareImportResult> {
+        const parts = [payload.url, payload.text, payload.title]
+            .filter((value): value is string => Boolean(value?.trim()))
+            .join('\n');
+        const result = await this.importUrls(extractUrls(parts));
+        return {
+            importedActiveItemIds: result.importedItems.map((item) => item.id),
+            existingActiveItemIds: result.existingActiveItems.map(
+                (item) => item.id
+            ),
+            existingDoneItemIds: result.existingDoneItems.map((item) => item.id),
+        };
     }
 
     @action.bound
@@ -188,6 +183,77 @@ class ReadingStore {
         } finally {
             this.enrichQueue.delete(id);
         }
+    }
+
+    private async importUrls(urls: string[]): Promise<{
+        importedItems: ReadingItem[];
+        existingActiveItems: ReadingItem[];
+        existingDoneItems: ReadingItem[];
+    }> {
+        let importedItems: ReadingItem[] = [];
+        let existingActiveItems: ReadingItem[] = [];
+        let existingDoneItems: ReadingItem[] = [];
+
+        this.importQueue = this.importQueue.then(async () => {
+            await this.refresh();
+
+            const now = new Date().toISOString();
+            const existingByNormalizedUrl = new Map(
+                this.all.map((item) => [item.normalizedUrl, item] as const)
+            );
+            const seenNormalizedUrls = new Set<string>();
+            const itemsToSave: ReadingItem[] = [];
+            existingActiveItems = [];
+            existingDoneItems = [];
+
+            for (const urlText of urls) {
+                try {
+                    const normalizedUrl = normalizeUrl(urlText);
+                    if (seenNormalizedUrls.has(normalizedUrl)) continue;
+                    seenNormalizedUrls.add(normalizedUrl);
+
+                    const existingItem = existingByNormalizedUrl.get(normalizedUrl);
+                    if (existingItem) {
+                        if (existingItem.queueStatus === 'active') {
+                            existingActiveItems.push(existingItem);
+                        } else {
+                            existingDoneItems.push(existingItem);
+                        }
+                        continue;
+                    }
+
+                    const newItem: ReadingItem = {
+                        id: crypto.randomUUID(),
+                        url: urlText.trim(),
+                        normalizedUrl,
+                        fetchState: 'pending',
+                        metadataSource: 'none',
+                        queueStatus: 'active',
+                        createdAt: now,
+                        updatedAt: now,
+                    };
+                    itemsToSave.push(newItem);
+                    existingByNormalizedUrl.set(normalizedUrl, newItem);
+                } catch (_error) {
+                    continue;
+                }
+            }
+
+            await readingItemDao.bulkPut(itemsToSave);
+            await this.refresh();
+            importedItems = itemsToSave;
+
+            itemsToSave.forEach((item) => {
+                void this.enrichItem(item.id);
+            });
+        });
+        await this.importQueue;
+
+        return {
+            importedItems,
+            existingActiveItems,
+            existingDoneItems,
+        };
     }
 }
 

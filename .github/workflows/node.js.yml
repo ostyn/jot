@@ -31,6 +31,7 @@ jobs:
         VITE_GAPI_KEY: ${{ secrets.VITE_GAPI_KEY }}
         VITE_GOAT_COUNTER_ID: ${{ vars.VITE_GOAT_COUNTER_ID }}
         VITE_IFRAMELY_API_KEY: ${{ secrets.VITE_IFRAMELY_API_KEY }}
+        VITE_TMDB_API_KEY: ${{ secrets.VITE_TMDB_API_KEY }}
     - name: Setup Pages
       if: github.ref == 'refs/heads/main'
       uses: actions/configure-pages@v5

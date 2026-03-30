@@ -6,8 +6,9 @@
     "type": "module",
     "nodeLinker": "node-modules",
     "scripts": {
+        "generate:movie-ids": "node ./scripts/generate-movie-ids.mjs",
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "yarn generate:movie-ids && tsc && vite build",
         "preview": "vite preview"
     },
     "dependencies": {

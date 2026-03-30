@@ -13,6 +13,7 @@ import './import-daylio.route';
 import './import.route';
 import './mood-edit.route';
 import './moods.route';
+import './movie-faceoff.route';
 import './note-edit.route';
 import './notes.route';
 import './reading.route';
@@ -139,6 +140,12 @@ export const routes = [
         path: '/game',
         component: 'game-route',
         name: 'game',
+        options: { hideNavBar: true },
+    },
+    {
+        path: '/movie-faceoff',
+        component: 'movie-faceoff-route',
+        name: 'movie-faceoff',
         options: { hideNavBar: true },
     },
     {

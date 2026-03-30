@@ -116,6 +116,9 @@ export class SettingsRoute extends MobxLitElement {
                     <button @click=${() => go('cycle')}>
                         <jot-icon name="MapPin"></jot-icon>Cycle Locator
                     </button>
+                    <button @click=${() => go('movie-faceoff')}>
+                        <jot-icon name="Play"></jot-icon>Movie Faceoff
+                    </button>
                     <button @click=${() => go('game')}>
                         <jot-icon name="Activity"></jot-icon>2048
                     </button>

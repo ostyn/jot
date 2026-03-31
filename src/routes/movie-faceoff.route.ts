@@ -21,6 +21,7 @@ import {
     getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../utils/movie-faceoff-rankings';
+import '../components/jot-icon';
 import '../components/utility-page-header.component';
 
 type FaceoffPair = [FaceoffMovie | null, FaceoffMovie | null];
@@ -137,7 +138,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
         super.connectedCallback();
         this.restoreUndoStack();
         if (this.undoStack.length) {
-            this.statusMessage = 'Undo available';
             this.showUndo = true;
         }
         void this.initializeRoute();
@@ -199,8 +199,52 @@ export class MovieFaceoffRoute extends MobxLitElement {
         return getMovieFaceoffRankingAlgorithm(this.sortMode);
     }
 
+    private get totalVoteCount() {
+        return movieFaceoff.allEvents.length;
+    }
+
+    private get rankedMovieCount() {
+        return this.visibleRankedMovies.length;
+    }
+
+    private get availableMovieCount() {
+        const excludedIds = movieFaceoff.excludedMovieIds;
+        const unseenIds = movieFaceoff.unseenMovieIds;
+
+        if (this.useRankedOnly) {
+            return Array.from(this.replayState.decisiveMovieIds).filter(
+                (id) => !excludedIds.has(id) && !unseenIds.has(id)
+            ).length;
+        }
+
+        if (!this.movieIdPool) return null;
+
+        return this.movieIdPool.filter(
+            (id) => !excludedIds.has(id) && !unseenIds.has(id)
+        ).length;
+    }
+
+    private get sessionStatusTone() {
+        if (this.errorMessage) return 'error';
+        if (this.isLoading) return 'loading';
+        if (this.showUndo) return 'active';
+        return 'idle';
+    }
+
+    private get sessionStatusLabel() {
+        if (this.errorMessage) return 'Needs attention';
+        if (this.isLoading) return 'Loading next matchup';
+        return 'Ready for the next pick';
+    }
+
     private snapshotCurrentPair() {
         return clonePair(this.movies);
+    }
+
+    private async setPoolMode(useRankedOnly: boolean) {
+        if (this.useRankedOnly === useRankedOnly) return;
+        this.useRankedOnly = useRankedOnly;
+        await this.displayNewPair();
     }
 
     private snapshotMovieChanges(movieIds: number[]): MovieStateChange[] {
@@ -598,6 +642,37 @@ export class MovieFaceoffRoute extends MobxLitElement {
         return this.rankingAlgorithm.formatMetric(movie);
     }
 
+    private renderSummaryStat(label: string, value: string | number, accent = false) {
+        return html`
+            <div class="summary-stat ${accent ? 'accent' : ''}">
+                <span class="summary-stat-value">${value}</span>
+                <span class="summary-stat-label">${label}</span>
+            </div>
+        `;
+    }
+
+    private renderMoviePlaceholder(index: 0 | 1) {
+        const label =
+            index === 0 ? 'First movie placeholder' : 'Second movie placeholder';
+        const message = this.isLoading ? 'Loading a fresh movie...' : 'No movie loaded';
+
+        return html`
+            <article class="movie-card placeholder-card" aria-label=${label}>
+                <div class="placeholder-poster">
+                    <jot-icon name="Play" size="large"></jot-icon>
+                </div>
+                <div class="placeholder-copy">
+                    <h5>${message}</h5>
+                    <p>
+                        ${this.errorMessage
+                            ? 'Try again once the catalog is available.'
+                            : 'The next matchup will appear here.'}
+                    </p>
+                </div>
+            </article>
+        `;
+    }
+
     private resetSwipeState(index: 0 | 1) {
         const nextOffsets: [number, number] = [...this.swipeOffsets] as [number, number];
         nextOffsets[index] = 0;
@@ -640,6 +715,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private renderMovie(movie: FaceoffMovie, index: 0 | 1) {
         const imageUrl = getMoviePosterUrl(movie);
         const swipeProgress = Math.min(Math.abs(this.swipeOffsets[index]) / 132, 1);
+        const year = movie.release_date?.split('-')[0] || 'Unknown year';
 
         return html`
             <div
@@ -657,6 +733,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     ${imageUrl
                         ? html`<button
                               class="poster-button"
+                              aria-label=${`Pick ${movie.title}`}
                               @click=${() => {
                                   void this.vote(index);
                               }}
@@ -665,24 +742,37 @@ export class MovieFaceoffRoute extends MobxLitElement {
                           </button>`
                         : html`<button
                               class="poster-button poster-fallback"
+                              aria-label=${`Pick ${movie.title}`}
                               @click=${() => {
                                   void this.vote(index);
                               }}
                           >
-                              <span>No poster</span>
+                              <jot-icon name="Play" size="large"></jot-icon>
+                              <span>No poster available</span>
                           </button>`}
-                    <hgroup>
-                        <h5>${movie.title}</h5>
-                        <p>${movie.release_date?.split('-')[0] || 'Unknown year'}</p>
-                    </hgroup>
+                    <div class="movie-copy">
+                        <div class="movie-title-row">
+                            <h5 title=${movie.title}>${movie.title}</h5>
+                            <span class="movie-title-year">${year}</span>
+                        </div>
+                    </div>
                     <div class="movie-actions">
                         <button
-                            class="secondary"
+                            class="ghost-action"
                             @click=${() => {
                                 void this.markMovieUnseen(index);
                             }}
                         >
-                            Not Seen
+                            <jot-icon name="EyeOff"></jot-icon>
+                            Not seen
+                        </button>
+                        <button
+                            class="primary-vote-action"
+                            @click=${() => {
+                                void this.vote(index);
+                            }}
+                        >
+                            Choose
                         </button>
                     </div>
                 </article>
@@ -742,109 +832,172 @@ export class MovieFaceoffRoute extends MobxLitElement {
     render() {
         const ranked = this.visibleRankedMovies;
         const [left, right] = this.movies;
+        const statusTone = this.sessionStatusTone;
+        const statusLabel = this.statusMessage || this.sessionStatusLabel;
+        const leftPoster = left ? getMoviePosterUrl(left) : '';
+        const rightPoster = right ? getMoviePosterUrl(right) : '';
 
         return html`
             <utility-page-header title="Movie Faceoff"></utility-page-header>
             <section class="layout">
                 <article class="faceoff-panel">
-                    <header>
-                        <h2>Pick a winner</h2>
-                        <p>
-                            Arrow keys vote left/right. Use Shift + arrows to mark
-                            one movie as not seen, or Arrow Down for both. On touch,
-                            swipe a card outward for “not seen”.
-                        </p>
-                    </header>
-
-                    <label class="ranked-toggle">
-                        <input
-                            type="checkbox"
-                            .checked=${this.useRankedOnly}
-                            @change=${async (event: Event) => {
-                                this.useRankedOnly = (
-                                    event.currentTarget as HTMLInputElement
-                                ).checked;
-                                await this.displayNewPair();
-                            }}
-                        />
-                        Only rank known movies
-                    </label>
-
-                    ${this.errorMessage
-                        ? html`<p class="error-message">${this.errorMessage}</p>`
-                        : nothing}
-
-                    <div class="matchup">
-                        ${left
-                            ? this.renderMovie(left, 0)
-                            : html`<article class="movie-card placeholder">
-                                  <p>${this.isLoading ? 'Loading...' : 'No movie loaded'}</p>
-                              </article>`}
-                        ${right
-                            ? this.renderMovie(right, 1)
-                            : html`<article class="movie-card placeholder">
-                                  <p>${this.isLoading ? 'Loading...' : 'No movie loaded'}</p>
-                              </article>`}
+                    <div class="cinema-backdrop" aria-hidden="true">
+                        <div
+                            class="backdrop-panel left ${leftPoster ? 'has-image' : ''}"
+                            style=${leftPoster
+                                ? `background-image:url(${leftPoster});`
+                                : ''}
+                        ></div>
+                        <div
+                            class="backdrop-panel right ${rightPoster ? 'has-image' : ''}"
+                            style=${rightPoster
+                                ? `background-image:url(${rightPoster});`
+                                : ''}
+                        ></div>
                     </div>
 
-                    <div class="controls">
-                        <button
-                            class="secondary"
-                            @click=${() => {
-                                void this.markBothMoviesUnseen();
-                            }}
-                        >
-                            Mark Both Not Seen
-                        </button>
-                    </div>
+                    <div class="faceoff-shell">
+                        <div class="faceoff-header">
+                            <div class="pool-toggle" aria-label="Movie pool">
+                                <button
+                                    class=${this.useRankedOnly ? '' : 'active'}
+                                    @click=${() => {
+                                        void this.setPoolMode(false);
+                                    }}
+                                >
+                                    All movies
+                                </button>
+                                <button
+                                    class=${this.useRankedOnly ? 'active' : ''}
+                                    @click=${() => {
+                                        void this.setPoolMode(true);
+                                    }}
+                                >
+                                    My movies
+                                </button>
+                            </div>
+                        </div>
 
-                    ${this.statusMessage
-                        ? html`<div class="status-note" role="status">
-                              <span>${this.statusMessage}</span>
-                              ${this.showUndo
-                                  ? html`<button
-                                        class="inline subtle-action"
-                                        @click=${() => void this.undoLastAction()}
-                                    >
-                                        Undo
-                                    </button>`
-                                  : nothing}
-                          </div>`
-                        : nothing}
+                        ${this.errorMessage
+                            ? html`<div class="status-banner error" role="alert">
+                                  <jot-icon name="AlertTriangle"></jot-icon>
+                                  <span>${this.errorMessage}</span>
+                              </div>`
+                            : nothing}
+
+                        <div class="matchup-shell">
+                            <div class="matchup">
+                                ${left
+                                    ? this.renderMovie(left, 0)
+                                    : this.renderMoviePlaceholder(0)}
+                                <div class="matchup-divider" aria-hidden="true">
+                                    <span>VS</span>
+                                </div>
+                                ${right
+                                    ? this.renderMovie(right, 1)
+                                    : this.renderMoviePlaceholder(1)}
+                            </div>
+                        </div>
+
+                        <div class="matchup-actions" aria-label="Current matchup actions">
+                            <button
+                                class="ghost-action wide-action"
+                                @click=${() => {
+                                    void this.markBothMoviesUnseen();
+                                }}
+                            >
+                                <jot-icon name="EyeOff"></jot-icon>
+                                Mark both unseen
+                            </button>
+                        </div>
+
+                        <div class="feedback-bar">
+                            <span class="session-pill status ${statusTone}" role="status">
+                                <span class="status-dot"></span>
+                                <span>${statusLabel}</span>
+                            </span>
+                            ${this.showUndo
+                                ? html`<button
+                                      class="status-action"
+                                      @click=${() => void this.undoLastAction()}
+                                  >
+                                      <jot-icon name="RotateCcw"></jot-icon>
+                                      Undo
+                                  </button>`
+                                : nothing}
+                        </div>
+
+                        <div class="session-panel">
+                            <div class="session-secondary">
+                                <div class="summary-grid session-summary">
+                                    ${this.renderSummaryStat(
+                                        'Ranked',
+                                        this.rankedMovieCount,
+                                        true
+                                    )}
+                                    ${this.renderSummaryStat(
+                                        'Votes',
+                                        this.totalVoteCount
+                                    )}
+                                    ${this.renderSummaryStat(
+                                        'Available',
+                                        this.availableMovieCount ?? '...'
+                                    )}
+                                </div>
+                            </div>
+
+                            <p class="session-hint">
+                                Swipe outward for not seen. Keyboard shortcuts:
+                                <kbd>Shift</kbd> + <kbd>Arrow</kbd> marks one movie unseen,
+                                <kbd>Down</kbd> marks both.
+                            </p>
+                        </div>
+                    </div>
                 </article>
 
                 <article class="rankings-panel">
                     <header class="rankings-header">
-                        <h2>Rankings</h2>
+                        <div class="rankings-heading">
+                            <h2>Rankings</h2>
+                            <p class="panel-description">
+                                ${ranked.length
+                                    ? `${ranked.length} movies ranked so far`
+                                    : 'Vote a few times to start building your list.'}
+                            </p>
+                        </div>
                         <div class="rankings-actions">
-                            <select
-                                .value=${this.sortMode}
-                                @change=${(event: Event) => {
-                                    this.sortMode = (
-                                        event.currentTarget as HTMLSelectElement
-                                    ).value as MovieFaceoffSortMode;
-                                }}
-                            >
-                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
-                                    (algorithm) => html`
-                                        <option value=${algorithm.id}>
-                                            ${algorithm.label}
-                                        </option>
-                                    `
-                                )}
-                            </select>
+                            <label class="ranking-select-field">
+                                <span>Sort by</span>
+                                <select
+                                    .value=${this.sortMode}
+                                    @change=${(event: Event) => {
+                                        this.sortMode = (
+                                            event.currentTarget as HTMLSelectElement
+                                        ).value as MovieFaceoffSortMode;
+                                    }}
+                                >
+                                    ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
+                                        (algorithm) => html`
+                                            <option value=${algorithm.id}>
+                                                ${algorithm.label}
+                                            </option>
+                                        `
+                                    )}
+                                </select>
+                            </label>
                             <button
-                                class="secondary info-button"
+                                class="ghost-action info-button"
                                 title="About the current ranking method"
                                 aria-label="About the current ranking method"
                                 @click=${() => {
                                     this.showAlgorithmInfo = true;
                                 }}
                             >
-                                i
+                                <jot-icon name="Info"></jot-icon>
+                                About
                             </button>
                             <button
-                                class="secondary"
+                                class="ghost-action"
                                 @click=${() => {
                                     this.editList = !this.editList;
                                 }}
@@ -857,32 +1010,69 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     ${ranked.length
                         ? html`<ol class="rank-list">
                               ${ranked.map(
-                                  (movie) => html`
-                                      <li>
-                                          <span class="rank-item">
-                                              <span class="rank-title">${movie.title}</span>
-                                              <span class="rank-meta">
-                                                  <span>${this.renderRankValue(movie)}</span>
-                                                  ${this.editList
-                                                      ? html`<button
-                                                            class="delete-button"
-                                                            @click=${() =>
-                                                                void this.excludeMovie(
-                                                                    movie
-                                                                )}
+                                  (movie, index) => {
+                                      const posterUrl = movie.posterPath
+                                          ? getMoviePosterUrl({
+                                                poster_path: movie.posterPath,
+                                            })
+                                          : '';
+
+                                      return html`
+                                          <li class="rank-row">
+                                              <span class="rank-index">${index + 1}</span>
+                                              <span class="rank-poster" aria-hidden="true">
+                                                  ${posterUrl
+                                                      ? html`<img
+                                                            src=${posterUrl}
+                                                            alt=""
+                                                            loading="lazy"
+                                                        />`
+                                                      : html`<span
+                                                            class="rank-poster-fallback"
                                                         >
-                                                            Exclude
-                                                        </button>`
-                                                      : nothing}
+                                                            <jot-icon
+                                                                name="Play"
+                                                            ></jot-icon>
+                                                        </span>`}
                                               </span>
-                                          </span>
-                                      </li>
-                                  `
+                                              <span class="rank-item">
+                                                  <span class="rank-title-group">
+                                                      <span class="rank-title"
+                                                          >${movie.title}</span
+                                                      >
+                                                      <span class="rank-subtitle"
+                                                          >${movie.releaseDate?.split('-')[0] ||
+                                                          'Unknown year'}</span
+                                                      >
+                                                  </span>
+                                                  <span class="rank-meta">
+                                                      <span class="rank-score"
+                                                          >${this.renderRankValue(
+                                                              movie
+                                                          )}</span
+                                                      >
+                                                      ${this.editList
+                                                          ? html`<button
+                                                                class="delete-button"
+                                                                @click=${() =>
+                                                                    void this.excludeMovie(
+                                                                        movie
+                                                                    )}
+                                                            >
+                                                                Exclude
+                                                            </button>`
+                                                          : nothing}
+                                                  </span>
+                                              </span>
+                                          </li>
+                                      `;
+                                  }
                               )}
                           </ol>`
-                        : html`<p class="empty-state">
-                              Your rankings will appear here after a few faceoffs.
-                          </p>`}
+                        : html`<div class="empty-state-panel">
+                              <jot-icon name="TrendingUp" size="large"></jot-icon>
+                              <p>Your rankings will appear here after a few faceoffs.</p>
+                          </div>`}
 
                     ${this.editList && this.excludedMovies.length
                         ? html`
@@ -892,19 +1082,22 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                       <small>${this.excludedMovies.length}</small>
                                   </header>
                                   <ul class="excluded-list">
-                                      ${this.excludedMovies.map(
-                                          (movie) => html`
-                                              <li class="excluded-item">
-                                                  <span>${movie.title}</span>
-                                                    <button
-                                                      class="secondary"
-                                                      @click=${() =>
-                                                          void this.restoreExcludedMovie(
-                                                              movie
-                                                          )}
-                                                  >
-                                                      Restore
-                                                  </button>
+                                          ${this.excludedMovies.map(
+                                              (movie) => html`
+                                                  <li class="excluded-item">
+                                                      <span class="excluded-copy">
+                                                          <strong>${movie.title}</strong>
+                                                          <small>Hidden from the active pool</small>
+                                                      </span>
+                                                      <button
+                                                          class="ghost-action"
+                                                          @click=${() =>
+                                                              void this.restoreExcludedMovie(
+                                                                  movie
+                                                              )}
+                                                      >
+                                                          Restore
+                                                      </button>
                                               </li>
                                           `
                                       )}
@@ -921,19 +1114,22 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                       <small>${this.unseenMovies.length}</small>
                                   </header>
                                   <ul class="excluded-list">
-                                      ${this.unseenMovies.map(
-                                          (movie) => html`
-                                              <li class="excluded-item">
-                                                  <span>${movie.title}</span>
-                                                  <button
-                                                      class="secondary"
-                                                      @click=${() =>
-                                                          void this.restoreSeenMovie(
-                                                              movie
-                                                          )}
-                                                  >
-                                                      Mark Seen
-                                                  </button>
+                                          ${this.unseenMovies.map(
+                                              (movie) => html`
+                                                  <li class="excluded-item">
+                                                      <span class="excluded-copy">
+                                                          <strong>${movie.title}</strong>
+                                                          <small>Skipped because you have not seen it</small>
+                                                      </span>
+                                                      <button
+                                                          class="ghost-action"
+                                                          @click=${() =>
+                                                              void this.restoreSeenMovie(
+                                                                  movie
+                                                              )}
+                                                      >
+                                                          Mark seen
+                                                      </button>
                                               </li>
                                           `
                                       )}
@@ -951,37 +1147,337 @@ export class MovieFaceoffRoute extends MobxLitElement {
         base,
         css`
             :host {
+                --faceoff-shell: linear-gradient(
+                    180deg,
+                    color-mix(in srgb, #1f2430 30%, #090b10) 0%,
+                    #090b10 52%,
+                    #050608 100%
+                );
+                --faceoff-surface: color-mix(
+                    in srgb,
+                    var(--pico-card-background-color) 62%,
+                    #0c1016
+                );
+                --faceoff-surface-strong: color-mix(
+                    in srgb,
+                    var(--pico-card-background-color) 28%,
+                    #080b11
+                );
+                --faceoff-border: color-mix(
+                    in srgb,
+                    white 12%,
+                    transparent
+                );
+                --faceoff-accent: #e50914;
+                --faceoff-accent-strong: #ff6b59;
+                --faceoff-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.4);
                 display: flex;
                 flex-direction: column;
-                gap: 1rem;
+                gap: 1.15rem;
+                width: min(100%, 94rem);
+                margin-inline: auto;
             }
             .layout {
                 display: grid;
-                gap: 1rem;
-                grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+                gap: 1.15rem;
+                grid-template-columns: minmax(0, 1fr);
                 align-items: start;
+                width: min(100%, 78rem);
+                margin-inline: auto;
             }
             .faceoff-panel,
             .rankings-panel {
                 margin: 0;
+                border: 1px solid var(--faceoff-border);
+                box-shadow: var(--faceoff-shadow);
             }
-            .ranked-toggle {
+            .faceoff-panel {
+                position: relative;
+                overflow: hidden;
+                background:
+                    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 32%),
+                    radial-gradient(circle at 78% 12%, rgba(229, 9, 20, 0.22), transparent 24%),
+                    var(--faceoff-shell);
+                color: white;
+                padding: clamp(1rem, 1rem + 1vw, 1.8rem);
+                border-radius: 1.8rem;
+            }
+            .faceoff-panel::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%),
+                    linear-gradient(0deg, rgba(0, 0, 0, 0.4), transparent 45%);
+                pointer-events: none;
+            }
+            .faceoff-panel > * {
+                position: relative;
+                z-index: 1;
+            }
+            .faceoff-shell {
+                display: grid;
+                gap: 1.5rem;
+            }
+            .cinema-backdrop {
+                position: absolute;
+                inset: 0;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                opacity: 0.42;
+                pointer-events: none;
+            }
+            .backdrop-panel {
+                background:
+                    radial-gradient(circle at center, rgba(255, 255, 255, 0.06), transparent 52%),
+                    linear-gradient(180deg, rgba(12, 15, 20, 0.2), rgba(5, 6, 8, 0.88));
+                background-size: cover;
+                background-position: center;
+                filter: saturate(0.9) blur(24px);
+                transform: scale(1.08);
+            }
+            .backdrop-panel.has-image {
+                background-blend-mode: screen, normal;
+            }
+            .rankings-panel {
+                position: relative;
+                overflow: hidden;
+                background: color-mix(
+                    in srgb,
+                    var(--pico-card-background-color) 52%,
+                    #0a0d12
+                );
+                color: white;
+                width: min(100%, 28rem);
+                margin-inline: auto;
+                border-radius: 1.8rem;
+                padding: 1.1rem;
+            }
+            .rankings-panel::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 30%),
+                    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 26%);
+                pointer-events: none;
+            }
+            .rankings-panel > * {
+                position: relative;
+                z-index: 1;
+            }
+            .faceoff-header {
+                display: flex;
+                justify-content: center;
+            }
+            .rankings-header h2 {
+                margin: 0;
+                font-size: clamp(1.7rem, 1.15rem + 1.5vw, 2.45rem);
+                line-height: 1;
+                letter-spacing: -0.03em;
+            }
+            .matchup-actions,
+            .feedback-bar,
+            .rankings-header > div,
+            .rankings-actions,
+            .ranking-select-field,
+            .rank-item,
+            .rank-title-group,
+            .movie-copy,
+            .placeholder-copy {
+                min-width: 0;
+            }
+            .pool-toggle {
+                display: inline-grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.2rem;
+                padding: 0.2rem;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.06);
+            }
+            .pool-toggle button {
+                margin: 0;
+                min-height: 2rem;
+                padding: 0.4rem 0.8rem;
+                border: 0;
+                border-radius: 999px;
+                background: transparent;
+                color: color-mix(in srgb, white 72%, transparent);
+                font-size: 0.82rem;
+                font-weight: 600;
+            }
+            .pool-toggle button.active {
+                background: rgba(255, 255, 255, 0.14);
+                color: white;
+            }
+            .feedback-bar {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 0.45rem;
+                align-items: center;
+                width: 100%;
+            }
+            .feedback-bar > * {
+                min-width: 0;
+            }
+            .session-pill {
                 display: inline-flex;
                 align-items: center;
-                gap: 0.5rem;
-                margin-bottom: 1rem;
+                gap: 0.45rem;
+                min-height: 2.25rem;
+                padding: 0.5rem 0.8rem;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.06);
+                color: color-mix(in srgb, white 86%, transparent);
+                font-size: 0.82rem;
+            }
+            .session-pill.status {
+                width: 100%;
+            }
+            .session-pill.status.active,
+            .session-pill.status.loading,
+            .session-pill.status.idle {
+                background: rgba(10, 13, 18, 0.62);
+            }
+            .session-pill.status.error {
+                background: color-mix(in srgb, var(--pico-del-color) 16%, rgba(255, 255, 255, 0.05));
+                border-color: color-mix(in srgb, var(--pico-del-color) 35%, transparent);
+            }
+            .status-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.45rem;
+                min-height: 2.25rem;
+                margin: 0;
+                padding: 0.5rem 0.8rem;
+                border-radius: 999px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.08);
+                color: white;
+            }
+            .summary-grid {
+                display: grid;
+                gap: 0.55rem;
+                grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+            }
+            .summary-stat {
+                display: grid;
+                gap: 0.12rem;
+                padding: 0.75rem 0.85rem;
+                border-radius: 0.95rem;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.05);
+            }
+            .summary-stat.accent {
+                background: rgba(229, 9, 20, 0.14);
+                border-color: rgba(255, 122, 108, 0.24);
+            }
+            .summary-stat-value {
+                font-size: 1.08rem;
+                font-weight: 700;
+                letter-spacing: -0.03em;
+            }
+            .summary-stat-label {
+                font-size: 0.74rem;
+                color: color-mix(in srgb, white 72%, transparent);
+            }
+            .session-panel {
+                display: grid;
+                gap: 0.85rem;
+                padding: 1rem;
+                border-radius: 1.15rem;
+                background: rgba(5, 7, 10, 0.38);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .matchup-actions {
+                display: flex;
+                gap: 0.65rem;
+                justify-content: center;
+            }
+            .session-secondary {
+                display: grid;
+                gap: 0.65rem;
+            }
+            .session-hint {
+                margin: 0;
+                color: color-mix(in srgb, white 74%, transparent);
+                font-size: 0.82rem;
+                line-height: 1.45;
+            }
+            .status-banner {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.8rem 0.95rem;
+                border-radius: 0.95rem;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(10, 13, 18, 0.62);
+                color: color-mix(in srgb, white 90%, transparent);
+            }
+            .status-banner.error {
+                background: color-mix(in srgb, var(--pico-del-color) 16%, rgba(255, 255, 255, 0.05));
+                border-color: color-mix(in srgb, var(--pico-del-color) 35%, transparent);
+            }
+            .status-dot {
+                width: 0.5rem;
+                height: 0.5rem;
+                border-radius: 999px;
+                background: var(--faceoff-accent);
+                box-shadow: 0 0 0 0.25rem rgba(229, 9, 20, 0.18);
+                flex: none;
+            }
+            .session-pill.status.loading .status-dot {
+                background: #82d2ff;
+            }
+            .session-pill.status.idle .status-dot {
+                background: #9cc9a7;
+            }
+            .session-pill.status.error .status-dot {
+                display: none;
+            }
+            .status-banner > span:first-of-type {
+                flex: 1;
+            }
+            .matchup-shell {
+                display: block;
             }
             .matchup {
-                display: grid;
-                gap: 1rem;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                position: relative;
+                display: flex;
+                gap: 1.2rem;
                 align-items: start;
+            }
+            .matchup > * {
+                flex: 1;
+            }
+            .matchup-divider {
+                flex: none;
+                display: grid;
+                place-items: center;
+                align-self: center;
+            }
+            .matchup-divider span {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 3.25rem;
+                height: 3.25rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: rgba(255, 255, 255, 0.88);
+                font-size: 0.78rem;
+                font-weight: 800;
+                letter-spacing: 0.16em;
             }
             .movie-swipe-stage {
                 position: relative;
                 min-width: 0;
                 --swipe-progress: 0;
-                padding: 0.25rem 0;
+                padding: 0.15rem 0;
                 overflow: hidden;
             }
             .swipe-hint {
@@ -1025,13 +1521,36 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 );
             }
             .movie-card {
-                text-align: center;
                 display: flex;
                 flex-direction: column;
-                justify-content: space-between;
-                gap: 0.75rem;
+                gap: 0.7rem;
                 min-height: 100%;
-                transition: transform 180ms ease;
+                padding: 0;
+                border-radius: 0;
+                border: 0;
+                background: transparent;
+                box-shadow: none;
+                transition:
+                    transform 180ms ease,
+                    box-shadow 180ms ease,
+                    border-color 180ms ease,
+                    scale 180ms ease;
+            }
+            .movie-card:hover {
+                border-color: transparent;
+                box-shadow: none;
+                scale: none;
+            }
+            .movie-title-row {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: start;
+                gap: 0.45rem;
+            }
+            .movie-title-year {
+                color: color-mix(in srgb, white 62%, transparent);
+                font-size: 0.9rem;
+                font-weight: 500;
             }
             .poster-button {
                 border: 0;
@@ -1039,52 +1558,98 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 padding: 0;
                 margin: 0;
                 cursor: pointer;
-                border-radius: 0.75rem;
+                border-radius: 1.2rem;
                 overflow: hidden;
+                position: relative;
+                box-shadow: 0 1.2rem 2.6rem rgba(0, 0, 0, 0.28);
             }
             .poster-button img {
                 width: 100%;
                 aspect-ratio: 2 / 3;
                 object-fit: cover;
                 display: block;
-                border-radius: 0.75rem;
+                border-radius: 1.2rem;
+            }
+            .poster-button::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    linear-gradient(180deg, transparent 30%, rgba(0, 0, 0, 0.08) 56%, rgba(0, 0, 0, 0.62) 100%);
+                pointer-events: none;
             }
             .poster-fallback {
-                min-height: 12rem;
+                min-height: 13rem;
                 display: grid;
                 place-items: center;
-                background: var(--pico-muted-border-color);
-                color: var(--pico-muted-color);
+                gap: 0.6rem;
+                background:
+                    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%),
+                    rgba(255, 255, 255, 0.08);
+                color: color-mix(in srgb, white 72%, transparent);
+            }
+            .movie-copy h5 {
+                margin: 0;
+                font-size: clamp(1.15rem, 1rem + 0.55vw, 1.6rem);
+                line-height: 1.04;
+                letter-spacing: -0.03em;
+                min-height: calc(2em * 1.04);
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
             .movie-actions,
-            .controls,
             .rankings-actions {
                 display: flex;
-                gap: 0.5rem;
+                gap: 0.65rem;
                 align-items: center;
             }
-            .controls {
+            .movie-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: stretch;
+            }
+            .primary-vote-action,
+            .ghost-action {
+                display: inline-flex;
+                align-items: center;
                 justify-content: center;
-                margin-top: 1rem;
+                gap: 0.45rem;
+                margin: 0;
             }
-            .status-note {
-                display: flex;
+            .primary-vote-action {
+                background: color-mix(
+                    in srgb,
+                    var(--faceoff-accent) 14%,
+                    rgba(255, 255, 255, 0.08)
+                );
+                border: 1px solid rgba(255, 122, 108, 0.32);
+                color: white;
+                font-weight: 700;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            }
+            .ghost-action {
+                background: rgba(255, 255, 255, 0.07);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: inherit;
+            }
+            .wide-action {
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
+            }
+            kbd {
+                display: inline-flex;
                 align-items: center;
-                justify-content: space-between;
-                gap: 0.75rem;
-                margin: 0.625rem 0 0;
-                padding: 0 0.25rem;
-                color: var(--pico-muted-color);
-                font-size: 0.9rem;
-            }
-            .subtle-action {
-                padding: 0;
-                border: 0;
-                background: transparent;
-                color: var(--pico-primary);
-                text-decoration: underline;
-                margin-bottom: 0;
-                white-space: nowrap;
+                justify-content: center;
+                min-width: 1.5rem;
+                padding: 0.12rem 0.35rem;
+                border-radius: 0.4rem;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.06);
+                font: inherit;
+                font-size: 0.8em;
+                color: white;
             }
             .rankings-header,
             .page-subheader {
@@ -1094,23 +1659,84 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
+            .panel-description {
+                margin: 0.35rem 0 0;
+                color: color-mix(in srgb, white 68%, transparent);
+                font-size: 0.9rem;
+            }
             .rankings-actions {
                 margin-left: auto;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+            .ranking-select-field {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+                color: var(--pico-muted-color);
+                font-size: 0.83rem;
             }
             .rankings-actions select {
                 margin: 0;
-                width: auto;
+                width: 100%;
+                min-width: 0;
             }
             .info-button {
-                margin: 0;
-                min-width: 2.35rem;
-                padding-left: 0.65rem;
-                padding-right: 0.65rem;
-                font-weight: 700;
+                min-width: auto;
             }
             .rank-list {
                 margin: 0;
-                padding-left: 1.25rem;
+                padding: 0;
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+            .rank-row {
+                display: grid;
+                grid-template-columns: auto 4rem minmax(0, 1fr);
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.85rem 0.9rem;
+                border-radius: 1rem;
+                background:
+                    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+                    rgba(8, 11, 16, 0.62);
+                border: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            .rank-index {
+                width: 2rem;
+                height: 2rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 999px;
+                background: rgba(229, 9, 20, 0.16);
+                font-weight: 700;
+                color: white;
+            }
+            .rank-poster {
+                width: 4rem;
+                aspect-ratio: 2 / 3;
+                border-radius: 0.75rem;
+                overflow: hidden;
+                background: rgba(255, 255, 255, 0.06);
+                display: block;
+            }
+            .rank-poster img,
+            .rank-poster-fallback {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+            .rank-poster img {
+                object-fit: cover;
+            }
+            .rank-poster-fallback {
+                display: grid;
+                place-items: center;
+                color: color-mix(in srgb, white 62%, transparent);
             }
             .rank-item {
                 display: flex;
@@ -1119,8 +1745,20 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 gap: 0.75rem;
                 text-align: left;
             }
+            .rank-title-group {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 0.16rem;
+                min-width: 0;
+            }
             .rank-title {
                 flex: 1;
+                font-weight: 600;
+            }
+            .rank-subtitle {
+                font-size: 0.82rem;
+                color: color-mix(in srgb, white 58%, transparent);
             }
             .rank-meta {
                 display: inline-flex;
@@ -1129,6 +1767,11 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 flex-wrap: wrap;
                 justify-content: flex-end;
                 text-align: right;
+            }
+            .rank-score {
+                font-variant-numeric: tabular-nums;
+                font-weight: 700;
+                color: color-mix(in srgb, white 92%, var(--faceoff-accent-strong));
             }
             .delete-button {
                 margin: 0;
@@ -1154,9 +1797,22 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 justify-content: space-between;
                 align-items: center;
                 gap: 0.75rem;
-                padding: 0.625rem 0.75rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
+                padding: 0.7rem 0.8rem;
+                border-radius: 0.9rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .excluded-copy {
+                display: flex;
+                flex-direction: column;
+                gap: 0.15rem;
+                min-width: 0;
+            }
+            .excluded-copy strong {
+                font-size: 0.95rem;
+            }
+            .excluded-copy small {
+                color: var(--pico-muted-color);
             }
             .error-message {
                 color: var(--pico-del-color);
@@ -1176,6 +1832,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 margin: 0;
                 max-height: min(80vh, 42rem);
                 overflow: auto;
+                background: color-mix(in srgb, var(--pico-card-background-color) 84%, #090b10);
+                color: white;
             }
             .algorithm-modal-header {
                 display: flex;
@@ -1196,49 +1854,156 @@ export class MovieFaceoffRoute extends MobxLitElement {
             .algorithm-modal-body p:last-child {
                 margin-bottom: 0;
             }
-            .empty-state,
-            .placeholder {
+            .empty-state-panel,
+            .placeholder-card {
+                display: grid;
+                gap: 0.7rem;
+                place-items: center;
+                text-align: center;
                 color: var(--pico-muted-color);
             }
-            @media (max-width: 900px) {
+            .placeholder-card {
+                min-height: 100%;
+                background:
+                    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+                    var(--faceoff-surface-strong);
+                color: color-mix(in srgb, white 76%, transparent);
+            }
+            .placeholder-poster {
+                width: 100%;
+                aspect-ratio: 2 / 3;
+                border-radius: 0.95rem;
+                display: grid;
+                place-items: center;
+                background:
+                    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 48%),
+                    rgba(255, 255, 255, 0.06);
+            }
+            .placeholder-copy {
+                display: grid;
+                gap: 0.35rem;
+                width: 100%;
+            }
+            .placeholder-copy h5,
+            .empty-state-panel p {
+                margin: 0;
+            }
+            @media (min-width: 1320px) {
                 .layout {
-                    grid-template-columns: 1fr;
+                    grid-template-columns: minmax(0, 1fr) 26rem;
+                    width: min(100%, 88rem);
+                }
+                .rankings-panel {
+                    width: 100%;
+                    margin-inline: 0;
+                }
+            }
+            @media (max-width: 900px) {
+                .pool-toggle {
+                    width: 100%;
                 }
             }
             @media (max-width: 640px) {
                 .faceoff-panel,
                 .rankings-panel {
-                    padding-left: 0.7rem;
-                    padding-right: 0.7rem;
+                    padding-left: 0.78rem;
+                    padding-right: 0.78rem;
+                }
+                .rankings-header h2 {
+                    font-size: 1.55rem;
+                }
+                .faceoff-shell {
+                    gap: 0.9rem;
+                }
+                .pool-toggle {
+                    width: 100%;
+                }
+                .pool-toggle button {
+                    padding: 0.45rem 0.55rem;
+                    font-size: 0.78rem;
+                }
+                .session-pill {
+                    min-height: 2rem;
+                    padding: 0.45rem 0.7rem;
+                    font-size: 0.78rem;
+                }
+                .status-action {
+                    min-height: 2rem;
+                    padding: 0.45rem 0.7rem;
+                    font-size: 0.78rem;
+                }
+                .summary-grid {
+                    gap: 0.45rem;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+                .summary-stat {
+                    gap: 0.1rem;
+                    padding: 0.65rem 0.7rem;
                 }
                 .matchup {
                     gap: 0.55rem;
+                    align-items: stretch;
+                }
+                .matchup-divider {
+                    position: absolute;
+                    inset: 34% auto auto 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 2;
+                    pointer-events: none;
+                }
+                .matchup-divider span {
+                    width: 1.85rem;
+                    height: 1.85rem;
+                    font-size: 0.56rem;
+                    letter-spacing: 0.08em;
+                    background: rgba(34, 38, 47, 0.92);
+                    border-color: rgba(255, 255, 255, 0.16);
+                    box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.18);
                 }
                 .movie-card {
-                    gap: 0.4rem;
-                    padding: 0.65rem;
+                    gap: 0.45rem;
+                }
+                .movie-title-row {
+                    gap: 0.32rem;
                 }
                 .movie-card h5 {
-                    font-size: 0.92rem;
-                    margin-bottom: 0.15rem;
+                    font-size: 0.98rem;
+                    min-height: calc(2em * 1.08);
+                    line-height: 1.08;
                 }
-                .movie-card p {
+                .movie-title-year {
                     font-size: 0.8rem;
-                    margin-bottom: 0;
                 }
                 .movie-actions button,
-                .controls button {
+                .matchup-actions button,
+                .rankings-actions button {
                     font-size: 0.85rem;
                     padding: 0.45rem 0.55rem;
                 }
-                .poster-fallback {
-                    min-height: 9.5rem;
+                .rankings-actions {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                .session-hint {
+                    font-size: 0.76rem;
+                }
+                .movie-actions button {
+                    width: 100%;
+                    justify-content: center;
+                }
+                .poster-button {
+                    border-radius: 1rem;
+                    box-shadow: 0 0.55rem 1.4rem rgba(0, 0, 0, 0.2);
+                }
+                .poster-button img {
+                    border-radius: 1rem;
+                }
+                .poster-fallback,
+                .placeholder-poster {
+                    min-height: 8.5rem;
                 }
                 .swipe-hint {
                     font-size: 0.68rem;
-                }
-                .status-note {
-                    padding: 0;
                 }
                 .algorithm-modal-backdrop {
                     padding: 0.75rem;
@@ -1248,6 +2013,32 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 }
                 .excluded-item {
                     padding: 0.5rem 0.65rem;
+                }
+                .rank-row {
+                    grid-template-columns: auto 3rem minmax(0, 1fr);
+                    padding: 0.65rem 0.7rem;
+                }
+                .rank-poster {
+                    width: 3rem;
+                }
+                .rank-item {
+                    flex-direction: column;
+                }
+                .rank-meta {
+                    width: 100%;
+                    justify-content: space-between;
+                }
+                .rankings-actions .ghost-action {
+                    width: 100%;
+                    justify-content: center;
+                }
+                .ranking-select-field {
+                    width: 100%;
+                }
+            }
+            @media (max-width: 520px) {
+                .summary-grid {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
                 }
             }
         `,

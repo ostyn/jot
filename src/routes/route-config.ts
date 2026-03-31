@@ -2,25 +2,10 @@ import { createContext } from '@lit/context';
 import { Route, Router } from '@vaadin/router';
 import '../components/action-sheets/map.sheet';
 import { JotIconName } from '../components/jot-icon';
-import './activities.route';
-import './backup.route';
-import './cycle-station.route';
-import './cycle.route';
-import './entries.route';
-import './entry-edit.route';
-import './game.route';
-import './import-daylio.route';
-import './import.route';
-import './mood-edit.route';
-import './moods.route';
-import './movie-faceoff.route';
-import './note-edit.route';
-import './notes.route';
-import './reading.route';
-import './search.route';
-import './settings.route';
-import './summary.route';
-import './today.route';
+
+const lazy = (loader: () => Promise<unknown>) => async () => {
+    await loader();
+};
 
 export const routerContext = createContext<Router>('router');
 export const routes = [
@@ -28,6 +13,7 @@ export const routes = [
         path: '/entries',
         component: 'entries-route',
         name: 'entries',
+        action: lazy(() => import('./entries.route')),
         options: { menuItem: true, iconName: 'BookOpen' },
     },
 
@@ -35,12 +21,14 @@ export const routes = [
         path: '/moods',
         component: 'moods-route',
         name: 'moods',
+        action: lazy(() => import('./moods.route')),
         options: { menuItem: true, iconName: 'Smile' },
         children: [
             {
                 name: 'mood-edit',
                 path: '/edit/:id?',
                 component: 'mood-edit-route',
+                action: lazy(() => import('./mood-edit.route')),
             },
         ],
     },
@@ -48,18 +36,21 @@ export const routes = [
         path: '/activities',
         component: 'activities-route',
         name: 'activities',
+        action: lazy(() => import('./activities.route')),
         options: { menuItem: true, iconName: 'Activity' },
     },
     {
         path: '/notes',
         component: 'notes-route',
         name: 'notes',
+        action: lazy(() => import('./notes.route')),
         options: { menuItem: true, iconName: 'StickyNote' },
         children: [
             {
                 name: 'note-edit',
                 path: '/edit/:id?',
                 component: 'note-edit-route',
+                action: lazy(() => import('./note-edit.route')),
             },
         ],
     },
@@ -67,17 +58,20 @@ export const routes = [
         path: '/reading',
         component: 'reading-route',
         name: 'reading',
+        action: lazy(() => import('./reading.route')),
         options: { hideNavBar: true },
         children: [
             {
                 name: 'reading-share',
                 path: '/share',
                 component: 'reading-route',
+                action: lazy(() => import('./reading.route')),
             },
             {
                 name: 'reading-item',
                 path: '/:id',
                 component: 'reading-route',
+                action: lazy(() => import('./reading.route')),
             },
         ],
     },
@@ -85,12 +79,14 @@ export const routes = [
         path: '/cycle',
         component: 'cycle-route',
         name: 'cycle',
+        action: lazy(() => import('./cycle.route')),
         options: { hideNavBar: true },
         children: [
             {
                 name: 'cycle-station',
                 path: '/:id',
                 component: 'cycle-station-route',
+                action: lazy(() => import('./cycle-station.route')),
             },
         ],
     },
@@ -98,60 +94,71 @@ export const routes = [
         path: '/',
         component: 'entries-route',
         name: 'entries',
+        action: lazy(() => import('./entries.route')),
     },
     {
         path: '/entry/:id?',
         component: 'entry-edit-route',
         name: 'entry',
+        action: lazy(() => import('./entry-edit.route')),
     },
     {
         path: '/summary/:start?/:end?',
         component: 'summary-route',
         name: 'summary',
+        action: lazy(() => import('./summary.route')),
     },
 
     {
         path: '/settings',
         component: 'settings-route',
         name: 'settings',
+        action: lazy(() => import('./settings.route')),
         options: { menuItem: true, iconName: 'Settings' },
     },
     {
         path: '/import-daylio',
         component: 'import-daylio-route',
         name: 'import-daylio',
+        action: lazy(() => import('./import-daylio.route')),
     },
     {
         path: '/import',
         component: 'import-route',
         name: 'import',
+        action: lazy(() => import('./import.route')),
     },
     {
         path: '/search',
         component: 'search-route',
         name: 'search',
+        action: lazy(() => import('./search.route')),
     },
     {
         path: '/backup',
         component: 'backup-route',
         name: 'backup',
+        action: lazy(() => import('./backup.route')),
     },
     {
         path: '/game',
         component: 'game-route',
         name: 'game',
+        action: lazy(() => import('./game.route')),
         options: { hideNavBar: true },
     },
     {
         path: '/movie-faceoff',
         component: 'movie-faceoff-route',
         name: 'movie-faceoff',
-        options: { hideNavBar: true },
+        action: lazy(() => import('./movie-faceoff.route')),
+        options: { hideNavBar: true, wideOutlet: true },
     },
     {
         path: '/today',
         component: 'today-route',
         name: 'today',
+        action: lazy(() => import('./today.route')),
     },
 ] as const satisfies JotRoute[];
 
@@ -166,6 +173,7 @@ export type JotRoute = Route & {
         iconName?: JotIconName;
         menuItem?: boolean;
         hideNavBar?: boolean;
+        wideOutlet?: boolean;
     };
 };
 export function go(
@@ -252,6 +260,17 @@ export function shouldHideNavBar(pathname: string): boolean {
             ? route.options
             : undefined) as JotRoute['options'] | undefined;
         if (!routeOptions?.hideNavBar) return false;
+        if (route.path === pathname) return true;
+        return route.path !== '/' && pathname.startsWith(`${route.path}/`);
+    });
+}
+
+export function shouldUseWideOutlet(pathname: string): boolean {
+    return routes.some((route) => {
+        const routeOptions = ('options' in route
+            ? route.options
+            : undefined) as JotRoute['options'] | undefined;
+        if (!routeOptions?.wideOutlet) return false;
         if (route.path === pathname) return true;
         return route.path !== '/' && pathname.startsWith(`${route.path}/`);
     });

@@ -6,6 +6,33 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
     build: {
         target: 'esnext',
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return;
+                    const storePath = id.split('.store/')[1];
+                    if (storePath) {
+                        const storePackage = storePath.split('/')[0];
+                        if (storePackage) {
+                            return `vendor-${storePackage.replace(
+                                /[^a-zA-Z0-9_-]/g,
+                                '_'
+                            )}`;
+                        }
+                    }
+
+                    const modulePath = id.split('node_modules/').pop();
+                    if (!modulePath) return;
+
+                    const segments = modulePath.split('/');
+                    const packageName = segments[0].startsWith('@')
+                        ? `${segments[0]}-${segments[1]}`
+                        : segments[0];
+
+                    return `vendor-${packageName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+                },
+            },
+        },
     },
     server: { https: true }, // Not needed for Vite 5+
     plugins: [

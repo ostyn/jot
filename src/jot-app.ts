@@ -13,6 +13,7 @@ import {
     routerContext,
     routes,
     shouldHideNavBar,
+    shouldUseWideOutlet,
 } from './routes/route-config';
 import { settings } from './stores/settings.store';
 
@@ -24,8 +25,20 @@ export class JotApp extends LitElement {
     hide: boolean = false;
     @state()
     hideNavBar = false;
+    @state()
+    wideOutlet = false;
     @provide({ context: routerContext })
     private router: Router = new Router();
+
+    private syncLayoutForRoute(pathname: string, activeRoute?: JotRoute) {
+        this.hideNavBar =
+            Boolean(activeRoute?.options?.hideNavBar) ||
+            shouldHideNavBar(pathname);
+        this.wideOutlet =
+            Boolean(activeRoute?.options?.wideOutlet) ||
+            shouldUseWideOutlet(pathname);
+    }
+
     protected firstUpdated(): void {
         const updateSW = registerSW({
             onNeedRefresh() {
@@ -36,14 +49,15 @@ export class JotApp extends LitElement {
         settings.setShowArchivedFromStorage();
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
-        this.hideNavBar = shouldHideNavBar(window.location.pathname);
+        this.syncLayoutForRoute(window.location.pathname);
         window.addEventListener('vaadin-router-location-changed', (event: any) => {
             const activeRoute = event.detail?.location?.routes?.at(-1) as
                 | JotRoute
                 | undefined;
-            this.hideNavBar =
-                Boolean(activeRoute?.options?.hideNavBar) ||
-                shouldHideNavBar(event.detail?.location?.pathname || '/');
+            this.syncLayoutForRoute(
+                event.detail?.location?.pathname || '/',
+                activeRoute
+            );
             if (Sheet.isShown) {
                 Sheet.close();
             } else {
@@ -55,7 +69,7 @@ export class JotApp extends LitElement {
     render() {
         return html`
             <main id="main" class=${this.hideNavBar ? 'nav-hidden' : ''}>
-                <div id="outlet"></div>
+                <div id="outlet" class=${this.wideOutlet ? 'wide' : ''}></div>
             </main>
             <action-sheet></action-sheet>
             ${this.hideNavBar ? null : html`<nav-bar></nav-bar>`}
@@ -77,6 +91,10 @@ export class JotApp extends LitElement {
                 width: calc(100% - 2rem);
                 margin: 1rem;
                 margin-top: 0;
+            }
+            #outlet.wide {
+                max-width: none;
+                width: min(96rem, calc(100% - 2rem));
             }
             #main.nav-hidden #outlet {
                 padding-bottom: 0;

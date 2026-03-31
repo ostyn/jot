@@ -4,11 +4,15 @@ import { base } from '../baseStyles';
 import { Activity } from '../interfaces/activity.interface';
 import { EditTools, Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';
+import { MovieFaceoffExportData } from '../interfaces/movie-faceoff.interface';
 import { Note } from '../interfaces/note.interface';
+import { ReadingItem } from '../interfaces/reading-item.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
+import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { moods } from '../stores/moods.store';
 import { notes } from '../stores/notes.store';
+import { reading } from '../stores/reading.store';
 import { JsonExport, prepJsonForImport } from '../utils/BackupHelpers';
 
 @customElement('import-route')
@@ -22,6 +26,10 @@ export class ImportRoute extends LitElement {
     @state()
     notes: Note[] = [];
     @state()
+    readingItems: ReadingItem[] = [];
+    @state()
+    movieFaceoff?: MovieFaceoffExportData;
+    @state()
     isLoading = false;
     @state()
     importEntries = true;
@@ -31,6 +39,10 @@ export class ImportRoute extends LitElement {
     importActivities = true;
     @state()
     importNotes = true;
+    @state()
+    importReading = true;
+    @state()
+    importMovieFaceoff = true;
     @state()
     overwriteExistingData = true;
     handleFile() {
@@ -52,6 +64,13 @@ export class ImportRoute extends LitElement {
                     this.moods = data.moods;
                     this.activities = data.activities;
                     this.notes = data.notes || [];
+                    this.readingItems = data.readingItems || [];
+                    this.importReading = Boolean(data.readingItems?.length);
+                    this.movieFaceoff = data.movieFaceoff;
+                    this.importMovieFaceoff = Boolean(
+                        data.movieFaceoff?.events.length ||
+                            data.movieFaceoff?.movies.length
+                    );
                     this.isLoading = false;
                 }
             };
@@ -60,36 +79,46 @@ export class ImportRoute extends LitElement {
             console.log('No file selected');
         }
     }
-    import() {
+    async import() {
         if (confirm('Are you sure?')) {
             this.isLoading = true;
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (this.importEntries) {
                     if (this.overwriteExistingData) {
-                        entries.reset();
+                        await entries.reset();
                     }
-                    entries.bulkImport(this.entries, EditTools.JSON_IMPORT);
+                    await entries.bulkImport(this.entries, EditTools.JSON_IMPORT);
                 }
                 if (this.importMoods) {
                     if (this.overwriteExistingData) {
-                        moods.reset();
+                        await moods.reset();
                     }
-                    moods.bulkImport(this.moods, EditTools.JSON_IMPORT);
+                    await moods.bulkImport(this.moods, EditTools.JSON_IMPORT);
                 }
                 if (this.importActivities) {
                     if (this.overwriteExistingData) {
-                        activities.reset();
+                        await activities.reset();
                     }
-                    activities.bulkImport(
+                    await activities.bulkImport(
                         this.activities,
                         EditTools.JSON_IMPORT
                     );
                 }
                 if (this.importNotes) {
                     if (this.overwriteExistingData) {
-                        notes.reset();
+                        await notes.reset();
                     }
-                    notes.bulkImport(this.notes, EditTools.JSON_IMPORT);
+                    await notes.bulkImport(this.notes, EditTools.JSON_IMPORT);
+                }
+                if (this.importReading) {
+                    await reading.importData(this.readingItems, {
+                        overwrite: this.overwriteExistingData,
+                    });
+                }
+                if (this.importMovieFaceoff) {
+                    await movieFaceoff.importData(this.movieFaceoff, {
+                        overwrite: this.overwriteExistingData,
+                    });
                 }
                 this.isLoading = false;
             }, 1);
@@ -105,7 +134,12 @@ export class ImportRoute extends LitElement {
                 accept=".json,.txt"
             />
 
-            ${this.entries.length || this.moods.length || this.activities.length
+            ${this.entries.length ||
+            this.moods.length ||
+            this.activities.length ||
+            this.notes.length ||
+            this.readingItems.length ||
+            this.movieFaceoff
                 ? html` <p>
                       <label
                           ><input
@@ -140,6 +174,26 @@ export class ImportRoute extends LitElement {
                                   (this.importNotes = !this.importNotes)}
                           />Notes: ${this.notes.length}
                       </label>
+                      <label
+                          ><input
+                              type="checkbox"
+                              ?checked=${this.importReading}
+                              @change=${() =>
+                                  (this.importReading = !this.importReading)}
+                          />Reading: ${this.readingItems.length}
+                      </label>
+                      ${this.movieFaceoff
+                          ? html`<label
+                                ><input
+                                    type="checkbox"
+                                    ?checked=${this.importMovieFaceoff}
+                                    @change=${() =>
+                                        (this.importMovieFaceoff =
+                                            !this.importMovieFaceoff)}
+                                />Movie Faceoff: ${this.movieFaceoff.events.length}
+                                events, ${this.movieFaceoff.movies.length} movies
+                            </label>`
+                          : nothing}
                       <hr />
                       <label
                           ><input
@@ -154,7 +208,12 @@ export class ImportRoute extends LitElement {
                 : nothing}
             ${this.isLoading
                 ? html`<span aria-busy="true">Loading...</span>`
-                : this.entries.length
+                : this.entries.length ||
+                    this.activities.length ||
+                    this.moods.length ||
+                    this.notes.length ||
+                    this.readingItems.length ||
+                    this.movieFaceoff
                   ? html`<button @click=${this.import}>Import</button>`
                   : nothing}
         </article>`;

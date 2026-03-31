@@ -8,7 +8,7 @@
     "scripts": {
         "generate:movie-ids": "node ./scripts/generate-movie-ids.mjs",
         "dev": "vite",
-        "build": "yarn generate:movie-ids && tsc && vite build",
+        "build": "tsc && vite build",
         "preview": "vite preview"
     },
     "dependencies": {

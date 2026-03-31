@@ -5,8 +5,10 @@ import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
+import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { moods } from '../stores/moods.store';
 import { notes } from '../stores/notes.store';
+import { reading } from '../stores/reading.store';
 import { settings } from '../stores/settings.store';
 import { createExportContents } from '../utils/BackupHelpers';
 import { go } from './route-config';
@@ -126,16 +128,18 @@ export class SettingsRoute extends MobxLitElement {
             </section>
         </article>`;
     }
-    resetAll() {
+    async resetAll() {
         if (
             confirm(
                 'Are you sure you want to delete all your data? This cannot be reversed without a valid backup.'
             )
         ) {
-            entries.reset();
-            activities.reset();
-            moods.reset();
-            notes.reset();
+            await entries.reset();
+            await activities.reset();
+            await moods.reset();
+            await notes.reset();
+            await reading.reset();
+            await movieFaceoff.reset();
         }
     }
     static styles = [

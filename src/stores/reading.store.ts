@@ -59,6 +59,30 @@ class ReadingStore {
     }
 
     @action.bound
+    async reset() {
+        await readingItemDao.reset();
+        runInAction(() => {
+            this.all = [];
+        });
+    }
+
+    @action.bound
+    async importData(items: ReadingItem[] | undefined, options: { overwrite: boolean }) {
+        if (options.overwrite) {
+            await readingItemDao.reset();
+        }
+        if (items?.length) {
+            await readingItemDao.bulkPut(items);
+        }
+        await this.refresh();
+        this.all
+            .filter((item) => item.fetchState === 'pending')
+            .forEach((item) => {
+                void this.enrichItem(item.id);
+            });
+    }
+
+    @action.bound
     async importFromText(text: string): Promise<ReadingItem[]> {
         const result = await this.importUrls(extractUrls(text));
         return result.importedItems;

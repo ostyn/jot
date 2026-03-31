@@ -5,6 +5,7 @@
 !.yarn/sdks
 !.yarn/versions
 node_modules/*
+public/generated/*
 dist/*
 .env
 

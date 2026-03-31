@@ -25,7 +25,6 @@ Jot is built with a modern tech stack including:
 - **Lucide**: For SVG icons
 - **GoatCounter**: For simple web analytics
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -36,21 +35,32 @@ Jot is built with a modern tech stack including:
 ### Installation
 
 1. Clone the repo
-   ```sh
-   git clone https://github.com/ostyn/jot.git
-   ```
+    ```sh
+    git clone https://github.com/ostyn/jot.git
+    ```
 2. Install NPM packages
-   ```sh
-   yarn
-   ```
+    ```sh
+    yarn
+    ```
 
 ### Available Scripts
 
 In the project directory, you can run:
 
-- `npm run dev`: Starts the development server.
-- `npm run build`: Compiles the application for production.
-- `npm run preview`: Serves the production build for preview.
+- `yarn dev`: Starts the development server.
+- `yarn build`: Compiles the application for production using the checked-in generated movie assets.
+- `yarn preview`: Serves the production build for preview.
+- `yarn generate:movie-ids`: Runs the TMDB discover-based movie id sync.
+
+## TMDB Movie Pipeline
+
+The movie faceoff feature uses a single-stage TMDB discover sync that generates a filtered id list for the app without doing a second enrichment crawl.
+
+- The generator uses TMDB's `discover/movie` endpoint with conservative defaults like `vote_count.gte=50`, `with_runtime.gte=60`, `without_genres=10770`, `region=US`, and `with_release_type=2|3|4`.
+- Large result sets are split into smaller release-date windows so the sync stays under TMDB's discover pagination cap.
+- The app still consumes `public/generated/filtered_movie_ids.json` and fetches per-movie details lazily at runtime.
+
+Run `yarn generate:movie-ids` whenever you want to refresh the catalog.
 
 ## Contributing
 

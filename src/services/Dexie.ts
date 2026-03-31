@@ -33,6 +33,23 @@ db.version(6).stores({
     notes: 'id, date, path',
     readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
 });
+db.version(7).stores({
+    moods: 'id',
+    activities: 'id',
+    entries: 'id, date',
+    notes: 'id, date, path',
+    readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
+});
+db.version(8)
+    .stores({
+        moods: 'id',
+        activities: 'id',
+        entries: 'id, date',
+        notes: 'id, date, path',
+        readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
+        movieFaceoffEvents: '++id, createdAt, type, winnerId, loserId',
+        movieFaceoffMovies: 'id, excludedAt, unseenAt, updatedAt',
+    });
 export interface EntryVersion {
     version: number;
     description: string;

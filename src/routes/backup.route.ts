@@ -9,8 +9,10 @@ import { EditTools } from '../interfaces/entry.interface';
 import { GoogleDriveService } from '../services/google-drive.service';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';
+import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { moods } from '../stores/moods.store';
 import { notes } from '../stores/notes.store';
+import { reading } from '../stores/reading.store';
 import {
     createExportContents,
     JsonExport,
@@ -44,7 +46,7 @@ export class BackupRoute extends LitElement {
         await this.gdrive.addFile(
             'Backup.json',
             createExportContents(),
-            `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}, Notes: ${notes.all.length}`
+            `Entries: ${entries.all.length}, Activities: ${activities.all.length}, Moods: ${moods.userCreated.length}, Notes: ${notes.all.length}, Reading: ${reading.all.length}, Faceoff: ${movieFaceoff.allEvents.length} events`
         );
         this.backups = await this.gdrive.listFolder();
         this.isLoading = false;
@@ -154,18 +156,26 @@ export class BackupRoute extends LitElement {
             const importData: JsonExport = resp.result;
 
             prepJsonForImport(importData);
-            entries.reset();
-            activities.reset();
-            moods.reset();
-            notes.reset();
-            moods.bulkImport(importData.moods, EditTools.GOOGLE_IMPORT);
-            activities.bulkImport(
+            await entries.reset();
+            await activities.reset();
+            await moods.reset();
+            await notes.reset();
+            await reading.reset();
+            await movieFaceoff.reset();
+            await moods.bulkImport(importData.moods, EditTools.GOOGLE_IMPORT);
+            await activities.bulkImport(
                 importData.activities,
                 EditTools.GOOGLE_IMPORT
             );
-            entries.bulkImport(importData.entries, EditTools.GOOGLE_IMPORT);
+            await entries.bulkImport(importData.entries, EditTools.GOOGLE_IMPORT);
             if (importData.notes)
-                notes.bulkImport(importData.notes, EditTools.GOOGLE_IMPORT);
+                await notes.bulkImport(importData.notes, EditTools.GOOGLE_IMPORT);
+            await reading.importData(importData.readingItems, {
+                overwrite: false,
+            });
+            await movieFaceoff.importData(importData.movieFaceoff, {
+                overwrite: false,
+            });
         }
     }
     static styles = [

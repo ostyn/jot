@@ -3,53 +3,99 @@ import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
-import '../components/utility-page-header.component';
+import {
+    MovieFaceoffMovie,
+    MovieFaceoffRankedMovie,
+    MovieFaceoffSortMode,
+} from '../interfaces/movie-faceoff.interface';
 import {
     FaceoffMovie,
     fetchMovieFaceoffIds,
     fetchTmdbMovie,
     getMoviePosterUrl,
 } from '../services/movie-faceoff.service';
+import { movieFaceoff } from '../stores/movie-faceoff.store';
+import {
+    buildMovieFaceoffReplayState,
+    getMovieFaceoffRankingAlgorithm,
+    getMovieFaceoffRankedMovies,
+    MOVIE_FACEOFF_RANKING_ALGORITHMS,
+} from '../utils/movie-faceoff-rankings';
+import '../components/utility-page-header.component';
 
-type MovieRating = {
-    id: string;
-    title: string;
-    rating: number;
-    winCount: number;
-    lossCount: number;
+type FaceoffPair = [FaceoffMovie | null, FaceoffMovie | null];
+type UndoAction =
+    | 'vote'
+    | 'not-seen-left'
+    | 'not-seen-right'
+    | 'not-seen-both'
+    | 'exclude'
+    | 'restore-excluded'
+    | 'restore-seen';
+
+type MovieStateChange = {
+    movieId: number;
+    previousExcludedAt?: string;
+    previousUnseenAt?: string;
 };
 
-type BeatMap = Record<string, Set<string>>;
-type SortMode =
-    | 'elo'
-    | 'wins'
-    | 'transitive'
-    | 'manual'
-    | 'copeland'
-    | 'markov'
-    | 'bradley-terry';
+type UndoEntry = {
+    action: UndoAction;
+    eventId?: number;
+    movieChanges?: MovieStateChange[];
+    pair: FaceoffPair;
+};
 
-type RankedMovie = MovieRating & { score?: number };
+const MAX_UNDO_ENTRIES = 25;
+const UNDO_STACK_STORAGE_KEY = 'movie-faceoff-undo-stack-v2';
 
-const RATINGS_KEY = 'ratings';
-const BEAT_MAP_KEY = 'beatMap';
-const MANUAL_LIST_KEY = 'manualList';
+function clonePair(pair: FaceoffPair): FaceoffPair {
+    return pair.map((movie) => (movie ? { ...movie } : null)) as FaceoffPair;
+}
+
+function isFaceoffMovie(candidate: unknown): candidate is FaceoffMovie {
+    if (!candidate || typeof candidate !== 'object') return false;
+    const movie = candidate as Partial<FaceoffMovie>;
+    return typeof movie.id === 'number' && typeof movie.title === 'string';
+}
+
+function isMovieStateChange(candidate: unknown): candidate is MovieStateChange {
+    if (!candidate || typeof candidate !== 'object') return false;
+    const change = candidate as Partial<MovieStateChange>;
+    return typeof change.movieId === 'number';
+}
+
+function isUndoEntry(entry: unknown): entry is UndoEntry {
+    if (!entry || typeof entry !== 'object') return false;
+    const candidate = entry as Partial<UndoEntry>;
+    return Boolean(
+        [
+            'vote',
+            'not-seen-left',
+            'not-seen-right',
+            'not-seen-both',
+            'exclude',
+            'restore-excluded',
+            'restore-seen',
+        ].includes(candidate.action || '') &&
+            Array.isArray(candidate.pair) &&
+            candidate.pair.length === 2 &&
+            candidate.pair.every(
+                (movie) => movie === null || isFaceoffMovie(movie)
+            ) &&
+            (candidate.movieChanges === undefined ||
+                (Array.isArray(candidate.movieChanges) &&
+                    candidate.movieChanges.every(isMovieStateChange)))
+    );
+}
 
 @customElement('movie-faceoff-route')
 export class MovieFaceoffRoute extends MobxLitElement {
     @state()
-    private movies: Array<FaceoffMovie | null> = [null, null];
+    private movies: FaceoffPair = [null, null];
 
     @state()
-    private ratings: Record<string, MovieRating> =
-        JSON.parse(localStorage.getItem(RATINGS_KEY) || '{}') || {};
-
-    @state()
-    private manualList: string[] =
-        JSON.parse(localStorage.getItem(MANUAL_LIST_KEY) || '[]') || [];
-
-    @state()
-    private sortMode: SortMode = 'elo';
+    private sortMode: MovieFaceoffSortMode = 'elo';
 
     @state()
     private useRankedOnly = false;
@@ -64,12 +110,21 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private errorMessage = '';
 
     @state()
+    private statusMessage = '';
+
+    @state()
+    private showUndo = false;
+
+    @state()
+    private showAlgorithmInfo = false;
+
+    @state()
     private swipeOffsets: [number, number] = [0, 0];
 
     @state()
     private swipeIntent: ['' | 'skip', '' | 'skip'] = ['', ''];
 
-    private beatMap: BeatMap = this.readBeatMap();
+    private undoStack: UndoEntry[] = [];
     private movieIdPool: number[] | null = null;
     private gestureHosts: Array<HTMLElement | undefined> = [];
     private gestures: Array<TinyGesture<HTMLElement> | undefined> = [];
@@ -80,7 +135,12 @@ export class MovieFaceoffRoute extends MobxLitElement {
 
     connectedCallback() {
         super.connectedCallback();
-        void this.displayNewPair();
+        this.restoreUndoStack();
+        if (this.undoStack.length) {
+            this.statusMessage = 'Undo available';
+            this.showUndo = true;
+        }
+        void this.initializeRoute();
         window.addEventListener('keydown', this.keyDownHandler);
     }
 
@@ -97,30 +157,124 @@ export class MovieFaceoffRoute extends MobxLitElement {
         this.attachGestures();
     }
 
-    private readBeatMap(): BeatMap {
-        const rawBeatMap = JSON.parse(localStorage.getItem(BEAT_MAP_KEY) || '{}') || {};
-        return Object.fromEntries(
-            Object.entries(rawBeatMap).map(([key, value]) => [
-                key,
-                new Set((value as string[]) || []),
-            ])
+    private async initializeRoute() {
+        await movieFaceoff.refresh();
+        await this.displayNewPair();
+    }
+
+    private get replayState() {
+        return buildMovieFaceoffReplayState(
+            movieFaceoff.allEvents,
+            movieFaceoff.allMovies
         );
     }
 
-    private persistState() {
-        localStorage.setItem(RATINGS_KEY, JSON.stringify(this.ratings));
-        localStorage.setItem(
-            BEAT_MAP_KEY,
-            JSON.stringify(
-                Object.fromEntries(
-                    Object.entries(this.beatMap).map(([key, value]) => [
-                        key,
-                        Array.from(value),
-                    ])
-                )
-            )
+    private get excludedMovies() {
+        return [...movieFaceoff.allMovies]
+            .filter((movie) => Boolean(movie.excludedAt))
+            .sort(
+                (a, b) =>
+                    a.title.localeCompare(b.title) ||
+                    b.updatedAt.localeCompare(a.updatedAt)
+            );
+    }
+
+    private get unseenMovies() {
+        return [...movieFaceoff.allMovies]
+            .filter((movie) => Boolean(movie.unseenAt))
+            .sort(
+                (a, b) =>
+                    a.title.localeCompare(b.title) ||
+                    b.updatedAt.localeCompare(a.updatedAt)
+            );
+    }
+
+    private get visibleRankedMovies() {
+        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
+            (movie) => !movie.excludedAt && !movie.unseenAt
         );
-        localStorage.setItem(MANUAL_LIST_KEY, JSON.stringify(this.manualList));
+    }
+
+    private get rankingAlgorithm() {
+        return getMovieFaceoffRankingAlgorithm(this.sortMode);
+    }
+
+    private snapshotCurrentPair() {
+        return clonePair(this.movies);
+    }
+
+    private snapshotMovieChanges(movieIds: number[]): MovieStateChange[] {
+        return [...new Set(movieIds)].map((movieId) => {
+            const movie = movieFaceoff.movieMap.get(movieId);
+            return {
+                movieId,
+                previousExcludedAt: movie?.excludedAt,
+                previousUnseenAt: movie?.unseenAt,
+            };
+        });
+    }
+
+    private persistUndoStack() {
+        try {
+            window.sessionStorage.setItem(
+                UNDO_STACK_STORAGE_KEY,
+                JSON.stringify(this.undoStack)
+            );
+        } catch (_error) {
+            // Ignore storage failures; undo remains best effort.
+        }
+    }
+
+    private restoreUndoStack() {
+        try {
+            const raw = window.sessionStorage.getItem(UNDO_STACK_STORAGE_KEY);
+            if (!raw) return;
+            const parsed: unknown = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return;
+            this.undoStack = parsed.filter(isUndoEntry);
+        } catch (_error) {
+            this.undoStack = [];
+        }
+        this.showUndo = this.undoStack.length > 0;
+    }
+
+    private pushUndoEntry(entry: UndoEntry) {
+        this.undoStack.push({
+            ...entry,
+            pair: clonePair(entry.pair),
+        });
+        this.undoStack = this.undoStack.slice(-MAX_UNDO_ENTRIES);
+        this.persistUndoStack();
+        this.showUndo = true;
+    }
+
+    private async undoLastAction() {
+        const entry = this.undoStack.pop();
+        if (!entry) return;
+
+        this.persistUndoStack();
+
+        if (entry.eventId !== undefined) {
+            await movieFaceoff.deleteEvent(entry.eventId);
+        }
+
+        for (const change of entry.movieChanges || []) {
+            await movieFaceoff.setMovieExcludedAt(
+                change.movieId,
+                change.previousExcludedAt
+            );
+            await movieFaceoff.setMovieUnseenAt(
+                change.movieId,
+                change.previousUnseenAt
+            );
+        }
+
+        this.movies = clonePair(entry.pair);
+        this.errorMessage = '';
+        this.resetSwipeState(0);
+        this.resetSwipeState(1);
+        this.showUndo = this.undoStack.length > 0;
+        this.statusMessage = 'Undid last action';
     }
 
     private async ensureMovieIdPool() {
@@ -129,17 +283,44 @@ export class MovieFaceoffRoute extends MobxLitElement {
         return this.movieIdPool;
     }
 
-    private async getRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
-        const pool = this.useRankedOnly
-            ? Object.keys(this.ratings)
-                  .map((id) => Number(id))
-                  .filter((id) => !exclude.includes(id))
-            : (await this.ensureMovieIdPool()).filter((id) => !exclude.includes(id));
+    private async getCandidatePool(exclude: number[] = []) {
+        const excludedIds = movieFaceoff.excludedMovieIds;
+        const unseenIds = movieFaceoff.unseenMovieIds;
+        if (this.useRankedOnly) {
+            return Array.from(this.replayState.decisiveMovieIds).filter(
+                (id) =>
+                    !excludedIds.has(id) &&
+                    !unseenIds.has(id) &&
+                    !exclude.includes(id)
+            );
+        }
 
+        return (await this.ensureMovieIdPool()).filter(
+            (id) =>
+                !excludedIds.has(id) &&
+                !unseenIds.has(id) &&
+                !exclude.includes(id)
+        );
+    }
+
+    private async getRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
+        const pool = await this.getCandidatePool(exclude);
         if (!pool.length) return null;
 
-        const id = pool[Math.floor(Math.random() * pool.length)];
-        return fetchTmdbMovie(id);
+        const candidateIds = [...pool];
+        while (candidateIds.length) {
+            const index = Math.floor(Math.random() * candidateIds.length);
+            const [id] = candidateIds.splice(index, 1);
+            try {
+                const movie = await fetchTmdbMovie(id);
+                await movieFaceoff.upsertMoviesMetadata([movie]);
+                return movie;
+            } catch (_error) {
+                continue;
+            }
+        }
+
+        return null;
     }
 
     private async displayNewPair() {
@@ -165,6 +346,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
             }
 
             this.movies = [left, right];
+            this.resetSwipeState(0);
+            this.resetSwipeState(1);
         } catch (error) {
             this.movies = [null, null];
             this.errorMessage =
@@ -174,30 +357,20 @@ export class MovieFaceoffRoute extends MobxLitElement {
         }
     }
 
-    private async skip(index: 0 | 1) {
-        this.resetSwipeState(index);
+    private async replaceUnavailableMovie(index: 0 | 1) {
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
-        try {
-            const replacement = await this.getRandomMovie(exclude);
-            if (!replacement) {
-                this.errorMessage = 'No replacement movie is available.';
-                return;
-            }
-            this.movies =
-                index === 0
-                    ? [replacement, this.movies[1]]
-                    : [this.movies[0], replacement];
-        } catch (error) {
-            this.errorMessage =
-                error instanceof Error ? error.message : 'Unable to load next movie.';
+        const replacement = await this.getRandomMovie(exclude);
+        if (!replacement) {
+            await this.displayNewPair();
+            return;
         }
-    }
 
-    private async skipBoth() {
-        this.resetSwipeState(0);
-        this.resetSwipeState(1);
-        await this.displayNewPair();
+        this.movies =
+            index === 0
+                ? [replacement, this.movies[1]]
+                : [this.movies[0], replacement];
+        this.resetSwipeState(index);
     }
 
     private attachGestures() {
@@ -277,320 +450,152 @@ export class MovieFaceoffRoute extends MobxLitElement {
     }
 
     private handleKeyDown(event: KeyboardEvent) {
+        if (this.showAlgorithmInfo) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                this.showAlgorithmInfo = false;
+            }
+            return;
+        }
+
         const [left, right] = this.movies;
         if (!left || !right) return;
 
         if (event.shiftKey && event.key === 'ArrowLeft') {
             event.preventDefault();
-            void this.skip(0);
+            void this.markMovieUnseen(0);
             return;
         }
 
         if (event.shiftKey && event.key === 'ArrowRight') {
             event.preventDefault();
-            void this.skip(1);
+            void this.markMovieUnseen(1);
             return;
         }
 
         if (event.key === 'ArrowDown') {
             event.preventDefault();
-            void this.skipBoth();
+            void this.markBothMoviesUnseen();
             return;
         }
 
         if (event.key === 'ArrowLeft') {
             event.preventDefault();
-            void this.vote(left, right);
+            void this.vote(0);
             return;
         }
 
         if (event.key === 'ArrowRight') {
             event.preventDefault();
-            void this.vote(right, left);
+            void this.vote(1);
         }
     }
 
-    private getOrCreateRating(movie: FaceoffMovie) {
-        const id = String(movie.id);
-        if (!this.ratings[id]) {
-            this.ratings = {
-                ...this.ratings,
-                [id]: {
-                    id,
-                    title: movie.title,
-                    rating: 1500,
-                    winCount: 0,
-                    lossCount: 0,
-                },
-            };
-        }
-        return this.ratings[id];
-    }
+    private async vote(winnerIndex: 0 | 1) {
+        const [left, right] = this.movies;
+        if (!left || !right) return;
 
-    private async vote(winner: FaceoffMovie, loser: FaceoffMovie) {
-        const K = 32;
-        const winnerId = String(winner.id);
-        const loserId = String(loser.id);
+        const previousPair = this.snapshotCurrentPair();
+        const winnerMovie = winnerIndex === 0 ? left : right;
+        const loserMovie = winnerIndex === 0 ? right : left;
+        const eventId = await movieFaceoff.recordVote(winnerMovie, loserMovie);
 
-        const winnerRating = { ...this.getOrCreateRating(winner) };
-        const loserRating = { ...this.getOrCreateRating(loser) };
-
-        const expectedWinner =
-            1 / (1 + 10 ** ((loserRating.rating - winnerRating.rating) / 400));
-        const expectedLoser = 1 - expectedWinner;
-
-        winnerRating.rating += K * (1 - expectedWinner);
-        loserRating.rating += K * (0 - expectedLoser);
-        winnerRating.winCount++;
-        loserRating.lossCount++;
-
-        this.ratings = {
-            ...this.ratings,
-            [winnerId]: winnerRating,
-            [loserId]: loserRating,
-        };
-
-        if (!this.beatMap[winnerId]) this.beatMap[winnerId] = new Set();
-        this.beatMap[winnerId].add(loserId);
-
-        this.insertManual(winner, loser);
-        this.persistState();
+        this.pushUndoEntry({
+            action: 'vote',
+            eventId,
+            pair: previousPair,
+        });
+        this.statusMessage = 'Recorded vote';
+        this.showUndo = true;
         await this.displayNewPair();
     }
 
-    private insertManual(winner: FaceoffMovie, loser: FaceoffMovie) {
-        const winnerId = String(winner.id);
-        const loserId = String(loser.id);
-        const list = [...this.manualList];
-        const winnerIndex = list.indexOf(winnerId);
-        const loserIndex = list.indexOf(loserId);
+    private async markMovieUnseen(index: 0 | 1) {
+        const [left, right] = this.movies;
+        if (!left || !right) return;
 
-        if (winnerIndex !== -1 && loserIndex !== -1 && winnerIndex < loserIndex) {
-            this.manualList = [...new Set(list)];
-            return;
-        }
+        const movie = index === 0 ? left : right;
+        const previousPair = this.snapshotCurrentPair();
+        const movieChanges = this.snapshotMovieChanges([movie.id]);
+        await movieFaceoff.markMovieUnseen(movie.id);
 
-        if (winnerIndex !== -1 && loserIndex !== -1 && winnerIndex > loserIndex) {
-            list.splice(winnerIndex, 1);
-            const newLoserIndex = list.indexOf(loserId);
-            list.splice(newLoserIndex, 0, winnerId);
-        }
-
-        if (winnerIndex === -1 && loserIndex !== -1) {
-            list.splice(list.indexOf(loserId), 0, winnerId);
-        }
-
-        if (winnerIndex !== -1 && loserIndex === -1) {
-            list.push(loserId);
-        }
-
-        if (winnerIndex === -1 && loserIndex === -1) {
-            list.push(winnerId, loserId);
-        }
-
-        this.manualList = [...new Set(list)];
+        this.pushUndoEntry({
+            action: index === 0 ? 'not-seen-left' : 'not-seen-right',
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = 'Marked as not seen';
+        this.showUndo = true;
+        await this.replaceUnavailableMovie(index);
     }
 
-    private computeTransitiveScores(): RankedMovie[] {
-        const scores: Record<string, number> = {};
-        const visitedCache: Record<string, number> = {};
+    private async markBothMoviesUnseen() {
+        const [left, right] = this.movies;
+        if (!left || !right) return;
 
-        const dfs = (id: string, visited = new Set<string>()) => {
-            if (visitedCache[id] !== undefined) return visitedCache[id];
-            if (!this.beatMap[id]) return 0;
-            visited.add(id);
-            let count = 0;
-            for (const defeated of this.beatMap[id]) {
-                if (!visited.has(defeated)) {
-                    count += 1 + dfs(defeated, visited);
-                }
-            }
-            visitedCache[id] = count;
-            return count;
-        };
-
-        for (const id in this.ratings) {
-            scores[id] = dfs(id, new Set<string>());
-        }
-
-        return Object.entries(scores)
-            .map(([id, score]) => ({ ...this.ratings[id], score }))
-            .sort((a, b) => (b.score || 0) - (a.score || 0));
+        const previousPair = this.snapshotCurrentPair();
+        const movieChanges = this.snapshotMovieChanges([left.id, right.id]);
+        await movieFaceoff.markMoviesUnseen([left.id, right.id]);
+        this.pushUndoEntry({
+            action: 'not-seen-both',
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = 'Marked both movies as not seen';
+        this.showUndo = true;
+        this.resetSwipeState(0);
+        this.resetSwipeState(1);
+        await this.displayNewPair();
     }
 
-    private computeCopelandScores(): RankedMovie[] {
-        const ids = Object.keys(this.ratings);
-        const scores: Record<string, RankedMovie> = {};
+    private async excludeMovie(movie: MovieFaceoffRankedMovie) {
+        const previousPair = this.snapshotCurrentPair();
+        const movieChanges = this.snapshotMovieChanges([movie.id]);
+        await movieFaceoff.excludeMovie(movie.id);
+        this.pushUndoEntry({
+            action: 'exclude',
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = `Excluded ${movie.title}`;
+        this.showUndo = true;
 
-        for (const id of ids) {
-            let wins = 0;
-            let losses = 0;
-
-            for (const otherId of ids) {
-                if (id === otherId) continue;
-                const beat = this.beatMap[id]?.has(otherId);
-                const lost = this.beatMap[otherId]?.has(id);
-                if (beat) wins++;
-                if (lost) losses++;
-            }
-
-            scores[id] = {
-                ...this.ratings[id],
-                score: wins - losses,
-            };
+        const currentIds = this.movies
+            .filter(Boolean)
+            .map((currentMovie) => currentMovie!.id);
+        if (currentIds.includes(movie.id)) {
+            await this.displayNewPair();
         }
-
-        return Object.values(scores).sort((a, b) => (b.score || 0) - (a.score || 0));
     }
 
-    private computeMarkovScores(iterations = 50, damping = 0.85): RankedMovie[] {
-        const ids = Object.keys(this.ratings);
-        const count = ids.length;
-        if (!count) return [];
-
-        const reverseEdges: Record<string, Set<string>> = {};
-        ids.forEach((id) => (reverseEdges[id] = new Set()));
-
-        for (const [winner, losers] of Object.entries(this.beatMap)) {
-            for (const loser of losers) {
-                if (!reverseEdges[loser]) reverseEdges[loser] = new Set();
-                reverseEdges[loser].add(winner);
-            }
-        }
-
-        const index = Object.fromEntries(ids.map((id, i) => [id, i]));
-        const matrix = Array.from({ length: count }, () =>
-            new Array<number>(count).fill(0)
-        );
-
-        for (let i = 0; i < count; i++) {
-            const fromId = ids[i];
-            const toSet = reverseEdges[fromId];
-            if (!toSet?.size) continue;
-
-            const share = 1 / toSet.size;
-            for (const toId of toSet) {
-                const j = index[toId];
-                if (j !== undefined) matrix[i][j] = share;
-            }
-        }
-
-        const rank = new Array<number>(count).fill(1 / count);
-        const temp = new Array<number>(count).fill(0);
-
-        for (let iteration = 0; iteration < iterations; iteration++) {
-            for (let j = 0; j < count; j++) {
-                temp[j] = (1 - damping) / count;
-            }
-
-            for (let i = 0; i < count; i++) {
-                for (let j = 0; j < count; j++) {
-                    temp[j] += damping * rank[i] * matrix[i][j];
-                }
-            }
-
-            rank.splice(0, count, ...temp);
-        }
-
-        return ids
-            .map((id, i) => ({
-                ...this.ratings[id],
-                score: rank[i],
-            }))
-            .sort((a, b) => (b.score || 0) - (a.score || 0));
+    private async restoreExcludedMovie(movie: MovieFaceoffMovie) {
+        const previousPair = this.snapshotCurrentPair();
+        const movieChanges = this.snapshotMovieChanges([movie.id]);
+        await movieFaceoff.restoreMovie(movie.id);
+        this.pushUndoEntry({
+            action: 'restore-excluded',
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = `Restored ${movie.title}`;
+        this.showUndo = true;
     }
 
-    private computeBradleyTerryScores(
-        iterations = 100,
-        learningRate = 0.01
-    ): RankedMovie[] {
-        const ids = Object.keys(this.ratings);
-        if (!ids.length) return [];
-
-        const strengths: Record<string, number> = {};
-        ids.forEach((id) => (strengths[id] = 0));
-
-        const outcomes: Array<[string, string]> = [];
-        for (const [winner, losers] of Object.entries(this.beatMap)) {
-            for (const loser of losers) {
-                outcomes.push([winner, loser]);
-            }
-        }
-
-        for (let iteration = 0; iteration < iterations; iteration++) {
-            for (const [winner, loser] of outcomes) {
-                const winnerStrength = Math.exp(strengths[winner]);
-                const loserStrength = Math.exp(strengths[loser]);
-                const denominator = winnerStrength + loserStrength;
-                strengths[winner] +=
-                    learningRate * (1 - winnerStrength / denominator);
-                strengths[loser] +=
-                    learningRate * (-loserStrength / denominator);
-            }
-        }
-
-        return ids
-            .map((id) => ({
-                ...this.ratings[id],
-                score: Math.exp(strengths[id]),
-            }))
-            .sort((a, b) => (b.score || 0) - (a.score || 0));
+    private async restoreSeenMovie(movie: MovieFaceoffMovie) {
+        const previousPair = this.snapshotCurrentPair();
+        const movieChanges = this.snapshotMovieChanges([movie.id]);
+        await movieFaceoff.restoreMovieSeen(movie.id);
+        this.pushUndoEntry({
+            action: 'restore-seen',
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = `Marked ${movie.title} as seen again`;
+        this.showUndo = true;
     }
 
-    private deleteMovie(id: string) {
-        const nextRatings = { ...this.ratings };
-        delete nextRatings[id];
-        this.ratings = nextRatings;
-
-        delete this.beatMap[id];
-        this.manualList = this.manualList.filter((movieId) => movieId !== id);
-        for (const winners of Object.values(this.beatMap)) {
-            winners.delete(id);
-        }
-
-        this.persistState();
-    }
-
-    private getRankedList(): RankedMovie[] {
-        if (this.sortMode === 'elo') {
-            return Object.values(this.ratings).sort((a, b) => b.rating - a.rating);
-        }
-
-        if (this.sortMode === 'wins') {
-            return Object.values(this.ratings).sort((a, b) => {
-                const aGames = a.winCount + a.lossCount;
-                const bGames = b.winCount + b.lossCount;
-                const aRate = aGames ? a.winCount / aGames : 0;
-                const bRate = bGames ? b.winCount / bGames : 0;
-                return bRate - aRate;
-            });
-        }
-
-        if (this.sortMode === 'transitive') return this.computeTransitiveScores();
-        if (this.sortMode === 'manual') {
-            return this.manualList
-                .map((id) => this.ratings[id])
-                .filter((movie): movie is MovieRating => Boolean(movie));
-        }
-        if (this.sortMode === 'copeland') return this.computeCopelandScores();
-        if (this.sortMode === 'markov') return this.computeMarkovScores();
-        return this.computeBradleyTerryScores();
-    }
-
-    private renderRankValue(movie: RankedMovie) {
-        if (this.sortMode === 'elo') return `${Math.round(movie.rating)} pts`;
-        if (this.sortMode === 'wins') {
-            const totalGames = movie.winCount + movie.lossCount;
-            return totalGames
-                ? `${Math.round((movie.winCount / totalGames) * 100)}%`
-                : '0%';
-        }
-        if (this.sortMode === 'manual') return '';
-        if (this.sortMode === 'copeland') return `${movie.score} net wins`;
-        if (this.sortMode === 'transitive') return `${movie.score} wins`;
-        if (this.sortMode === 'markov')
-            return `${((movie.score || 0) * 100).toFixed(2)}%`;
-        return `${(movie.score || 0).toFixed(2)}%`;
+    private renderRankValue(movie: MovieFaceoffRankedMovie) {
+        return this.rankingAlgorithm.formatMetric(movie);
     }
 
     private resetSwipeState(index: 0 | 1) {
@@ -628,7 +633,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
 
         this.swipeActionTimers[index] = window.setTimeout(() => {
             this.swipeActionTimers[index] = undefined;
-            void this.skip(index);
+            void this.markMovieUnseen(index);
         }, 140);
     }
 
@@ -653,8 +658,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                         ? html`<button
                               class="poster-button"
                               @click=${() => {
-                                  const otherMovie = this.movies[1 - index];
-                                  if (otherMovie) void this.vote(movie, otherMovie);
+                                  void this.vote(index);
                               }}
                           >
                               <img src=${imageUrl} alt=${movie.title} />
@@ -662,8 +666,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                         : html`<button
                               class="poster-button poster-fallback"
                               @click=${() => {
-                                  const otherMovie = this.movies[1 - index];
-                                  if (otherMovie) void this.vote(movie, otherMovie);
+                                  void this.vote(index);
                               }}
                           >
                               <span>No poster</span>
@@ -676,7 +679,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                         <button
                             class="secondary"
                             @click=${() => {
-                                void this.skip(index);
+                                void this.markMovieUnseen(index);
                             }}
                         >
                             Not Seen
@@ -687,8 +690,57 @@ export class MovieFaceoffRoute extends MobxLitElement {
         `;
     }
 
+    private renderAlgorithmInfoModal() {
+        if (!this.showAlgorithmInfo) return nothing;
+
+        const descriptionParts = this.rankingAlgorithm.description
+            .split('\n\n')
+            .filter(Boolean);
+
+        return html`
+            <div
+                class="algorithm-modal-backdrop"
+                @click=${() => {
+                    this.showAlgorithmInfo = false;
+                }}
+            >
+                <article
+                    class="algorithm-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="algorithm-info-title"
+                    @click=${(event: Event) => event.stopPropagation()}
+                >
+                    <header class="algorithm-modal-header">
+                        <div>
+                            <p class="algorithm-modal-eyebrow">
+                                Current ranking method
+                            </p>
+                            <h3 id="algorithm-info-title">
+                                ${this.rankingAlgorithm.label}
+                            </h3>
+                        </div>
+                        <button
+                            class="secondary"
+                            @click=${() => {
+                                this.showAlgorithmInfo = false;
+                            }}
+                        >
+                            Close
+                        </button>
+                    </header>
+                    <div class="algorithm-modal-body">
+                        ${descriptionParts.map(
+                            (paragraph) => html`<p>${paragraph}</p>`
+                        )}
+                    </div>
+                </article>
+            </div>
+        `;
+    }
+
     render() {
-        const ranked = this.getRankedList();
+        const ranked = this.visibleRankedMovies;
         const [left, right] = this.movies;
 
         return html`
@@ -698,9 +750,9 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     <header>
                         <h2>Pick a winner</h2>
                         <p>
-                            Arrow keys vote left/right. Use Shift + arrows to skip one,
-                            or Arrow Down to skip both. On touch, swipe a card outward
-                            for “not seen”.
+                            Arrow keys vote left/right. Use Shift + arrows to mark
+                            one movie as not seen, or Arrow Down for both. On touch,
+                            swipe a card outward for “not seen”.
                         </p>
                     </header>
 
@@ -739,12 +791,26 @@ export class MovieFaceoffRoute extends MobxLitElement {
                         <button
                             class="secondary"
                             @click=${() => {
-                                void this.skipBoth();
+                                void this.markBothMoviesUnseen();
                             }}
                         >
-                            Skip Both
+                            Mark Both Not Seen
                         </button>
                     </div>
+
+                    ${this.statusMessage
+                        ? html`<div class="status-note" role="status">
+                              <span>${this.statusMessage}</span>
+                              ${this.showUndo
+                                  ? html`<button
+                                        class="inline subtle-action"
+                                        @click=${() => void this.undoLastAction()}
+                                    >
+                                        Undo
+                                    </button>`
+                                  : nothing}
+                          </div>`
+                        : nothing}
                 </article>
 
                 <article class="rankings-panel">
@@ -756,17 +822,27 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                 @change=${(event: Event) => {
                                     this.sortMode = (
                                         event.currentTarget as HTMLSelectElement
-                                    ).value as SortMode;
+                                    ).value as MovieFaceoffSortMode;
                                 }}
                             >
-                                <option value="elo">Elo Score</option>
-                                <option value="wins">Win Rate</option>
-                                <option value="transitive">Transitive Rank</option>
-                                <option value="manual">Insert Rank</option>
-                                <option value="copeland">Copeland Score</option>
-                                <option value="markov">Markov Ranking</option>
-                                <option value="bradley-terry">Bradley-Terry Ranking</option>
+                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
+                                    (algorithm) => html`
+                                        <option value=${algorithm.id}>
+                                            ${algorithm.label}
+                                        </option>
+                                    `
+                                )}
                             </select>
+                            <button
+                                class="secondary info-button"
+                                title="About the current ranking method"
+                                aria-label="About the current ranking method"
+                                @click=${() => {
+                                    this.showAlgorithmInfo = true;
+                                }}
+                            >
+                                i
+                            </button>
                             <button
                                 class="secondary"
                                 @click=${() => {
@@ -790,11 +866,12 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                                   ${this.editList
                                                       ? html`<button
                                                             class="delete-button"
-                                                            @click=${() => {
-                                                                this.deleteMovie(movie.id);
-                                                            }}
+                                                            @click=${() =>
+                                                                void this.excludeMovie(
+                                                                    movie
+                                                                )}
                                                         >
-                                                            Remove
+                                                            Exclude
                                                         </button>`
                                                       : nothing}
                                               </span>
@@ -806,8 +883,67 @@ export class MovieFaceoffRoute extends MobxLitElement {
                         : html`<p class="empty-state">
                               Your rankings will appear here after a few faceoffs.
                           </p>`}
+
+                    ${this.editList && this.excludedMovies.length
+                        ? html`
+                              <section class="excluded-section">
+                                  <header class="page-subheader">
+                                      <h3>Excluded</h3>
+                                      <small>${this.excludedMovies.length}</small>
+                                  </header>
+                                  <ul class="excluded-list">
+                                      ${this.excludedMovies.map(
+                                          (movie) => html`
+                                              <li class="excluded-item">
+                                                  <span>${movie.title}</span>
+                                                    <button
+                                                      class="secondary"
+                                                      @click=${() =>
+                                                          void this.restoreExcludedMovie(
+                                                              movie
+                                                          )}
+                                                  >
+                                                      Restore
+                                                  </button>
+                                              </li>
+                                          `
+                                      )}
+                                  </ul>
+                              </section>
+                          `
+                        : nothing}
+
+                    ${this.editList && this.unseenMovies.length
+                        ? html`
+                              <section class="excluded-section">
+                                  <header class="page-subheader">
+                                      <h3>Not Seen</h3>
+                                      <small>${this.unseenMovies.length}</small>
+                                  </header>
+                                  <ul class="excluded-list">
+                                      ${this.unseenMovies.map(
+                                          (movie) => html`
+                                              <li class="excluded-item">
+                                                  <span>${movie.title}</span>
+                                                  <button
+                                                      class="secondary"
+                                                      @click=${() =>
+                                                          void this.restoreSeenMovie(
+                                                              movie
+                                                          )}
+                                                  >
+                                                      Mark Seen
+                                                  </button>
+                                              </li>
+                                          `
+                                      )}
+                                  </ul>
+                              </section>
+                          `
+                        : nothing}
                 </article>
             </section>
+            ${this.renderAlgorithmInfoModal()}
         `;
     }
 
@@ -931,7 +1067,27 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 justify-content: center;
                 margin-top: 1rem;
             }
-            .rankings-header {
+            .status-note {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                margin: 0.625rem 0 0;
+                padding: 0 0.25rem;
+                color: var(--pico-muted-color);
+                font-size: 0.9rem;
+            }
+            .subtle-action {
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: var(--pico-primary);
+                text-decoration: underline;
+                margin-bottom: 0;
+                white-space: nowrap;
+            }
+            .rankings-header,
+            .page-subheader {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -944,6 +1100,13 @@ export class MovieFaceoffRoute extends MobxLitElement {
             .rankings-actions select {
                 margin: 0;
                 width: auto;
+            }
+            .info-button {
+                margin: 0;
+                min-width: 2.35rem;
+                padding-left: 0.65rem;
+                padding-right: 0.65rem;
+                font-weight: 700;
             }
             .rank-list {
                 margin: 0;
@@ -971,8 +1134,67 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 margin: 0;
                 padding: 0.15rem 0.5rem;
             }
+            .excluded-section {
+                margin-top: 1.25rem;
+            }
+            .page-subheader h3 {
+                margin: 0;
+                font-size: 1rem;
+            }
+            .excluded-list {
+                list-style: none;
+                padding: 0;
+                margin: 0.75rem 0 0;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .excluded-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.625rem 0.75rem;
+                border-radius: var(--pico-border-radius);
+                background: var(--pico-card-sectioning-background-color);
+            }
             .error-message {
                 color: var(--pico-del-color);
+            }
+            .algorithm-modal-backdrop {
+                position: fixed;
+                inset: 0;
+                z-index: 50;
+                display: grid;
+                place-items: center;
+                padding: 1rem;
+                background: color-mix(in srgb, black 52%, transparent);
+                backdrop-filter: blur(6px);
+            }
+            .algorithm-modal {
+                width: min(34rem, 100%);
+                margin: 0;
+                max-height: min(80vh, 42rem);
+                overflow: auto;
+            }
+            .algorithm-modal-header {
+                display: flex;
+                align-items: start;
+                justify-content: space-between;
+                gap: 0.75rem;
+            }
+            .algorithm-modal-header h3 {
+                margin: 0.1rem 0 0;
+            }
+            .algorithm-modal-eyebrow {
+                margin: 0;
+                font-size: 0.78rem;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--pico-muted-color);
+            }
+            .algorithm-modal-body p:last-child {
+                margin-bottom: 0;
             }
             .empty-state,
             .placeholder {
@@ -1014,6 +1236,18 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 }
                 .swipe-hint {
                     font-size: 0.68rem;
+                }
+                .status-note {
+                    padding: 0;
+                }
+                .algorithm-modal-backdrop {
+                    padding: 0.75rem;
+                }
+                .algorithm-modal {
+                    width: 100%;
+                }
+                .excluded-item {
+                    padding: 0.5rem 0.65rem;
                 }
             }
         `,

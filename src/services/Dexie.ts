@@ -114,4 +114,37 @@ export const versions: { [key: number]: EntryVersion } = {
             }
         },
     },
+    6: {
+        version: 6,
+        description: 'Added readingItems',
+        needUpgrade: () => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
+    7: {
+        version: 7,
+        description: 'No changes',
+        needUpgrade: () => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
+    8: {
+        version: 8,
+        description: 'Added movieFaceoff',
+        needUpgrade: () => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
 };

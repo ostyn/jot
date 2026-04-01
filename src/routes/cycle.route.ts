@@ -94,6 +94,7 @@ export class CycleRoute extends LitElement {
     }
 
     async onAfterEnter() {
+        await stations.populateStations();
         await this.fetchStations();
         locationService.subscribe((coords) => {
             this.lat = coords.latitude;

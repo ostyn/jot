@@ -11,8 +11,7 @@ class StationStore {
         this.all = stations;
     }
     constructor() {
-        makeObservable(this);
-        this.populateStations();
+        makeObservable(this);      
     }
     async populateStations() {
         this.loading = true;

@@ -7,6 +7,8 @@ import {
     ArrowRight,
     BookOpen,
     CalendarCheck,
+    CalendarPlus,
+    ChartBar,
     ChevronLeft,
     ChevronRight,
     createElement,
@@ -16,6 +18,7 @@ import {
     FileText,
     Filter,
     FilterX,
+    Heart,
     Import,
     Info,
     Locate,
@@ -47,6 +50,8 @@ import {
 // Find Unused icons: [\\'\\"]AlertTriangle
 const mapping = {
     CalendarCheck,
+    CalendarPlus,
+    ChartBar,
     Filter,
     FilterX,
     PartyPopper,
@@ -85,6 +90,7 @@ const mapping = {
     Import,
     SmilePlus,
     MapPin,
+    Heart,
     StickyNote,
 };
 export type JotIconName = keyof typeof mapping;

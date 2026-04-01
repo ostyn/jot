@@ -3,6 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
+import '../components/edit-log-dates.component';
 import { notes } from '../stores/notes.store';
 import { betterGo } from './route-config';
 

@@ -51,7 +51,12 @@ export class MapSheet extends LitElement {
     ): void {
         if (!this.lat || !this.lon) {
             const latLng = locationService.getCachedLocation();
-            this.setupMap(latLng!.latitude, latLng!.longitude);
+            if (latLng) {
+                this.setupMap(latLng.latitude, latLng.longitude);
+            } else {
+                // No cached location available, use default coordinates (London)
+                this.setupMap(0, 0);
+            }
         } else {
             this.setupMap(this.lat, this.lon);
         }
@@ -222,11 +227,14 @@ export class MapSheet extends LitElement {
         this.map.panTo(location as any);
     }
     private updateCurrentLocationMarker() {
-        const location = {
-            lat: locationService.getCachedLocation()?.latitude,
-            lng: locationService.getCachedLocation()?.longitude,
-        };
-        this.currentLocation1.setLatLng(location as any);
-        this.currentLocation2.setLatLng(location as any);
+        const coords = locationService.getCachedLocation();
+        if (coords) {
+            const location = {
+                lat: coords.latitude,
+                lng: coords.longitude,
+            };
+            this.currentLocation1.setLatLng(location as any);
+            this.currentLocation2.setLatLng(location as any);
+        }
     }
 }

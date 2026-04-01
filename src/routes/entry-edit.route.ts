@@ -12,6 +12,7 @@ import { MoodsSheet } from '../components/action-sheets/moods.sheet';
 import { TextSheet } from '../components/action-sheets/text.sheet';
 import '../components/mood.component';
 import { QuickSet2 } from '../components/quick-set2.component';
+import '../components/activity-grid.component';
 import {
     ActivityDetail,
     EditTools,

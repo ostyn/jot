@@ -1,5 +1,4 @@
 import { html, TemplateResult } from 'lit';
-import '../components/activity-grid.component.ts';
 
 export class ActivitySheet {
     static getActionSheet(

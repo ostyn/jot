@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { consume } from '@lit/context';
 import { Router } from '@vaadin/router';
 import TinyGesture from 'tinygesture';
@@ -42,7 +43,7 @@ export class NavBar extends LitElement {
                             return html`<a
                                 class="item-wrapper"
                                 href="${route.path}"
-                                aria-label=${route.name}
+                                aria-label=${ifDefined(route.name)}
                                 ><span
                                     class=${'menu-bar-item ' +
                                     (this.isRouteSelected(route.path)

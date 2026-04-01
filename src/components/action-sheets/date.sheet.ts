@@ -19,13 +19,13 @@ import { dispatchEvent, Events } from '../../utils/Helpers';
 
 @customElement('date-sheet')
 export class DateSheet extends LitElement {
-    @property()
+    @property({ attribute: false })
     public date!: Date;
     @property()
     public type: TypesCalendar = 'default';
     @property()
     public selectionMode: 'single' | 'range' = 'single';
-    @property()
+    @property({ type: Array })
     public selectedDates: string[] = [];
     @state()
     public newText!: string;

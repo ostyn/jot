@@ -131,7 +131,7 @@ export class ActivityEditSheet extends MobxLitElement {
                                         <input
                                             type="radio"
                                             name="category"
-                                            .value=${category}
+                                            .value=${category || ''}
                                             .checked=${category ===
                                             this.localActivity?.category}
                                             class="radio-button"

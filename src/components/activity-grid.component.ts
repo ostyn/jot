@@ -13,13 +13,13 @@ import './activity.component';
 export class ActivityGridComponent extends MobxLitElement {
     @state()
     private searchTerm = '';
-    @property()
+    @property({ type: Boolean })
     filterArchived: boolean = true;
     @property()
     selectedActivityInfo?: { [key: string]: ActivityDetail };
-    @property()
+    @property({ type: Boolean })
     showFilterUnused = false;
-    @property()
+    @property({ type: Array })
     focusedActivityIdList: string[] = [];
     @state()
     search: boolean = false;

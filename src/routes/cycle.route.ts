@@ -190,7 +190,7 @@ export class CycleRoute extends LitElement {
             <div class="stations">
                 <lit-virtualizer
                     .items=${filteredStations}
-                    .renderItem=${(station: Station): TemplateResult =>
+                    .renderItem=${((station: Station) =>
                         html`<station-component
                             .station="${station}"
                             .distanceFromUser="${station.distanceFromUser}"
@@ -198,7 +198,7 @@ export class CycleRoute extends LitElement {
                             @favorite-toggle="${this.handleFavoriteToggle.bind(
                                 this
                             )}"
-                        ></station-component>`}
+                        ></station-component>`) as any}
                 ></lit-virtualizer>
             </div>
         `;

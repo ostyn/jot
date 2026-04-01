@@ -1,6 +1,6 @@
 import minifyLiterals from 'rollup-plugin-minify-html-literals-v3';
 import { defineConfig } from 'vite';
-import mkcert from 'vite-plugin-mkcert';
+// import mkcert from 'vite-plugin-mkcert';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -34,10 +34,10 @@ export default defineConfig({
             },
         },
     },
-    server: { https: true }, // Not needed for Vite 5+
+    // server: { https: true }, // Not needed for Vite 5+
     plugins: [
         minifyLiterals(),
-        mkcert(),
+        // mkcert(),
         VitePWA({
             registerType: 'prompt',
             manifest: {

@@ -23,11 +23,11 @@ import leaflet from '/node_modules/leaflet/dist/leaflet.css?inline';
 
 @customElement('map-sheet')
 export class MapSheet extends LitElement {
-    @property()
+    @property({ type: Number })
     public lat?: number;
-    @property()
+    @property({ type: Number })
     public lon?: number;
-    @property()
+    @property({ type: Boolean })
     public updatable?: boolean = false;
     hasDisconnected = false;
     map!: MapType;

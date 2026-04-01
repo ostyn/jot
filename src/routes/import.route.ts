@@ -140,7 +140,7 @@ export class ImportRoute extends LitElement {
             this.notes.length ||
             this.readingItems.length ||
             this.movieFaceoff
-                ? html` <p>
+                ? html`<p>
                       <label
                           ><input
                               type="checkbox"

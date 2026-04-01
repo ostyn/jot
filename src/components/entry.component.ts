@@ -15,11 +15,11 @@ import './mood.component';
 
 @customElement('entry-component')
 export class EntryComponent extends MobxLitElement {
-    @property()
+    @property({ attribute: false })
     public entry: Entry = {} as Entry;
-    @property()
+    @property({ type: Boolean })
     public scrollToSelf = false;
-    @property()
+    @property({ type: Boolean })
     public hideFooter = false;
     updated() {
         if (this.scrollToSelf) {

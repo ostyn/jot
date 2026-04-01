@@ -15,7 +15,7 @@ export class ActivityInfoSheet extends LitElement {
     activityStats: any;
     @property()
     activityId!: string;
-    @property()
+    @property({ attribute: false })
     date!: Date;
     @property()
     onChange!: (a: any) => {};

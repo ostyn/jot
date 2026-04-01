@@ -10,7 +10,7 @@
         "dev": "vite",
         "build": "tsc && vite build",
         "preview": "vite preview",
-        "analyze": "npx lit-analyzer src/**/*.ts",
+        "analyze": "npx lit-analyzer --quiet src/**/*.ts",
         "prepare": "husky"
     },
     "dependencies": {

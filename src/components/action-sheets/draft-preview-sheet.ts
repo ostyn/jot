@@ -9,7 +9,7 @@ import { Sheet } from './action-sheet';
 
 @customElement('draft-preview-sheet')
 export class DraftPreviewSheet extends LitElement {
-    @property()
+    @property({ attribute: false })
     draftEntry!: Entry & { draftTime: number };
     @property()
     submit!: (data: boolean) => void;

@@ -12,7 +12,7 @@ import { Sheet } from './action-sheet';
 @customElement('activity-detail-edit-sheet')
 export class ActivityDetailEditSheet extends MobxLitElement {
     inputRef: Ref<HTMLElement> = createRef();
-    @property()
+    @property({ attribute: false })
     public store!: EntryEditStore;
     @property()
     public activityId!: string;

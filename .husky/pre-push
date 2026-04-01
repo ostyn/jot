@@ -1,2 +1,8 @@
 #!/usr/bin/env sh
-yarn analyze
+echo "Running Lit Analyzer..."
+if yarn analyze; then
+  echo "Lit Analyzer passed."
+else
+  echo "Lit Analyzer failed. Please fix the issues before pushing."
+  exit 1
+fi

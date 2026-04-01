@@ -99,7 +99,7 @@ export class JotIcon extends LitElement {
     @property({ type: String })
     name: JotIconName = 'Smile';
 
-    @property({ type: Object })
+    @property({ type: String })
     size: 'small' | 'medium' | 'large' | 'xlarge' = 'medium';
 
     @property({ type: String })
@@ -167,14 +167,20 @@ export class JotIcon extends LitElement {
                 line-height: 0px;
             }
             .small {
+                height: 1rem;
+                width: 1rem;
             }
             .medium {
+                height: 1.25rem;
+                width: 1.25rem;
             }
             .large {
                 height: 1.5rem;
                 width: 1.5rem;
             }
             .xlarge {
+                height: 2rem;
+                width: 2rem;
             }
         `,
     ];

@@ -9,11 +9,11 @@ import './activity-detail.component';
 
 @customElement('activity-component')
 export class ActivityComponent extends LitElement {
-    @property()
+    @property({ attribute: false })
     public detail?: ActivityDetail;
-    @property()
+    @property({ type: Boolean })
     public showName: boolean = false;
-    @property()
+    @property({ attribute: false })
     public activity?: Activity;
     protected firstUpdated(): void {
         setTimeout(() => {

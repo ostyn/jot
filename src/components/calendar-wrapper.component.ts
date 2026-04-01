@@ -12,7 +12,7 @@ import { dispatchEvent, Events } from '../utils/Helpers';
 
 @customElement('calendar-wrapper')
 export class CalendarWrapperComponent extends MobxLitElement {
-    @property()
+    @property({ attribute: false })
     startingDate = new Date();
     @property()
     type: TypesCalendar = 'default';
@@ -20,7 +20,7 @@ export class CalendarWrapperComponent extends MobxLitElement {
     selectionDatesMode: 'multiple-ranged' | 'single' | 'multiple' = 'single';
     @property()
     dateValues!: { [key: string]: string };
-    @property()
+    @property({ type: Array })
     selectedDatesInitial: string[] = [];
     calendar!: Calendar;
     shownMonth!: number;

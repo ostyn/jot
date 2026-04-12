@@ -1174,7 +1174,18 @@ export class MovieFaceoffRoute
         const rightPoster = right ? getMoviePosterUrl(right) : '';
 
         return html`
-            <utility-page-header title="Movie Faceoff"></utility-page-header>
+            <utility-page-header title="Movie Faceoff">
+                <button
+                    slot="actions"
+                    class="secondary header-action-button"
+                    @click=${() => {
+                        betterGo('movie-faceoff-add');
+                    }}
+                >
+                    <jot-icon name="Search"></jot-icon>
+                    <span>Add movie</span>
+                </button>
+            </utility-page-header>
             <main class="layout">
                 <section class="faceoff-column">
                     <article class="faceoff-panel surface-panel">
@@ -1206,18 +1217,6 @@ export class MovieFaceoffRoute
                                 </button>
                             </div>
                         </header>
-
-                        <div class="faceoff-toolbar">
-                            <button
-                                class="secondary"
-                                @click=${() => {
-                                    betterGo('movie-faceoff-add');
-                                }}
-                            >
-                                <jot-icon name="Search"></jot-icon>
-                                Add movie
-                            </button>
-                        </div>
 
                         ${this.renderTargetedInsertionBanner()}
 
@@ -1560,15 +1559,19 @@ export class MovieFaceoffRoute
                 grid-template-columns: minmax(0, 1fr) auto;
                 align-items: center;
             }
-            .faceoff-toolbar,
             .targeted-meta {
                 display: flex;
                 gap: 0.75rem;
                 align-items: start;
                 flex-wrap: wrap;
             }
-            .faceoff-toolbar {
-                justify-content: flex-start;
+            .header-action-button {
+                margin: 0;
+                padding-inline: 0.7rem;
+                min-height: 2.25rem;
+            }
+            .header-action-button span {
+                display: inline-block;
             }
             .targeted-copy,
             .search-result-copy {
@@ -2064,8 +2067,8 @@ export class MovieFaceoffRoute
                     width: 100%;
                 }
                 .targeted-banner,
-                .faceoff-toolbar {
-                    grid-template-columns: minmax(0, 1fr);
+                .header-action-button span {
+                    display: none;
                 }
                 .targeted-meta {
                     align-items: stretch;

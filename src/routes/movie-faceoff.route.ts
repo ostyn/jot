@@ -1,6 +1,7 @@
 import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
+import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import {
@@ -13,7 +14,6 @@ import {
     fetchMovieFaceoffIds,
     fetchTmdbMovie,
     getMoviePosterUrl,
-    searchTmdbMovies,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
@@ -105,7 +105,10 @@ function isUndoEntry(entry: unknown): entry is UndoEntry {
 }
 
 @customElement('movie-faceoff-route')
-export class MovieFaceoffRoute extends MobxLitElement {
+export class MovieFaceoffRoute
+    extends MobxLitElement
+    implements WebComponentInterface
+{
     @state()
     private movies: FaceoffPair = [null, null];
 
@@ -128,18 +131,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private statusMessage = '';
 
     @state()
-    private searchQuery = '';
-
-    @state()
-    private searchResults: FaceoffMovie[] = [];
-
-    @state()
-    private searchErrorMessage = '';
-
-    @state()
-    private isSearching = false;
-
-    @state()
     private targetedInsertion: TargetedInsertionState | null = null;
 
     @state()
@@ -160,8 +151,23 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private gestures: Array<TinyGesture<HTMLElement> | undefined> = [];
     private swipeActionTimers: Array<number | undefined> = [];
     private swipeSettling: [boolean, boolean] = [false, false];
+    private pendingTargetMovieId?: number;
+    private routeInitialized = false;
     private readonly keyDownHandler = (event: KeyboardEvent) =>
         this.handleKeyDown(event);
+
+    async onAfterEnter(location: RouterLocation) {
+        const search = new URLSearchParams(location.search);
+        const targetMovieId = Number(search.get('targetMovieId'));
+        this.pendingTargetMovieId =
+            Number.isFinite(targetMovieId) && targetMovieId > 0
+                ? targetMovieId
+                : undefined;
+
+        if (!this.routeInitialized) return;
+
+        await this.maybeStartTargetedInsertionFromUrl();
+    }
 
     connectedCallback() {
         super.connectedCallback();
@@ -188,7 +194,11 @@ export class MovieFaceoffRoute extends MobxLitElement {
 
     private async initializeRoute() {
         await movieFaceoff.refresh();
-        await this.displayNewPair();
+        this.routeInitialized = true;
+        const startedFromUrl = await this.maybeStartTargetedInsertionFromUrl();
+        if (!startedFromUrl) {
+            await this.displayNewPair();
+        }
     }
 
     private get replayState() {
@@ -374,6 +384,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
             );
             this.targetedInsertion = nextState.complete ? null : nextState;
             if (nextState.complete) {
+                this.pendingTargetMovieId = undefined;
+                this.clearTargetedMovieQueryParam();
                 this.statusMessage =
                     'Undid the last targeted vote. Targeted placement needs another ranked comparison.';
                 await this.displayNewPair();
@@ -513,6 +525,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 nextState.low + 1
             );
             this.targetedInsertion = null;
+            this.pendingTargetMovieId = undefined;
+            this.clearTargetedMovieQueryParam();
             this.statusMessage = nextState.rankedSnapshot.length
                 ? `Placed ${nextState.targetMovie.title} around #${estimatedPlacement} in ${this.rankingAlgorithm.label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
@@ -528,9 +542,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
     }
 
     private async startTargetedInsertion(movie: FaceoffMovie) {
-        this.searchErrorMessage = '';
-        this.searchResults = [];
-        this.searchQuery = movie.title;
         await movieFaceoff.upsertMoviesMetadata([movie]);
 
         const nextState = this.createTargetedInsertionState(movie);
@@ -539,6 +550,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
         if (nextState.complete) {
             const hasRankings = nextState.rankedSnapshot.length > 0;
             this.targetedInsertion = null;
+            this.pendingTargetMovieId = undefined;
+            this.clearTargetedMovieQueryParam();
             this.statusMessage = hasRankings
                 ? `Placed ${movie.title} around #${nextState.low + 1} in ${this.rankingAlgorithm.label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
@@ -556,38 +569,40 @@ export class MovieFaceoffRoute extends MobxLitElement {
         this.resetSwipeState(1);
     }
 
+    private async maybeStartTargetedInsertionFromUrl() {
+        if (!this.pendingTargetMovieId) return false;
+        if (this.targetedInsertion?.targetMovie.id === this.pendingTargetMovieId) {
+            return true;
+        }
+
+        try {
+            const movie = await fetchTmdbMovie(this.pendingTargetMovieId);
+            await this.startTargetedInsertion(movie);
+            return true;
+        } catch (error) {
+            this.errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Unable to start targeted placement.';
+            return false;
+        }
+    }
+
+    private clearTargetedMovieQueryParam() {
+        if (typeof window === 'undefined') return;
+        const search = new URLSearchParams(window.location.search);
+        if (!search.has('targetMovieId')) return;
+        betterGo('movie-faceoff');
+    }
+
     private cancelTargetedInsertion() {
         if (!this.targetedInsertion) return;
         const targetTitle = this.targetedInsertion.targetMovie.title;
         this.targetedInsertion = null;
+        this.pendingTargetMovieId = undefined;
+        this.clearTargetedMovieQueryParam();
         this.statusMessage = `Stopped targeted placement for ${targetTitle}.`;
         void this.displayNewPair();
-    }
-
-    private async handleMovieSearch(event?: Event) {
-        event?.preventDefault();
-        const trimmedQuery = this.searchQuery.trim();
-        this.searchErrorMessage = '';
-        this.searchResults = [];
-
-        if (!trimmedQuery) {
-            this.searchErrorMessage = 'Enter a movie title to search TMDB.';
-            return;
-        }
-
-        this.isSearching = true;
-        try {
-            const results = await searchTmdbMovies(trimmedQuery);
-            this.searchResults = results.slice(0, 8);
-            if (!this.searchResults.length) {
-                this.searchErrorMessage = `No TMDB results found for "${trimmedQuery}".`;
-            }
-        } catch (error) {
-            this.searchErrorMessage =
-                error instanceof Error ? error.message : 'Unable to search movies.';
-        } finally {
-            this.isSearching = false;
-        }
     }
 
     private async displayNewPair() {
@@ -824,6 +839,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
         if (this.targetedInsertion) {
             if (this.targetedInsertion.targetMovie.id === movie.id) {
                 this.targetedInsertion = null;
+                this.pendingTargetMovieId = undefined;
+                this.clearTargetedMovieQueryParam();
                 this.statusMessage = `Marked ${movie.title} as not seen and stopped targeted placement`;
                 await this.displayNewPair();
                 return;
@@ -857,6 +874,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
 
         if (this.targetedInsertion) {
             this.targetedInsertion = null;
+            this.pendingTargetMovieId = undefined;
+            this.clearTargetedMovieQueryParam();
         }
         await this.displayNewPair();
     }
@@ -956,92 +975,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     </button>
                 </div>
             </article>
-        `;
-    }
-
-    private renderMovieSearch() {
-        return html`
-            <section class="targeted-search-panel">
-                <header class="targeted-search-header">
-                    <div>
-                        <p class="eyebrow">Add a specific movie</p>
-                        <h3>Search TMDB and place it directly</h3>
-                    </div>
-                    <p class="panel-description">
-                        Pick a movie to compare it against ranked pivots in
-                        ${this.rankingAlgorithm.label}.
-                    </p>
-                </header>
-
-                <form
-                    class="targeted-search-form"
-                    @submit=${(event: Event) => {
-                        void this.handleMovieSearch(event);
-                    }}
-                >
-                    <input
-                        type="search"
-                        .value=${this.searchQuery}
-                        placeholder="Search for a movie title"
-                        ?disabled=${this.isSearching}
-                        @input=${(event: InputEvent) => {
-                            this.searchQuery = (
-                                event.currentTarget as HTMLInputElement
-                            ).value;
-                            this.searchErrorMessage = '';
-                        }}
-                    />
-                    <button type="submit" ?aria-busy=${this.isSearching}>
-                        <jot-icon name="Search"></jot-icon>
-                        ${this.isSearching ? 'Searching...' : 'Search'}
-                    </button>
-                </form>
-
-                ${this.searchErrorMessage
-                    ? html`<p class="search-feedback error">${this.searchErrorMessage}</p>`
-                    : nothing}
-
-                ${this.searchResults.length
-                    ? html`
-                          <ul class="search-results-list">
-                              ${this.searchResults.map((movie) => {
-                                  const posterUrl = getMoviePosterUrl(movie);
-                                  return html`
-                                      <li>
-                                          <button
-                                              class="search-result"
-                                              @click=${() => {
-                                                  void this.startTargetedInsertion(movie);
-                                              }}
-                                          >
-                                              <span class="search-result-poster">
-                                                  ${posterUrl
-                                                      ? html`<img
-                                                            src=${posterUrl}
-                                                            alt=""
-                                                            loading="lazy"
-                                                        />`
-                                                      : html`<span
-                                                            class="search-result-poster-fallback"
-                                                        >
-                                                            <jot-icon name="Play"></jot-icon>
-                                                        </span>`}
-                                              </span>
-                                              <span class="search-result-copy">
-                                                  <strong>${movie.title}</strong>
-                                                  <small>${this.getMovieYear(movie)}</small>
-                                              </span>
-                                              <span class="search-result-action">
-                                                  Place movie
-                                              </span>
-                                          </button>
-                                      </li>
-                                  `;
-                              })}
-                          </ul>
-                      `
-                    : nothing}
-            </section>
         `;
     }
 
@@ -1274,7 +1207,19 @@ export class MovieFaceoffRoute extends MobxLitElement {
                             </div>
                         </header>
 
-                        ${this.renderMovieSearch()} ${this.renderTargetedInsertionBanner()}
+                        <div class="faceoff-toolbar">
+                            <button
+                                class="secondary"
+                                @click=${() => {
+                                    betterGo('movie-faceoff-add');
+                                }}
+                            >
+                                <jot-icon name="Search"></jot-icon>
+                                Add movie
+                            </button>
+                        </div>
+
+                        ${this.renderTargetedInsertionBanner()}
 
                         <div class="poster-wash" aria-hidden="true">
                             <div
@@ -1600,7 +1545,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 overflow: hidden;
                 margin: 0;
             }
-            .targeted-search-panel,
             .targeted-banner {
                 display: grid;
                 gap: 0.75rem;
@@ -1616,13 +1560,15 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 grid-template-columns: minmax(0, 1fr) auto;
                 align-items: center;
             }
-            .targeted-search-header,
+            .faceoff-toolbar,
             .targeted-meta {
                 display: flex;
-                justify-content: space-between;
                 gap: 0.75rem;
                 align-items: start;
                 flex-wrap: wrap;
+            }
+            .faceoff-toolbar {
+                justify-content: flex-start;
             }
             .targeted-copy,
             .search-result-copy {
@@ -1640,73 +1586,6 @@ export class MovieFaceoffRoute extends MobxLitElement {
             .targeted-meta {
                 flex-direction: column;
                 align-items: flex-end;
-            }
-            .targeted-search-form {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) auto;
-                gap: 0.75rem;
-                align-items: center;
-            }
-            .targeted-search-form input,
-            .targeted-search-form button {
-                margin: 0;
-            }
-            .search-feedback.error {
-                color: var(--pico-del-color);
-            }
-            .search-results-list {
-                list-style: none;
-                padding: 0;
-                margin: 0;
-                display: flex;
-                flex-direction: column;
-                gap: 0.65rem;
-            }
-            .search-result {
-                width: 100%;
-                display: grid;
-                grid-template-columns: 3rem minmax(0, 1fr) auto;
-                gap: 0.75rem;
-                align-items: center;
-                padding: 0.65rem 0.75rem;
-                text-align: left;
-            }
-            .search-result-poster {
-                width: 3rem;
-                aspect-ratio: 2 / 3;
-                overflow: hidden;
-                border-radius: calc(var(--pico-border-radius) * 0.8);
-                background: var(--pico-form-element-background-color);
-                display: block;
-            }
-            .search-result-poster img,
-            .search-result-poster-fallback {
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
-            .search-result-poster img {
-                object-fit: cover;
-            }
-            .search-result-poster-fallback {
-                display: grid;
-                place-items: center;
-            }
-            .search-result-copy {
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
-            }
-            .search-result-copy strong {
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-            .search-result-action {
-                color: var(--pico-primary);
-                font-size: 0.9rem;
-                white-space: nowrap;
             }
             .faceoff-panel {
                 display: grid;
@@ -2185,8 +2064,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     width: 100%;
                 }
                 .targeted-banner,
-                .targeted-search-form,
-                .search-result {
+                .faceoff-toolbar {
                     grid-template-columns: minmax(0, 1fr);
                 }
                 .targeted-meta {

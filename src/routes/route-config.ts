@@ -155,6 +155,13 @@ export const routes = [
         options: { hideNavBar: true, wideOutlet: true },
     },
     {
+        path: '/movie-faceoff/add',
+        component: 'movie-faceoff-add-route',
+        name: 'movie-faceoff-add',
+        action: lazy(() => import('./movie-faceoff-add.route')),
+        options: { hideNavBar: true, wideOutlet: true },
+    },
+    {
         path: '/movie-faceoff',
         component: 'movie-faceoff-route',
         name: 'movie-faceoff',

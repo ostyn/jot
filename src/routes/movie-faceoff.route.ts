@@ -13,6 +13,7 @@ import {
     fetchMovieFaceoffIds,
     fetchTmdbMovie,
     getMoviePosterUrl,
+    searchTmdbMovies,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
@@ -45,6 +46,18 @@ type UndoEntry = {
     eventId?: number;
     movieChanges?: MovieStateChange[];
     pair: FaceoffPair;
+};
+
+type TargetedInsertionState = {
+    targetMovie: FaceoffMovie;
+    rankingSortMode: MovieFaceoffSortMode;
+    rankedSnapshot: MovieFaceoffRankedMovie[];
+    low: number;
+    high: number;
+    pivotIndex: number;
+    pivotMovie: FaceoffMovie | null;
+    comparisonsCompleted: number;
+    complete: boolean;
 };
 
 const MAX_UNDO_ENTRIES = 25;
@@ -112,6 +125,21 @@ export class MovieFaceoffRoute extends MobxLitElement {
 
     @state()
     private statusMessage = '';
+
+    @state()
+    private searchQuery = '';
+
+    @state()
+    private searchResults: FaceoffMovie[] = [];
+
+    @state()
+    private searchErrorMessage = '';
+
+    @state()
+    private isSearching = false;
+
+    @state()
+    private targetedInsertion: TargetedInsertionState | null = null;
 
     @state()
     private showUndo = false;
@@ -227,14 +255,33 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private get sessionStatusTone() {
         if (this.errorMessage) return 'error';
         if (this.isLoading) return 'loading';
+        if (this.targetedInsertion) return 'active';
         if (this.showUndo) return 'active';
         return 'idle';
     }
 
     private get sessionStatusLabel() {
         if (this.errorMessage) return 'Needs attention';
+        if (this.targetedInsertion) return 'Placing your chosen movie';
         if (this.isLoading) return 'Loading next matchup';
         return 'Ready for the next pick';
+    }
+
+    private get isTargetedMode() {
+        return Boolean(this.targetedInsertion);
+    }
+
+    private get targetedProgressLabel() {
+        const session = this.targetedInsertion;
+        if (!session) return '';
+        const remainingWindow = Math.max(session.high - session.low, 0);
+        if (session.complete) return 'Placement locked';
+        if (!session.rankedSnapshot.length) return 'Need more ranked movies';
+        return `${session.comparisonsCompleted} comparison${
+            session.comparisonsCompleted === 1 ? '' : 's'
+        } made, ${remainingWindow + 1} possible slot${
+            remainingWindow === 0 ? '' : 's'
+        } left`;
     }
 
     private snapshotCurrentPair() {
@@ -319,6 +366,22 @@ export class MovieFaceoffRoute extends MobxLitElement {
         this.resetSwipeState(1);
         this.showUndo = this.undoStack.length > 0;
         this.statusMessage = 'Undid last action';
+
+        if (this.targetedInsertion) {
+            const nextState = this.createTargetedInsertionState(
+                this.targetedInsertion.targetMovie
+            );
+            this.targetedInsertion = nextState.complete ? null : nextState;
+            if (nextState.complete) {
+                this.statusMessage =
+                    'Undid the last targeted vote. Targeted placement needs another ranked comparison.';
+                await this.displayNewPair();
+                return;
+            }
+            this.movies = [nextState.targetMovie, nextState.pivotMovie];
+            this.resetSwipeState(0);
+            this.resetSwipeState(1);
+        }
     }
 
     private async ensureMovieIdPool() {
@@ -367,7 +430,167 @@ export class MovieFaceoffRoute extends MobxLitElement {
         return null;
     }
 
+    private toFaceoffMovie(
+        movie: Pick<MovieFaceoffMovie, 'id' | 'title' | 'posterPath' | 'releaseDate'>
+    ): FaceoffMovie {
+        return {
+            id: movie.id,
+            title: movie.title,
+            poster_path: movie.posterPath,
+            release_date: movie.releaseDate,
+        };
+    }
+
+    private createTargetedInsertionState(
+        targetMovie: FaceoffMovie,
+        comparisonsCompleted = 0,
+        low = 0,
+        high?: number
+    ): TargetedInsertionState {
+        const rankedSnapshot = this.visibleRankedMovies.filter(
+            (movie) => movie.id !== targetMovie.id
+        );
+        const normalizedHigh = Math.max(
+            0,
+            Math.min(high ?? rankedSnapshot.length, rankedSnapshot.length)
+        );
+        const normalizedLow = Math.max(0, Math.min(low, normalizedHigh));
+
+        if (!rankedSnapshot.length || normalizedLow >= normalizedHigh) {
+            return {
+                targetMovie,
+                rankingSortMode: this.sortMode,
+                rankedSnapshot,
+                low: normalizedLow,
+                high: normalizedHigh,
+                pivotIndex: -1,
+                pivotMovie: null,
+                comparisonsCompleted,
+                complete: true,
+            };
+        }
+
+        const pivotIndex = Math.floor((normalizedLow + normalizedHigh) / 2);
+        const pivotMovie = this.toFaceoffMovie(rankedSnapshot[pivotIndex]);
+
+        return {
+            targetMovie,
+            rankingSortMode: this.sortMode,
+            rankedSnapshot,
+            low: normalizedLow,
+            high: normalizedHigh,
+            pivotIndex,
+            pivotMovie,
+            comparisonsCompleted,
+            complete: false,
+        };
+    }
+
+    private async refreshTargetedInsertion(
+        options: {
+            comparisonsCompleted?: number;
+            low?: number;
+            high?: number;
+            preserveCurrentPair?: boolean;
+        } = {}
+    ) {
+        const session = this.targetedInsertion;
+        if (!session) return;
+
+        const nextState = this.createTargetedInsertionState(
+            session.targetMovie,
+            options.comparisonsCompleted ?? session.comparisonsCompleted,
+            options.low ?? session.low,
+            options.high ?? session.high
+        );
+
+        this.targetedInsertion = nextState;
+
+        if (nextState.complete) {
+            const estimatedPlacement = Math.min(
+                nextState.rankedSnapshot.length + 1,
+                nextState.low + 1
+            );
+            this.targetedInsertion = null;
+            this.statusMessage = nextState.rankedSnapshot.length
+                ? `Placed ${nextState.targetMovie.title} around #${estimatedPlacement} in ${this.rankingAlgorithm.label}.`
+                : 'Saved that movie. Rank a few movies first, then use targeted placement.';
+            await this.displayNewPair();
+            return;
+        }
+
+        if (!options.preserveCurrentPair) {
+            this.movies = [nextState.targetMovie, nextState.pivotMovie];
+            this.resetSwipeState(0);
+            this.resetSwipeState(1);
+        }
+    }
+
+    private async startTargetedInsertion(movie: FaceoffMovie) {
+        this.searchErrorMessage = '';
+        this.searchResults = [];
+        this.searchQuery = movie.title;
+        await movieFaceoff.upsertMoviesMetadata([movie]);
+
+        const nextState = this.createTargetedInsertionState(movie);
+        this.targetedInsertion = nextState;
+
+        if (nextState.complete) {
+            const hasRankings = nextState.rankedSnapshot.length > 0;
+            this.targetedInsertion = null;
+            this.statusMessage = hasRankings
+                ? `Placed ${movie.title} around #${nextState.low + 1} in ${this.rankingAlgorithm.label}.`
+                : 'Saved that movie. Rank a few movies first, then use targeted placement.';
+            await this.displayNewPair();
+            this.errorMessage = hasRankings
+                ? ''
+                : 'Targeted placement needs at least one ranked movie to compare against.';
+            return;
+        }
+
+        this.statusMessage = `Placing ${movie.title} using ${this.rankingAlgorithm.label}.`;
+        this.errorMessage = '';
+        this.movies = [movie, nextState.pivotMovie];
+        this.resetSwipeState(0);
+        this.resetSwipeState(1);
+    }
+
+    private cancelTargetedInsertion() {
+        if (!this.targetedInsertion) return;
+        const targetTitle = this.targetedInsertion.targetMovie.title;
+        this.targetedInsertion = null;
+        this.statusMessage = `Stopped targeted placement for ${targetTitle}.`;
+        void this.displayNewPair();
+    }
+
+    private async handleMovieSearch(event?: Event) {
+        event?.preventDefault();
+        const trimmedQuery = this.searchQuery.trim();
+        this.searchErrorMessage = '';
+        this.searchResults = [];
+
+        if (!trimmedQuery) {
+            this.searchErrorMessage = 'Enter a movie title to search TMDB.';
+            return;
+        }
+
+        this.isSearching = true;
+        try {
+            const results = await searchTmdbMovies(trimmedQuery);
+            this.searchResults = results.slice(0, 8);
+            if (!this.searchResults.length) {
+                this.searchErrorMessage = `No TMDB results found for "${trimmedQuery}".`;
+            }
+        } catch (error) {
+            this.searchErrorMessage =
+                error instanceof Error ? error.message : 'Unable to search movies.';
+        } finally {
+            this.isSearching = false;
+        }
+    }
+
     private async displayNewPair() {
+        if (this.targetedInsertion) return;
         this.isLoading = true;
         this.errorMessage = '';
         try {
@@ -402,6 +625,10 @@ export class MovieFaceoffRoute extends MobxLitElement {
     }
 
     private async replaceUnavailableMovie(index: 0 | 1) {
+        if (this.targetedInsertion) {
+            this.errorMessage = 'Targeted placement only supports choosing between the target and comparison movie.';
+            return;
+        }
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
         const replacement = await this.getRandomMovie(exclude);
@@ -502,6 +729,12 @@ export class MovieFaceoffRoute extends MobxLitElement {
             return;
         }
 
+        if (this.targetedInsertion && event.key === 'Escape') {
+            event.preventDefault();
+            this.cancelTargetedInsertion();
+            return;
+        }
+
         const [left, right] = this.movies;
         if (!left || !right) return;
 
@@ -551,6 +784,22 @@ export class MovieFaceoffRoute extends MobxLitElement {
         });
         this.statusMessage = 'Recorded vote';
         this.showUndo = true;
+
+        if (this.targetedInsertion) {
+            const session = this.targetedInsertion;
+            const pivotIndex = session.pivotIndex;
+            const nextHigh = winnerIndex === 0 ? pivotIndex : session.high;
+            const nextLow =
+                winnerIndex === 1 ? Math.min(session.high, pivotIndex + 1) : session.low;
+
+            await this.refreshTargetedInsertion({
+                comparisonsCompleted: session.comparisonsCompleted + 1,
+                low: nextLow,
+                high: nextHigh,
+            });
+            return;
+        }
+
         await this.displayNewPair();
     }
 
@@ -570,6 +819,21 @@ export class MovieFaceoffRoute extends MobxLitElement {
         });
         this.statusMessage = 'Marked as not seen';
         this.showUndo = true;
+
+        if (this.targetedInsertion) {
+            if (this.targetedInsertion.targetMovie.id === movie.id) {
+                this.targetedInsertion = null;
+                this.statusMessage = `Marked ${movie.title} as not seen and stopped targeted placement`;
+                await this.displayNewPair();
+                return;
+            }
+
+            await this.refreshTargetedInsertion({
+                preserveCurrentPair: false,
+            });
+            return;
+        }
+
         await this.replaceUnavailableMovie(index);
     }
 
@@ -589,6 +853,10 @@ export class MovieFaceoffRoute extends MobxLitElement {
         this.showUndo = true;
         this.resetSwipeState(0);
         this.resetSwipeState(1);
+
+        if (this.targetedInsertion) {
+            this.targetedInsertion = null;
+        }
         await this.displayNewPair();
     }
 
@@ -648,6 +916,131 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 <p>${label}</p>
                 <strong>${value}</strong>
             </article>
+        `;
+    }
+
+    private getMovieYear(movie: Pick<FaceoffMovie, 'release_date'>) {
+        return movie.release_date?.split('-')[0] || 'Unknown year';
+    }
+
+    private renderTargetedInsertionBanner() {
+        const session = this.targetedInsertion;
+        if (!session) return nothing;
+
+        const estimatedPlacement = Math.min(
+            session.rankedSnapshot.length + 1,
+            session.low + 1
+        );
+
+        return html`
+            <article class="targeted-banner">
+                <div class="targeted-copy">
+                    <p class="eyebrow">Targeted placement</p>
+                    <h3>${session.targetMovie.title}</h3>
+                    <p>
+                        Compare it against key movies in ${this.rankingAlgorithm.label}.
+                        Current estimated slot: #${estimatedPlacement}.
+                    </p>
+                </div>
+                <div class="targeted-meta">
+                    <strong>${this.targetedProgressLabel}</strong>
+                    <button
+                        class="secondary"
+                        @click=${() => {
+                            this.cancelTargetedInsertion();
+                        }}
+                    >
+                        <jot-icon name="XCircle"></jot-icon>
+                        Cancel
+                    </button>
+                </div>
+            </article>
+        `;
+    }
+
+    private renderMovieSearch() {
+        return html`
+            <section class="targeted-search-panel">
+                <header class="targeted-search-header">
+                    <div>
+                        <p class="eyebrow">Add a specific movie</p>
+                        <h3>Search TMDB and place it directly</h3>
+                    </div>
+                    <p class="panel-description">
+                        Pick a movie to compare it against ranked pivots in
+                        ${this.rankingAlgorithm.label}.
+                    </p>
+                </header>
+
+                <form
+                    class="targeted-search-form"
+                    @submit=${(event: Event) => {
+                        void this.handleMovieSearch(event);
+                    }}
+                >
+                    <input
+                        type="search"
+                        .value=${this.searchQuery}
+                        placeholder="Search for a movie title"
+                        ?disabled=${this.isSearching}
+                        @input=${(event: InputEvent) => {
+                            this.searchQuery = (
+                                event.currentTarget as HTMLInputElement
+                            ).value;
+                            this.searchErrorMessage = '';
+                        }}
+                    />
+                    <button type="submit" ?aria-busy=${this.isSearching}>
+                        <jot-icon name="Search"></jot-icon>
+                        ${this.isSearching ? 'Searching...' : 'Search'}
+                    </button>
+                </form>
+
+                ${this.searchErrorMessage
+                    ? html`<p class="search-feedback error">${this.searchErrorMessage}</p>`
+                    : nothing}
+
+                ${this.searchResults.length
+                    ? html`
+                          <ul class="search-results-list">
+                              ${this.searchResults.map((movie) => {
+                                  const posterUrl = getMoviePosterUrl(movie);
+                                  return html`
+                                      <li>
+                                          <button
+                                              class="search-result"
+                                              @click=${() => {
+                                                  void this.startTargetedInsertion(movie);
+                                              }}
+                                          >
+                                              <span class="search-result-poster">
+                                                  ${posterUrl
+                                                      ? html`<img
+                                                            src=${posterUrl}
+                                                            alt=""
+                                                            loading="lazy"
+                                                        />`
+                                                      : html`<span
+                                                            class="search-result-poster-fallback"
+                                                        >
+                                                            <jot-icon name="Play"></jot-icon>
+                                                        </span>`}
+                                              </span>
+                                              <span class="search-result-copy">
+                                                  <strong>${movie.title}</strong>
+                                                  <small>${this.getMovieYear(movie)}</small>
+                                              </span>
+                                              <span class="search-result-action">
+                                                  Place movie
+                                              </span>
+                                          </button>
+                                      </li>
+                                  `;
+                              })}
+                          </ul>
+                      `
+                    : nothing}
+            </section>
         `;
     }
 
@@ -715,11 +1108,12 @@ export class MovieFaceoffRoute extends MobxLitElement {
     private renderMovie(movie: FaceoffMovie, index: 0 | 1) {
         const imageUrl = getMoviePosterUrl(movie);
         const swipeProgress = Math.min(Math.abs(this.swipeOffsets[index]) / 132, 1);
-        const year = movie.release_date?.split('-')[0] || 'Unknown year';
+        const year = this.getMovieYear(movie);
+        const isTargetedCard = this.targetedInsertion?.targetMovie.id === movie.id;
 
         return html`
             <div
-                class="movie-swipe-stage ${this.swipeIntent[index] ? 'skip' : ''}"
+                class="movie-swipe-stage ${this.swipeIntent[index] ? 'skip' : ''} ${this.targetedInsertion ? 'targeted' : ''}"
                 data-index=${index}
                 style=${`--swipe-progress:${swipeProgress};`}
             >
@@ -727,7 +1121,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     Not seen
                 </div>
                 <article
-                    class="movie-card"
+                    class="movie-card ${isTargetedCard ? 'target-card' : ''}"
                     style=${`transform: translateX(${this.swipeOffsets[index]}px) rotate(${this.swipeOffsets[index] * 0.04}deg);`}
                 >
                     ${imageUrl
@@ -755,6 +1149,15 @@ export class MovieFaceoffRoute extends MobxLitElement {
                             <div>
                                 <h3 title=${movie.title}>${movie.title}</h3>
                                 <p>${year}</p>
+                                ${this.targetedInsertion
+                                    ? html`<small class="targeted-card-label">
+                                          ${isTargetedCard
+                                              ? 'Target movie'
+                                              : `Compare against #${
+                                                    this.targetedInsertion.pivotIndex + 1
+                                                }`}
+                                      </small>`
+                                    : nothing}
                             </div>
                         </div>
                     </div>
@@ -850,6 +1253,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                 <button
                                     class=${this.useRankedOnly ? 'secondary' : ''}
                                     aria-pressed=${!this.useRankedOnly}
+                                    ?disabled=${this.isTargetedMode}
                                     @click=${() => {
                                         void this.setPoolMode(false);
                                     }}
@@ -859,6 +1263,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                 <button
                                     class=${this.useRankedOnly ? '' : 'secondary'}
                                     aria-pressed=${this.useRankedOnly}
+                                    ?disabled=${this.isTargetedMode}
                                     @click=${() => {
                                         void this.setPoolMode(true);
                                     }}
@@ -867,6 +1272,8 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                 </button>
                             </div>
                         </header>
+
+                        ${this.renderMovieSearch()} ${this.renderTargetedInsertionBanner()}
 
                         <div class="poster-wash" aria-hidden="true">
                             <div
@@ -935,6 +1342,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                             <div class="matchup-actions" role="group" aria-label="Current matchup actions">
                                 <button
                                     class="secondary"
+                                    ?disabled=${this.isTargetedMode}
                                     @click=${() => {
                                         void this.markBothMoviesUnseen();
                                     }}
@@ -970,6 +1378,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                     <span>Sort by</span>
                                     <select
                                         .value=${this.sortMode}
+                                        ?disabled=${this.isTargetedMode}
                                         @change=${(event: Event) => {
                                             this.sortMode = (
                                                 event.currentTarget as HTMLSelectElement
@@ -1175,6 +1584,114 @@ export class MovieFaceoffRoute extends MobxLitElement {
                 position: relative;
                 overflow: hidden;
                 margin: 0;
+            }
+            .targeted-search-panel,
+            .targeted-banner {
+                display: grid;
+                gap: 0.75rem;
+                padding: 1rem;
+                border-radius: var(--pico-border-radius);
+                background: color-mix(
+                    in srgb,
+                    var(--pico-card-sectioning-background-color) 78%,
+                    var(--pico-card-background-color)
+                );
+            }
+            .targeted-banner {
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+            }
+            .targeted-search-header,
+            .targeted-meta {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.75rem;
+                align-items: start;
+                flex-wrap: wrap;
+            }
+            .targeted-copy,
+            .search-result-copy {
+                min-width: 0;
+            }
+            .targeted-copy h3 {
+                margin: 0;
+            }
+            .targeted-copy p:last-child,
+            .search-feedback,
+            .targeted-card-label {
+                margin: 0;
+                color: var(--pico-muted-color);
+            }
+            .targeted-meta {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .targeted-search-form {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 0.75rem;
+                align-items: center;
+            }
+            .targeted-search-form input,
+            .targeted-search-form button {
+                margin: 0;
+            }
+            .search-feedback.error {
+                color: var(--pico-del-color);
+            }
+            .search-results-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+            }
+            .search-result {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 3rem minmax(0, 1fr) auto;
+                gap: 0.75rem;
+                align-items: center;
+                padding: 0.65rem 0.75rem;
+                text-align: left;
+            }
+            .search-result-poster {
+                width: 3rem;
+                aspect-ratio: 2 / 3;
+                overflow: hidden;
+                border-radius: calc(var(--pico-border-radius) * 0.8);
+                background: var(--pico-form-element-background-color);
+                display: block;
+            }
+            .search-result-poster img,
+            .search-result-poster-fallback {
+                width: 100%;
+                height: 100%;
+                display: block;
+            }
+            .search-result-poster img {
+                object-fit: cover;
+            }
+            .search-result-poster-fallback {
+                display: grid;
+                place-items: center;
+            }
+            .search-result-copy {
+                display: flex;
+                flex-direction: column;
+                gap: 0.2rem;
+            }
+            .search-result-copy strong {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .search-result-action {
+                color: var(--pico-primary);
+                font-size: 0.9rem;
+                white-space: nowrap;
             }
             .faceoff-panel {
                 display: grid;
@@ -1402,6 +1919,13 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     transform 180ms ease,
                     box-shadow 180ms ease;
             }
+            .movie-card.target-card {
+                border-color: color-mix(
+                    in srgb,
+                    var(--pico-primary-border) 72%,
+                    var(--pico-card-border-color)
+                );
+            }
             .movie-title-row {
                 min-width: 0;
             }
@@ -1446,6 +1970,11 @@ export class MovieFaceoffRoute extends MobxLitElement {
             }
             .movie-copy p {
                 margin-top: 0.35rem;
+            }
+            .targeted-card-label {
+                display: inline-flex;
+                margin-top: 0.5rem;
+                font-size: 0.82rem;
             }
             .movie-actions {
                 display: grid;
@@ -1639,6 +2168,14 @@ export class MovieFaceoffRoute extends MobxLitElement {
             @media (max-width: 640px) {
                 :host {
                     width: 100%;
+                }
+                .targeted-banner,
+                .targeted-search-form,
+                .search-result {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+                .targeted-meta {
+                    align-items: stretch;
                 }
                 .pool-toggle {
                     width: 100%;

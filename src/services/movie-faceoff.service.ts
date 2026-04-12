@@ -35,6 +35,32 @@ export async function fetchTmdbMovie(id: number): Promise<FaceoffMovie> {
     return (await response.json()) as FaceoffMovie;
 }
 
+export async function searchTmdbMovies(query: string): Promise<FaceoffMovie[]> {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return [];
+    if (!tmdbApiKey) {
+        throw new Error('Missing TMDB API key');
+    }
+
+    const response = await fetch(
+        `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(
+            trimmedQuery
+        )}`
+    );
+
+    if (!response.ok) {
+        throw new Error(`Unable to search movies (${response.status})`);
+    }
+
+    const data = (await response.json()) as {
+        results?: FaceoffMovie[];
+    };
+
+    return (data.results || []).filter(
+        (movie) => typeof movie.id === 'number' && Boolean(movie.title)
+    );
+}
+
 export function getMoviePosterUrl(movie: Pick<FaceoffMovie, 'poster_path'>) {
     return movie.poster_path
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`

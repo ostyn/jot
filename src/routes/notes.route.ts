@@ -86,7 +86,7 @@ export class NotesRoute extends MobxLitElement {
                                                     ${this.canShare
                                                         ? html`<button
                                                               type="button"
-                                                              class="secondary share-button"
+                                                              class="outline"
                                                               @click=${(event: Event) =>
                                                                   this.handleShareClick(
                                                                       event,
@@ -99,7 +99,7 @@ export class NotesRoute extends MobxLitElement {
                                                         : null}
                                                     <button
                                                         type="button"
-                                                        class="secondary delete-button"
+                                                        class="outline secondary"
                                                         @click=${(event: Event) =>
                                                             this.handleDeleteClick(
                                                                 event,
@@ -150,7 +150,8 @@ export class NotesRoute extends MobxLitElement {
             }
             footer {
                 display: flex;
-                align-items: center;
+                align-items: end;
+                flex-direction: column;
                 justify-content: space-between;
                 gap: 0.75rem;
             }
@@ -158,14 +159,6 @@ export class NotesRoute extends MobxLitElement {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
-            }
-            .share-button,
-            .delete-button {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35rem;
-                margin-bottom: 0;
-                padding: 0.35rem 0.7rem;
             }
         `,
     ];

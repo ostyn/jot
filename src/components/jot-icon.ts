@@ -164,7 +164,12 @@ export class JotIcon extends LitElement {
     static styles = [
         css`
             :host {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
                 line-height: 0px;
+                vertical-align: middle;
+                flex: none;
             }
             .small {
                 height: 1rem;

@@ -21,6 +21,11 @@ input.inline {
 button {
     user-select: none;
     --pico-line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    vertical-align: middle;
 }
 article > section {
     padding: 0.5rem 0;

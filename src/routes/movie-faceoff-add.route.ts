@@ -101,7 +101,7 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                                 this.searchErrorMessage = '';
                             }}
                         />
-                        <button type="submit" ?aria-busy=${this.isSearching}>
+                        <button type="submit">
                             <jot-icon name="Search"></jot-icon>
                             ${this.isSearching ? 'Searching...' : 'Search'}
                         </button>

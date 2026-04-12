@@ -24,6 +24,7 @@ import {
 } from '../utils/movie-faceoff-rankings';
 import '../components/jot-icon';
 import '../components/utility-page-header.component';
+import { betterGo } from './route-config';
 
 type FaceoffPair = [FaceoffMovie | null, FaceoffMovie | null];
 type UndoAction =
@@ -1460,6 +1461,20 @@ export class MovieFaceoffRoute extends MobxLitElement {
                                                           <strong class="rank-score"
                                                               >${this.renderRankValue(movie)}</strong
                                                           >
+                                                          <button
+                                                              class="outline"
+                                                              @click=${() =>
+                                                                  betterGo(
+                                                                      'movie-faceoff-movie',
+                                                                      {
+                                                                          pathParams: {
+                                                                              id: movie.id,
+                                                                          },
+                                                                      }
+                                                                  )}
+                                                          >
+                                                              Details
+                                                          </button>
                                                           ${this.editList
                                                               ? html`<button
                                                                     class="outline delete-button"

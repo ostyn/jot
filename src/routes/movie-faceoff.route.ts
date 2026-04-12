@@ -843,7 +843,7 @@ export class MovieFaceoffRoute extends MobxLitElement {
                     <article class="faceoff-panel surface-panel">
                         <header class="panel-header">
                             <div>
-                                <p class="eyebrow">Choose the better movie</p>
+                                <p class="eyebrow">Which would you rather watch?</p>
                                 <h2>Current faceoff</h2>
                             </div>
                             <div role="group" class="pool-toggle" aria-label="Movie pool">

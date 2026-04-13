@@ -1329,7 +1329,6 @@ export class MovieFaceoffRoute
                                       />
                                       <span>Smart pairing</span>
                                   </label>
-                                  <small class="selection-description">Intelligently selects movies to improve rankings</small>
                               </div>`
                             : nothing}
 
@@ -1750,12 +1749,6 @@ export class MovieFaceoffRoute
             .smart-selection-label input[type="checkbox"] {
                 margin: 0;
                 cursor: pointer;
-            }
-            .selection-description {
-                color: var(--pico-muted-color);
-                font-size: 0.875rem;
-                margin: 0;
-                white-space: nowrap;
             }
             .feedback-bar {
                 display: grid;

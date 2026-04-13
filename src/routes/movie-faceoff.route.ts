@@ -1211,13 +1211,6 @@ export class MovieFaceoffRoute
                             <jot-icon name="EyeOff"></jot-icon>
                             Not seen
                         </button>
-                        <button
-                            @click=${() => {
-                                void this.vote(index);
-                            }}
-                        >
-                            Choose
-                        </button>
                     </footer>
                 </article>
             </div>
@@ -1283,7 +1276,7 @@ export class MovieFaceoffRoute
             <utility-page-header title="Movie Faceoff">
                 <button
                     slot="actions"
-                    class="secondary header-action-button"
+                    class="outline header-action-button"
                     @click=${() => {
                         betterGo('movie-faceoff-add');
                     }}
@@ -1302,7 +1295,7 @@ export class MovieFaceoffRoute
                             </div>
                             <div role="group" class="pool-toggle" aria-label="Movie pool">
                                 <button
-                                    class=${this.useRankedOnly ? 'secondary' : ''}
+                                    class=${this.useRankedOnly ? 'outline' : ''}
                                     aria-pressed=${!this.useRankedOnly}
                                     ?disabled=${this.isTargetedMode}
                                     @click=${() => {
@@ -1312,7 +1305,7 @@ export class MovieFaceoffRoute
                                     All movies
                                 </button>
                                 <button
-                                    class=${this.useRankedOnly ? '' : 'secondary'}
+                                    class=${this.useRankedOnly ? '' : 'outline'}
                                     aria-pressed=${this.useRankedOnly}
                                     ?disabled=${this.isTargetedMode}
                                     @click=${() => {
@@ -1344,17 +1337,6 @@ export class MovieFaceoffRoute
 
                         ${this.renderTargetedInsertionBanner()}
 
-                        <div class="poster-wash" aria-hidden="true">
-                            <div
-                                class="poster-wash-panel ${leftPoster ? 'has-image' : ''}"
-                                style=${leftPoster ? `background-image:url(${leftPoster});` : ''}
-                            ></div>
-                            <div
-                                class="poster-wash-panel ${rightPoster ? 'has-image' : ''}"
-                                style=${rightPoster ? `background-image:url(${rightPoster});` : ''}
-                            ></div>
-                        </div>
-
                         ${this.errorMessage
                             ? html`<aside class="status-banner error" role="alert">
                                   <jot-icon name="AlertTriangle"></jot-icon>
@@ -1377,6 +1359,18 @@ export class MovieFaceoffRoute
                         </section>
 
                         <footer class="session-panel">
+                            <div class="matchup-actions" role="group" aria-label="Current matchup actions">
+                                <button
+                                    class="secondary"
+                                    ?disabled=${this.isTargetedMode}
+                                    @click=${() => {
+                                        void this.markBothMoviesUnseen();
+                                    }}
+                                >
+                                    <jot-icon name="EyeOff"></jot-icon>
+                                    Mark both unseen
+                                </button>
+                            </div>
                             <div class="feedback-bar">
                                 <p class="status-chip ${statusTone}" role="status">
                                     ${statusTone === 'error'
@@ -1408,18 +1402,7 @@ export class MovieFaceoffRoute
                                 )}
                             </div>
 
-                            <div class="matchup-actions" role="group" aria-label="Current matchup actions">
-                                <button
-                                    class="secondary"
-                                    ?disabled=${this.isTargetedMode}
-                                    @click=${() => {
-                                        void this.markBothMoviesUnseen();
-                                    }}
-                                >
-                                    <jot-icon name="EyeOff"></jot-icon>
-                                    Mark both unseen
-                                </button>
-                            </div>
+
 
                             <p class="session-hint">
                                 Swipe outward for not seen. Keyboard shortcuts:
@@ -1463,25 +1446,27 @@ export class MovieFaceoffRoute
                                         )}
                                     </select>
                                 </label>
-                                <button
-                                    class="secondary"
-                                    title="About the current ranking method"
-                                    aria-label="About the current ranking method"
-                                    @click=${() => {
-                                        this.showAlgorithmInfo = true;
-                                    }}
-                                >
-                                    <jot-icon name="Info"></jot-icon>
-                                    About
-                                </button>
-                                <button
-                                    class=${this.editList ? '' : 'secondary'}
-                                    @click=${() => {
-                                        this.editList = !this.editList;
-                                    }}
-                                >
-                                    ${this.editList ? 'Done' : 'Edit'}
-                                </button>
+                                <div role="group">
+                                    <button
+                                        class="secondary"
+                                        title="About the current ranking method"
+                                        aria-label="About the current ranking method"
+                                        @click=${() => {
+                                            this.showAlgorithmInfo = true;
+                                        }}
+                                    >
+                                        <jot-icon name="Info"></jot-icon>
+                                        About
+                                    </button>
+                                    <button
+                                        class=${this.editList ? '' : 'secondary'}
+                                        @click=${() => {
+                                            this.editList = !this.editList;
+                                        }}
+                                    >
+                                        ${this.editList ? 'Done' : 'Edit'}
+                                    </button>
+                                </div>
                             </div>
                         </header>
 
@@ -1716,7 +1701,6 @@ export class MovieFaceoffRoute
             }
             .faceoff-panel {
                 display: grid;
-                gap: 1rem;
             }
             .panel-header,
             .rankings-header,
@@ -1741,26 +1725,6 @@ export class MovieFaceoffRoute
                 font-size: 0.78rem;
                 letter-spacing: 0.06em;
                 text-transform: uppercase;
-            }
-            .poster-wash {
-                position: absolute;
-                inset: 0;
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                opacity: 0.18;
-                pointer-events: none;
-            }
-            .poster-wash-panel {
-                background:
-                    linear-gradient(180deg, transparent, var(--pico-card-background-color)),
-                    var(--pico-muted-border-color);
-                background-size: cover;
-                background-position: center;
-                filter: blur(24px);
-                transform: scale(1.06);
-            }
-            .poster-wash-panel.has-image {
-                background-blend-mode: multiply;
             }
             .faceoff-panel > *,
             .rankings-panel > * {
@@ -1840,7 +1804,6 @@ export class MovieFaceoffRoute
             .session-panel {
                 display: grid;
                 gap: 1rem;
-                padding: 0;
                 background: transparent;
                 border: 0;
             }
@@ -1956,6 +1919,8 @@ export class MovieFaceoffRoute
                 );
             }
             .movie-card {
+                box-shadow: none;
+                padding: 0;
                 display: flex;
                 flex-direction: column;
                 gap: 0.85rem;
@@ -2023,10 +1988,8 @@ export class MovieFaceoffRoute
                 font-size: 0.82rem;
             }
             .movie-actions {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.75rem;
                 margin-top: auto;
+                margin-bottom: auto;
             }
             kbd {
                 display: inline-flex;

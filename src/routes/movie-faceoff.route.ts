@@ -528,7 +528,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = nextState.rankedSnapshot.length
-                ? `Placed ${nextState.targetMovie.title} around #${estimatedPlacement} in ${this.rankingAlgorithm.label}.`
+                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${this.rankingAlgorithm.label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             return;
@@ -542,6 +542,7 @@ export class MovieFaceoffRoute
     }
 
     private async startTargetedInsertion(movie: FaceoffMovie) {
+        this.sortMode = 'manual';
         await movieFaceoff.upsertMoviesMetadata([movie]);
 
         const nextState = this.createTargetedInsertionState(movie);
@@ -553,7 +554,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = hasRankings
-                ? `Placed ${movie.title} around #${nextState.low + 1} in ${this.rankingAlgorithm.label}.`
+                ? `Placed ${movie.title} at #${nextState.low + 1} in ${this.rankingAlgorithm.label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             this.errorMessage = hasRankings

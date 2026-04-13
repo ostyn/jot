@@ -1269,8 +1269,6 @@ export class MovieFaceoffRoute
         const [left, right] = this.movies;
         const statusTone = this.sessionStatusTone;
         const statusLabel = this.statusMessage || this.sessionStatusLabel;
-        const leftPoster = left ? getMoviePosterUrl(left) : '';
-        const rightPoster = right ? getMoviePosterUrl(right) : '';
 
         return html`
             <utility-page-header title="Movie Faceoff">

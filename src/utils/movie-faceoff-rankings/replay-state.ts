@@ -48,7 +48,6 @@ function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceof
     // Glicko constants
     const SCALE = 173.7178; // Converts Elo scale to Glicko scale
     const DEFAULT_VOLATILITY = 0.06;
-    const CONVERGENCE_TOLERANCE = 0.000001;
 
     // Convert to Glicko scale
     const winnerRating = (winner.rating - 1500) / SCALE;
@@ -75,10 +74,6 @@ function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceof
     // Update volatility (simplified - full algorithm needs iterative solution)
     const winnerVolatility = winner.ratingVolatility || DEFAULT_VOLATILITY;
     const loserVolatility = loser.ratingVolatility || DEFAULT_VOLATILITY;
-
-    // Simplified volatility update (full Glicko-2 would iterate)
-    const aWinner = Math.log(winnerVolatility * winnerVolatility);
-    const aLoser = Math.log(loserVolatility * loserVolatility);
 
     // Update RD
     const newWinnerRD = Math.sqrt(winnerRD * winnerRD + winnerVolatility * winnerVolatility);

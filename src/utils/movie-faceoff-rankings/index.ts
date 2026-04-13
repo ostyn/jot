@@ -2,6 +2,7 @@ import { MovieFaceoffSortMode } from '../../interfaces/movie-faceoff.interface';
 import { bradleyTerryRankingAlgorithm } from './algorithms/bradley-terry';
 import { copelandRankingAlgorithm } from './algorithms/copeland';
 import { eloRankingAlgorithm } from './algorithms/elo';
+import { glickoRankingAlgorithm } from './algorithms/glicko';
 import { manualRankingAlgorithm } from './algorithms/manual';
 import { markovRankingAlgorithm } from './algorithms/markov';
 import { transitiveRankingAlgorithm } from './algorithms/transitive';
@@ -20,6 +21,7 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         copelandRankingAlgorithm,
         markovRankingAlgorithm,
         bradleyTerryRankingAlgorithm,
+        glickoRankingAlgorithm,
     ];
 
 const rankingAlgorithmMap = new Map<MovieFaceoffSortMode, MovieFaceoffRankingAlgorithm>(

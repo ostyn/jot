@@ -24,6 +24,8 @@ function syncRankedMovieMetadata(
             rating: 1500,
             winCount: 0,
             lossCount: 0,
+            ratingDeviation: 350, // Glicko default RD (high uncertainty)
+            ratingVolatility: 0.06, // Glicko default volatility
         });
         return ratings.get(movieId)!;
     }
@@ -40,6 +42,57 @@ function syncRankedMovieMetadata(
     current.createdAt = movie.createdAt;
     current.updatedAt = movie.updatedAt;
     return current;
+}
+
+function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceoffRankedMovie) {
+    // Glicko constants
+    const SCALE = 173.7178; // Converts Elo scale to Glicko scale
+    const DEFAULT_VOLATILITY = 0.06;
+    const CONVERGENCE_TOLERANCE = 0.000001;
+
+    // Convert to Glicko scale
+    const winnerRating = (winner.rating - 1500) / SCALE;
+    const loserRating = (loser.rating - 1500) / SCALE;
+    const winnerRD = (winner.ratingDeviation || 350) / SCALE;
+    const loserRD = (loser.ratingDeviation || 350) / SCALE;
+
+    // g(RD) function
+    const gWinner = 1 / Math.sqrt(1 + 3 * winnerRD * winnerRD / (Math.PI * Math.PI));
+    const gLoser = 1 / Math.sqrt(1 + 3 * loserRD * loserRD / (Math.PI * Math.PI));
+
+    // Expected outcome
+    const EWinner = 1 / (1 + Math.exp(-gLoser * (winnerRating - loserRating)));
+    const ELoser = 1 / (1 + Math.exp(-gWinner * (loserRating - winnerRating)));
+
+    // Variance
+    const vWinner = 1 / (gLoser * gLoser * EWinner * (1 - EWinner));
+    const vLoser = 1 / (gWinner * gWinner * ELoser * (1 - ELoser));
+
+    // Delta (rating change)
+    const deltaWinner = vWinner * gLoser * (1 - EWinner);
+    const deltaLoser = vLoser * gWinner * (0 - ELoser);
+
+    // Update volatility (simplified - full algorithm needs iterative solution)
+    const winnerVolatility = winner.ratingVolatility || DEFAULT_VOLATILITY;
+    const loserVolatility = loser.ratingVolatility || DEFAULT_VOLATILITY;
+
+    // Simplified volatility update (full Glicko-2 would iterate)
+    const aWinner = Math.log(winnerVolatility * winnerVolatility);
+    const aLoser = Math.log(loserVolatility * loserVolatility);
+
+    // Update RD
+    const newWinnerRD = Math.sqrt(winnerRD * winnerRD + winnerVolatility * winnerVolatility);
+    const newLoserRD = Math.sqrt(loserRD * loserRD + loserVolatility * loserVolatility);
+
+    // Update rating
+    const newWinnerRating = winnerRating + (1 / (newWinnerRD * newWinnerRD + vWinner)) * deltaWinner;
+    const newLoserRating = loserRating + (1 / (newLoserRD * newLoserRD + vLoser)) * deltaLoser;
+
+    // Convert back to Elo scale
+    winner.rating = newWinnerRating * SCALE + 1500;
+    loser.rating = newLoserRating * SCALE + 1500;
+    winner.ratingDeviation = Math.min(newWinnerRD * SCALE, 350); // Cap RD
+    loser.ratingDeviation = Math.min(newLoserRD * SCALE, 350);
 }
 
 function insertManualRank(list: number[], winnerId: number, loserId: number) {
@@ -109,6 +162,9 @@ export function buildMovieFaceoffReplayState(
         loser.rating += 32 * (0 - expectedLoser);
         winner.winCount++;
         loser.lossCount++;
+
+        // Update Glicko ratings
+        updateGlickoRatings(winner, loser);
 
         ratings.set(winnerId, winner);
         ratings.set(loserId, loser);

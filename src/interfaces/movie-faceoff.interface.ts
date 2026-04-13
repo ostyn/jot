@@ -6,6 +6,7 @@ export const MOVIE_FACEOFF_SORT_MODES = [
     'copeland',
     'markov',
     'bradley-terry',
+    'glicko',
 ] as const;
 
 export type MovieFaceoffSortMode = (typeof MOVIE_FACEOFF_SORT_MODES)[number];
@@ -39,4 +40,6 @@ export interface MovieFaceoffRankedMovie extends MovieFaceoffMovie {
     winCount: number;
     lossCount: number;
     score?: number;
+    ratingDeviation?: number; // Glicko rating deviation (uncertainty)
+    ratingVolatility?: number; // Glicko rating volatility (stability)
 }

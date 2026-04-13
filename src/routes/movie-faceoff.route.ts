@@ -119,6 +119,9 @@ export class MovieFaceoffRoute
     private useRankedOnly = false;
 
     @state()
+    private useSmartSelection = true;
+
+    @state()
     private editList = false;
 
     @state()
@@ -175,6 +178,8 @@ export class MovieFaceoffRoute
         if (this.undoStack.length) {
             this.showUndo = true;
         }
+        // Initialize settings from localStorage
+        this.useSmartSelection = localStorage.getItem('movieFaceoff_smartSelection') !== 'false';
         void this.initializeRoute();
         window.addEventListener('keydown', this.keyDownHandler);
     }
@@ -305,6 +310,13 @@ export class MovieFaceoffRoute
         await this.displayNewPair();
     }
 
+    private async setSmartSelection(useSmartSelection: boolean) {
+        if (this.useSmartSelection === useSmartSelection) return;
+        this.useSmartSelection = useSmartSelection;
+        localStorage.setItem('movieFaceoff_smartSelection', `${useSmartSelection}`);
+        await this.displayNewPair();
+    }
+
     private snapshotMovieChanges(movieIds: number[]): MovieStateChange[] {
         return [...new Set(movieIds)].map((movieId) => {
             const movie = movieFaceoff.movieMap.get(movieId);
@@ -421,6 +433,94 @@ export class MovieFaceoffRoute
                 !unseenIds.has(id) &&
                 !exclude.includes(id)
         );
+    }
+
+    /**
+     * Fast weighted random selection for intelligent movie pairing.
+     * Prioritizes under-voted movies while maintaining O(n) complexity.
+     */
+    private async getSmartMovie(exclude: number[] = [], firstMovie?: FaceoffMovie): Promise<FaceoffMovie | null> {
+        const pool = await this.getCandidatePool(exclude);
+        if (!pool.length) return null;
+
+        // O(n) weighted random selection - much faster than sorting
+        let totalWeight = 0;
+        const weights: number[] = [];
+
+        for (const id of pool) {
+            const rating = this.replayState.ratings.get(id);
+            const totalVotes = (rating?.winCount || 0) + (rating?.lossCount || 0);
+
+            // Simple weight calculation: prioritize low-vote movies
+            let weight = Math.max(1, 100 - totalVotes * 2); // 100 for 0 votes, 1 for 50+ votes
+
+            // Bonus for uncertain rankings (Glicko RD)
+            const ratingDeviation = rating?.ratingDeviation || 350;
+            if (ratingDeviation > 200) weight *= 1.5; // 50% bonus for uncertain movies
+
+            // Pairing bonuses (when selecting second movie)
+            if (firstMovie) {
+                const firstRating = this.replayState.ratings.get(firstMovie.id);
+                const firstTotalVotes = (firstRating?.winCount || 0) + (firstRating?.lossCount || 0);
+
+                // Bonus for vote count diversity
+                const voteDiff = Math.abs(totalVotes - firstTotalVotes);
+                if (voteDiff > 10) weight *= 1.3; // 30% bonus for different experience levels
+
+                // Small bonus for rating proximity (refine close rankings)
+                const firstRatingValue = firstRating?.rating || 1500;
+                const candidateRatingValue = rating?.rating || 1500;
+                const ratingDiff = Math.abs(firstRatingValue - candidateRatingValue);
+                if (ratingDiff < 300) weight *= 1.2; // 20% bonus for close ratings
+            }
+
+            weights.push(weight);
+            totalWeight += weight;
+        }
+
+        // Single-pass weighted random selection
+        let random = Math.random() * totalWeight;
+        for (let i = 0; i < pool.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                // Try to load this movie, fallback to random if it fails
+                try {
+                    const movie = await fetchTmdbMovie(pool[i]);
+                    await movieFaceoff.upsertMoviesMetadata([movie]);
+                    return movie;
+                } catch (_error) {
+                    // Remove this candidate and try weighted selection again
+                    const newPool = pool.filter((_, idx) => idx !== i);
+                    return this.getWeightedRandomMovie(newPool, weights.filter((_, idx) => idx !== i));
+                }
+            }
+        }
+
+        // Fallback to simple random selection
+        return this.getRandomMovie(exclude);
+    }
+
+    /**
+     * Helper method for weighted random selection when a candidate fails to load
+     */
+    private async getWeightedRandomMovie(pool: number[], weights: number[]): Promise<FaceoffMovie | null> {
+        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+        let random = Math.random() * totalWeight;
+
+        for (let i = 0; i < pool.length; i++) {
+            random -= weights[i];
+            if (random <= 0) {
+                try {
+                    const movie = await fetchTmdbMovie(pool[i]);
+                    await movieFaceoff.upsertMoviesMetadata([movie]);
+                    return movie;
+                } catch (_error) {
+                    continue; // Skip this one and continue
+                }
+            }
+        }
+
+        return null;
     }
 
     private async getRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
@@ -611,7 +711,9 @@ export class MovieFaceoffRoute
         this.isLoading = true;
         this.errorMessage = '';
         try {
-            const left = await this.getRandomMovie();
+            // Only use smart selection in "My movies" mode with smart pairing enabled
+            const useSmart = this.useRankedOnly && this.useSmartSelection;
+            const left = await (useSmart ? this.getSmartMovie() : this.getRandomMovie());
             if (!left) {
                 this.movies = [null, null];
                 this.errorMessage = this.useRankedOnly
@@ -620,7 +722,7 @@ export class MovieFaceoffRoute
                 return;
             }
 
-            const right = await this.getRandomMovie([left.id]);
+            const right = await (useSmart ? this.getSmartMovie([left.id], left) : this.getRandomMovie([left.id]));
             if (!right) {
                 this.movies = [left, null];
                 this.errorMessage = this.useRankedOnly
@@ -648,7 +750,10 @@ export class MovieFaceoffRoute
         }
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
-        const replacement = await this.getRandomMovie(exclude);
+        const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
+        // Only use smart selection in "My movies" mode with smart pairing enabled
+        const useSmart = this.useRankedOnly && this.useSmartSelection;
+        const replacement = await (useSmart ? this.getSmartMovie(exclude, otherMovie) : this.getRandomMovie(exclude));
         if (!replacement) {
             await this.displayNewPair();
             return;
@@ -1219,6 +1324,24 @@ export class MovieFaceoffRoute
                             </div>
                         </header>
 
+                        ${this.useRankedOnly
+                            ? html`<div class="selection-controls">
+                                  <label class="smart-selection-label">
+                                      <input
+                                          type="checkbox"
+                                          .checked=${this.useSmartSelection}
+                                          ?disabled=${this.isTargetedMode}
+                                          @change=${(event: Event) => {
+                                              const target = event.target as HTMLInputElement;
+                                              void this.setSmartSelection(target.checked);
+                                          }}
+                                      />
+                                      <span>Smart pairing</span>
+                                  </label>
+                                  <small class="selection-description">Intelligently selects movies to improve rankings</small>
+                              </div>`
+                            : nothing}
+
                         ${this.renderTargetedInsertionBanner()}
 
                         <div class="poster-wash" aria-hidden="true">
@@ -1646,6 +1769,31 @@ export class MovieFaceoffRoute
             }
             .pool-toggle {
                 width: fit-content;
+            }
+            .selection-controls {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-top: 0.5rem;
+                padding: 0.5rem 0;
+            }
+            .smart-selection-label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+                margin: 0;
+                user-select: none;
+            }
+            .smart-selection-label input[type="checkbox"] {
+                margin: 0;
+                cursor: pointer;
+            }
+            .selection-description {
+                color: var(--pico-muted-color);
+                font-size: 0.875rem;
+                margin: 0;
+                white-space: nowrap;
             }
             .feedback-bar {
                 display: grid;

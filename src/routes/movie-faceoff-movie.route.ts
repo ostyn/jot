@@ -15,6 +15,7 @@ import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
     buildMovieFaceoffReplayState,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
+    MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
 
 type RankingSnapshot = {
@@ -55,11 +56,20 @@ export class MovieFaceoffMovieRoute
         await this.loadMovie();
     }
 
+    private cachedReplayState: MovieFaceoffReplayState | null = null;
+    private cachedReplayStateVersion = 0;
+
     private get replayState() {
-        return buildMovieFaceoffReplayState(
-            movieFaceoff.allEvents,
-            movieFaceoff.allMovies
-        );
+        // Check if we need to rebuild the replay state
+        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
+        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
+            this.cachedReplayState = buildMovieFaceoffReplayState(
+                movieFaceoff.allEvents,
+                movieFaceoff.allMovies
+            );
+            this.cachedReplayStateVersion = currentVersion;
+        }
+        return this.cachedReplayState;
     }
 
     private get rankingSnapshots(): RankingSnapshot[] {
@@ -88,8 +98,11 @@ export class MovieFaceoffMovieRoute
         return movieFaceoff.movieMap.get(this.movieId);
     }
 
-    private get primaryRanking() {
-        return this.rankingSnapshots.find((ranking) => ranking.rank !== null);
+    disconnectedCallback() {
+        // Clear cache to prevent memory leaks
+        this.cachedReplayState = null;
+        this.cachedReplayStateVersion = 0;
+        super.disconnectedCallback();
     }
 
     private async loadMovie() {
@@ -153,7 +166,6 @@ export class MovieFaceoffMovieRoute
         const backdropUrl = getMovieBackdropUrl(details || { backdrop_path: undefined });
         const year = (details?.release_date || storedMovie?.releaseDate || '').split('-')[0];
         const genres = details?.genres?.map((genre) => genre.name).join(', ') || 'Unknown';
-        const primaryRanking = this.primaryRanking;
 
         return html`
             <utility-page-header
@@ -253,13 +265,6 @@ export class MovieFaceoffMovieRoute
                                           <p class="eyebrow">Ranking snapshot</p>
                                           <h3>Compare rankings</h3>
                                       </div>
-                                      ${primaryRanking
-                                          ? html`<strong class="headline-rank"
-                                                >#${primaryRanking.rank}</strong
-                                            >`
-                                          : html`<strong class="headline-rank muted"
-                                                >Unranked</strong
-                                            >`}
                                   </header>
 
                                   <div class="stats-grid">

@@ -21,6 +21,7 @@ import {
     getMovieFaceoffRankingAlgorithm,
     getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
+    MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
 import '../components/jot-icon';
 import '../components/utility-page-header.component';
@@ -190,6 +191,9 @@ export class MovieFaceoffRoute
         this.swipeActionTimers.forEach((timer) => {
             if (timer) window.clearTimeout(timer);
         });
+        // Clear cache to prevent memory leaks
+        this.cachedReplayState = null;
+        this.cachedReplayStateVersion = 0;
         super.disconnectedCallback();
     }
 
@@ -206,11 +210,20 @@ export class MovieFaceoffRoute
         }
     }
 
+    private cachedReplayState: MovieFaceoffReplayState | null = null;
+    private cachedReplayStateVersion = 0;
+
     private get replayState() {
-        return buildMovieFaceoffReplayState(
-            movieFaceoff.allEvents,
-            movieFaceoff.allMovies
-        );
+        // Check if we need to rebuild the replay state
+        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
+        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
+            this.cachedReplayState = buildMovieFaceoffReplayState(
+                movieFaceoff.allEvents,
+                movieFaceoff.allMovies
+            );
+            this.cachedReplayStateVersion = currentVersion;
+        }
+        return this.cachedReplayState;
     }
 
     private get excludedMovies() {

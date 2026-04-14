@@ -91,33 +91,37 @@ function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceof
 }
 
 function insertManualRank(list: number[], winnerId: number, loserId: number) {
-    const nextList = [...list];
-    const winnerIndex = nextList.indexOf(winnerId);
-    const loserIndex = nextList.indexOf(loserId);
+    // Create a position map for O(1) lookups
+    const positionMap = new Map<number, number>();
+    list.forEach((id, index) => positionMap.set(id, index));
 
-    if (winnerIndex !== -1 && loserIndex !== -1 && winnerIndex < loserIndex) {
-        return [...new Set(nextList)];
+    const winnerIndex = positionMap.get(winnerId);
+    const loserIndex = positionMap.get(loserId);
+
+    // Winner already beats loser, no change needed
+    if (winnerIndex !== undefined && loserIndex !== undefined && winnerIndex < loserIndex) {
+        return [...list];
     }
 
-    if (winnerIndex !== -1 && loserIndex !== -1 && winnerIndex > loserIndex) {
+    const nextList = [...list];
+
+    if (winnerIndex !== undefined && loserIndex !== undefined && winnerIndex > loserIndex) {
+        // Winner is currently below loser, move winner above loser
         nextList.splice(winnerIndex, 1);
         const newLoserIndex = nextList.indexOf(loserId);
         nextList.splice(newLoserIndex, 0, winnerId);
-    }
-
-    if (winnerIndex === -1 && loserIndex !== -1) {
-        nextList.splice(nextList.indexOf(loserId), 0, winnerId);
-    }
-
-    if (winnerIndex !== -1 && loserIndex === -1) {
+    } else if (winnerIndex === undefined && loserIndex !== undefined) {
+        // Winner is new, insert above loser
+        nextList.splice(loserIndex, 0, winnerId);
+    } else if (winnerIndex !== undefined && loserIndex === undefined) {
+        // Loser is new, append to end
         nextList.push(loserId);
-    }
-
-    if (winnerIndex === -1 && loserIndex === -1) {
+    } else if (winnerIndex === undefined && loserIndex === undefined) {
+        // Both are new, append both
         nextList.push(winnerId, loserId);
     }
 
-    return [...new Set(nextList)];
+    return [...new Set(nextList)]; // Remove duplicates if any
 }
 
 export function buildMovieFaceoffReplayState(

@@ -20,90 +20,29 @@ import {
     buildMovieFaceoffReplayState,
     getMovieFaceoffRankingAlgorithm,
     getMovieFaceoffRankedMovies,
-    MOVIE_FACEOFF_RANKING_ALGORITHMS,
     MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
+import {
+    getCandidatePool,
+    getRandomMovie,
+    getSmartMovie,
+} from '../utils/movie-faceoff-pairing';
+import {
+    advanceTargetedInsertion,
+    createTargetedInsertionState,
+} from '../utils/movie-faceoff-targeted-insertion';
+import {
+    clonePair,
+    FaceoffPair,
+    MovieStateChange,
+    TargetedInsertionState,
+    UndoEntry,
+} from '../utils/movie-faceoff-types';
+import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import '../components/jot-icon';
+import '../components/movie-faceoff-rankings.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
-
-type FaceoffPair = [FaceoffMovie | null, FaceoffMovie | null];
-type UndoAction =
-    | 'vote'
-    | 'not-seen-left'
-    | 'not-seen-right'
-    | 'not-seen-both'
-    | 'exclude'
-    | 'restore-excluded'
-    | 'restore-seen';
-
-type MovieStateChange = {
-    movieId: number;
-    previousExcludedAt?: string;
-    previousUnseenAt?: string;
-};
-
-type UndoEntry = {
-    action: UndoAction;
-    eventId?: number;
-    movieChanges?: MovieStateChange[];
-    pair: FaceoffPair;
-};
-
-type TargetedInsertionState = {
-    targetMovie: FaceoffMovie;
-    rankingSortMode: MovieFaceoffSortMode;
-    rankedSnapshot: MovieFaceoffRankedMovie[];
-    low: number;
-    high: number;
-    pivotIndex: number;
-    pivotMovie: FaceoffMovie | null;
-    comparisonsCompleted: number;
-    complete: boolean;
-};
-
-const MAX_UNDO_ENTRIES = 25;
-const UNDO_STACK_STORAGE_KEY = 'movie-faceoff-undo-stack-v2';
-
-function clonePair(pair: FaceoffPair): FaceoffPair {
-    return pair.map((movie) => (movie ? { ...movie } : null)) as FaceoffPair;
-}
-
-function isFaceoffMovie(candidate: unknown): candidate is FaceoffMovie {
-    if (!candidate || typeof candidate !== 'object') return false;
-    const movie = candidate as Partial<FaceoffMovie>;
-    return typeof movie.id === 'number' && typeof movie.title === 'string';
-}
-
-function isMovieStateChange(candidate: unknown): candidate is MovieStateChange {
-    if (!candidate || typeof candidate !== 'object') return false;
-    const change = candidate as Partial<MovieStateChange>;
-    return typeof change.movieId === 'number';
-}
-
-function isUndoEntry(entry: unknown): entry is UndoEntry {
-    if (!entry || typeof entry !== 'object') return false;
-    const candidate = entry as Partial<UndoEntry>;
-    return Boolean(
-        [
-            'vote',
-            'not-seen-left',
-            'not-seen-right',
-            'not-seen-both',
-            'exclude',
-            'restore-excluded',
-            'restore-seen',
-        ].includes(candidate.action || '') &&
-            Array.isArray(candidate.pair) &&
-            candidate.pair.length === 2 &&
-            candidate.pair.every(
-                (movie) => movie === null || isFaceoffMovie(movie)
-            ) &&
-            (candidate.movieChanges === undefined ||
-                (Array.isArray(candidate.movieChanges) &&
-                    candidate.movieChanges.every(isMovieStateChange)))
-    );
-}
 
 @customElement('movie-faceoff-route')
 export class MovieFaceoffRoute
@@ -141,15 +80,12 @@ export class MovieFaceoffRoute
     private showUndo = false;
 
     @state()
-    private showAlgorithmInfo = false;
-
-    @state()
     private swipeOffsets: [number, number] = [0, 0];
 
     @state()
     private swipeIntent: ['' | 'skip', '' | 'skip'] = ['', ''];
 
-    private undoStack: UndoEntry[] = [];
+    private undoManager = new MovieFaceoffUndoManager();
     private movieIdPool: number[] | null = null;
     private gestureHosts: Array<HTMLElement | undefined> = [];
     private gestures: Array<TinyGesture<HTMLElement> | undefined> = [];
@@ -175,8 +111,8 @@ export class MovieFaceoffRoute
 
     connectedCallback() {
         super.connectedCallback();
-        this.restoreUndoStack();
-        if (this.undoStack.length) {
+        this.undoManager.restore();
+        if (this.undoManager.hasEntries) {
             this.showUndo = true;
         }
         // Initialize settings from localStorage
@@ -341,45 +277,14 @@ export class MovieFaceoffRoute
         });
     }
 
-    private persistUndoStack() {
-        try {
-            window.sessionStorage.setItem(
-                UNDO_STACK_STORAGE_KEY,
-                JSON.stringify(this.undoStack)
-            );
-        } catch (_error) {
-            // Ignore storage failures; undo remains best effort.
-        }
-    }
-
-    private restoreUndoStack() {
-        try {
-            const raw = window.sessionStorage.getItem(UNDO_STACK_STORAGE_KEY);
-            if (!raw) return;
-            const parsed: unknown = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return;
-            this.undoStack = parsed.filter(isUndoEntry);
-        } catch (_error) {
-            this.undoStack = [];
-        }
-        this.showUndo = this.undoStack.length > 0;
-    }
-
     private pushUndoEntry(entry: UndoEntry) {
-        this.undoStack.push({
-            ...entry,
-            pair: clonePair(entry.pair),
-        });
-        this.undoStack = this.undoStack.slice(-MAX_UNDO_ENTRIES);
-        this.persistUndoStack();
+        this.undoManager.push(entry);
         this.showUndo = true;
     }
 
     private async undoLastAction() {
-        const entry = this.undoStack.pop();
+        const entry = this.undoManager.pop();
         if (!entry) return;
-
-        this.persistUndoStack();
 
         if (entry.eventId !== undefined) {
             await movieFaceoff.deleteEvent(entry.eventId);
@@ -400,11 +305,11 @@ export class MovieFaceoffRoute
         this.errorMessage = '';
         this.resetSwipeState(0);
         this.resetSwipeState(1);
-        this.showUndo = this.undoStack.length > 0;
+        this.showUndo = this.undoManager.hasEntries;
         this.statusMessage = 'Undid last action';
 
         if (this.targetedInsertion) {
-            const nextState = this.createTargetedInsertionState(
+            const nextState = this.buildTargetedInsertionState(
                 this.targetedInsertion.targetMovie
             );
             this.targetedInsertion = nextState.complete ? null : nextState;
@@ -428,188 +333,48 @@ export class MovieFaceoffRoute
         return this.movieIdPool;
     }
 
-    private async getCandidatePool(exclude: number[] = []) {
-        const excludedIds = movieFaceoff.excludedMovieIds;
-        const unseenIds = movieFaceoff.unseenMovieIds;
-        if (this.useRankedOnly) {
-            return Array.from(this.replayState.decisiveMovieIds).filter(
-                (id) =>
-                    !excludedIds.has(id) &&
-                    !unseenIds.has(id) &&
-                    !exclude.includes(id)
-            );
-        }
-
-        return (await this.ensureMovieIdPool()).filter(
-            (id) =>
-                !excludedIds.has(id) &&
-                !unseenIds.has(id) &&
-                !exclude.includes(id)
+    private async buildCandidatePool(exclude: number[] = []) {
+        const allIds = this.useRankedOnly
+            ? Array.from(this.replayState.decisiveMovieIds)
+            : await this.ensureMovieIdPool();
+        return getCandidatePool(
+            allIds,
+            movieFaceoff.excludedMovieIds,
+            movieFaceoff.unseenMovieIds,
+            exclude
         );
     }
 
-    /**
-     * Fast weighted random selection for intelligent movie pairing.
-     * Prioritizes under-voted movies while maintaining O(n) complexity.
-     */
-    private async getSmartMovie(exclude: number[] = [], firstMovie?: FaceoffMovie): Promise<FaceoffMovie | null> {
-        const pool = await this.getCandidatePool(exclude);
-        if (!pool.length) return null;
+    private readonly loadMovie = async (id: number): Promise<FaceoffMovie> => {
+        const movie = await fetchTmdbMovie(id);
+        await movieFaceoff.upsertMoviesMetadata([movie]);
+        return movie;
+    };
 
-        // O(n) weighted random selection - much faster than sorting
-        let totalWeight = 0;
-        const weights: number[] = [];
-
-        for (const id of pool) {
-            const rating = this.replayState.ratings.get(id);
-            const totalVotes = (rating?.winCount || 0) + (rating?.lossCount || 0);
-
-            // Simple weight calculation: prioritize low-vote movies
-            let weight = Math.max(1, 100 - totalVotes * 2); // 100 for 0 votes, 1 for 50+ votes
-
-            // Bonus for uncertain rankings (Glicko RD)
-            const ratingDeviation = rating?.ratingDeviation || 350;
-            if (ratingDeviation > 200) weight *= 1.5; // 50% bonus for uncertain movies
-
-            // Pairing bonuses (when selecting second movie)
-            if (firstMovie) {
-                const firstRating = this.replayState.ratings.get(firstMovie.id);
-                const firstTotalVotes = (firstRating?.winCount || 0) + (firstRating?.lossCount || 0);
-
-                // Bonus for vote count diversity
-                const voteDiff = Math.abs(totalVotes - firstTotalVotes);
-                if (voteDiff > 10) weight *= 1.3; // 30% bonus for different experience levels
-
-                // Small bonus for rating proximity (refine close rankings)
-                const firstRatingValue = firstRating?.rating || 1500;
-                const candidateRatingValue = rating?.rating || 1500;
-                const ratingDiff = Math.abs(firstRatingValue - candidateRatingValue);
-                if (ratingDiff < 300) weight *= 1.2; // 20% bonus for close ratings
-            }
-
-            weights.push(weight);
-            totalWeight += weight;
-        }
-
-        // Single-pass weighted random selection
-        let random = Math.random() * totalWeight;
-        for (let i = 0; i < pool.length; i++) {
-            random -= weights[i];
-            if (random <= 0) {
-                // Try to load this movie, fallback to random if it fails
-                try {
-                    const movie = await fetchTmdbMovie(pool[i]);
-                    await movieFaceoff.upsertMoviesMetadata([movie]);
-                    return movie;
-                } catch (_error) {
-                    // Remove this candidate and try weighted selection again
-                    const newPool = pool.filter((_, idx) => idx !== i);
-                    return this.getWeightedRandomMovie(newPool, weights.filter((_, idx) => idx !== i));
-                }
-            }
-        }
-
-        // Fallback to simple random selection
-        return this.getRandomMovie(exclude);
+    private async pickSmartMovie(exclude: number[] = [], firstMovie?: FaceoffMovie): Promise<FaceoffMovie | null> {
+        const pool = await this.buildCandidatePool(exclude);
+        return getSmartMovie(pool, this.replayState.ratings, this.loadMovie, firstMovie);
     }
 
-    /**
-     * Helper method for weighted random selection when a candidate fails to load
-     */
-    private async getWeightedRandomMovie(pool: number[], weights: number[]): Promise<FaceoffMovie | null> {
-        const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-        let random = Math.random() * totalWeight;
-
-        for (let i = 0; i < pool.length; i++) {
-            random -= weights[i];
-            if (random <= 0) {
-                try {
-                    const movie = await fetchTmdbMovie(pool[i]);
-                    await movieFaceoff.upsertMoviesMetadata([movie]);
-                    return movie;
-                } catch (_error) {
-                    continue; // Skip this one and continue
-                }
-            }
-        }
-
-        return null;
+    private async pickRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
+        const pool = await this.buildCandidatePool(exclude);
+        return getRandomMovie(pool, this.loadMovie);
     }
 
-    private async getRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
-        const pool = await this.getCandidatePool(exclude);
-        if (!pool.length) return null;
-
-        const candidateIds = [...pool];
-        while (candidateIds.length) {
-            const index = Math.floor(Math.random() * candidateIds.length);
-            const [id] = candidateIds.splice(index, 1);
-            try {
-                const movie = await fetchTmdbMovie(id);
-                await movieFaceoff.upsertMoviesMetadata([movie]);
-                return movie;
-            } catch (_error) {
-                continue;
-            }
-        }
-
-        return null;
-    }
-
-    private toFaceoffMovie(
-        movie: Pick<MovieFaceoffMovie, 'id' | 'title' | 'posterPath' | 'releaseDate'>
-    ): FaceoffMovie {
-        return {
-            id: movie.id,
-            title: movie.title,
-            poster_path: movie.posterPath,
-            release_date: movie.releaseDate,
-        };
-    }
-
-    private createTargetedInsertionState(
+    private buildTargetedInsertionState(
         targetMovie: FaceoffMovie,
         comparisonsCompleted = 0,
         low = 0,
         high?: number
     ): TargetedInsertionState {
-        const rankedSnapshot = this.visibleRankedMovies.filter(
-            (movie) => movie.id !== targetMovie.id
-        );
-        const normalizedHigh = Math.max(
-            0,
-            Math.min(high ?? rankedSnapshot.length, rankedSnapshot.length)
-        );
-        const normalizedLow = Math.max(0, Math.min(low, normalizedHigh));
-
-        if (!rankedSnapshot.length || normalizedLow >= normalizedHigh) {
-            return {
-                targetMovie,
-                rankingSortMode: this.sortMode,
-                rankedSnapshot,
-                low: normalizedLow,
-                high: normalizedHigh,
-                pivotIndex: -1,
-                pivotMovie: null,
-                comparisonsCompleted,
-                complete: true,
-            };
-        }
-
-        const pivotIndex = Math.floor((normalizedLow + normalizedHigh) / 2);
-        const pivotMovie = this.toFaceoffMovie(rankedSnapshot[pivotIndex]);
-
-        return {
+        return createTargetedInsertionState(
             targetMovie,
-            rankingSortMode: this.sortMode,
-            rankedSnapshot,
-            low: normalizedLow,
-            high: normalizedHigh,
-            pivotIndex,
-            pivotMovie,
+            this.visibleRankedMovies,
+            this.sortMode,
             comparisonsCompleted,
-            complete: false,
-        };
+            low,
+            high
+        );
     }
 
     private async refreshTargetedInsertion(
@@ -623,7 +388,7 @@ export class MovieFaceoffRoute
         const session = this.targetedInsertion;
         if (!session) return;
 
-        const nextState = this.createTargetedInsertionState(
+        const nextState = this.buildTargetedInsertionState(
             session.targetMovie,
             options.comparisonsCompleted ?? session.comparisonsCompleted,
             options.low ?? session.low,
@@ -658,7 +423,7 @@ export class MovieFaceoffRoute
         this.sortMode = 'manual';
         await movieFaceoff.upsertMoviesMetadata([movie]);
 
-        const nextState = this.createTargetedInsertionState(movie);
+        const nextState = this.buildTargetedInsertionState(movie);
         this.targetedInsertion = nextState;
 
         if (nextState.complete) {
@@ -726,7 +491,7 @@ export class MovieFaceoffRoute
         try {
             // Only use smart selection in "My movies" mode with smart pairing enabled
             const useSmart = this.useRankedOnly && this.useSmartSelection;
-            const left = await (useSmart ? this.getSmartMovie() : this.getRandomMovie());
+            const left = await (useSmart ? this.pickSmartMovie() : this.pickRandomMovie());
             if (!left) {
                 this.movies = [null, null];
                 this.errorMessage = this.useRankedOnly
@@ -735,7 +500,7 @@ export class MovieFaceoffRoute
                 return;
             }
 
-            const right = await (useSmart ? this.getSmartMovie([left.id], left) : this.getRandomMovie([left.id]));
+            const right = await (useSmart ? this.pickSmartMovie([left.id], left) : this.pickRandomMovie([left.id]));
             if (!right) {
                 this.movies = [left, null];
                 this.errorMessage = this.useRankedOnly
@@ -766,7 +531,7 @@ export class MovieFaceoffRoute
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
         // Only use smart selection in "My movies" mode with smart pairing enabled
         const useSmart = this.useRankedOnly && this.useSmartSelection;
-        const replacement = await (useSmart ? this.getSmartMovie(exclude, otherMovie) : this.getRandomMovie(exclude));
+        const replacement = await (useSmart ? this.pickSmartMovie(exclude, otherMovie) : this.pickRandomMovie(exclude));
         if (!replacement) {
             await this.displayNewPair();
             return;
@@ -856,14 +621,6 @@ export class MovieFaceoffRoute
     }
 
     private handleKeyDown(event: KeyboardEvent) {
-        if (this.showAlgorithmInfo) {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                this.showAlgorithmInfo = false;
-            }
-            return;
-        }
-
         if (this.targetedInsertion && event.key === 'Escape') {
             event.preventDefault();
             this.cancelTargetedInsertion();
@@ -921,16 +678,15 @@ export class MovieFaceoffRoute
         this.showUndo = true;
 
         if (this.targetedInsertion) {
-            const session = this.targetedInsertion;
-            const pivotIndex = session.pivotIndex;
-            const nextHigh = winnerIndex === 0 ? pivotIndex : session.high;
-            const nextLow =
-                winnerIndex === 1 ? Math.min(session.high, pivotIndex + 1) : session.low;
+            const { low, high, comparisonsCompleted } = advanceTargetedInsertion(
+                this.targetedInsertion,
+                winnerIndex === 0
+            );
 
             await this.refreshTargetedInsertion({
-                comparisonsCompleted: session.comparisonsCompleted + 1,
-                low: nextLow,
-                high: nextHigh,
+                comparisonsCompleted,
+                low,
+                high,
             });
             return;
         }
@@ -1043,10 +799,6 @@ export class MovieFaceoffRoute
         });
         this.statusMessage = `Marked ${movie.title} as seen again`;
         this.showUndo = true;
-    }
-
-    private renderRankValue(movie: MovieFaceoffRankedMovie) {
-        return this.rankingAlgorithm.formatMetric(movie);
     }
 
     private renderSummaryStat(label: string, value: string | number, accent = false) {
@@ -1230,53 +982,6 @@ export class MovieFaceoffRoute
         `;
     }
 
-    private renderAlgorithmInfoModal() {
-        if (!this.showAlgorithmInfo) return nothing;
-
-        const descriptionParts = this.rankingAlgorithm.description
-            .split('\n\n')
-            .filter(Boolean);
-
-        return html`
-            <div
-                class="algorithm-modal-backdrop"
-                @click=${() => {
-                    this.showAlgorithmInfo = false;
-                }}
-            >
-                <article
-                    class="algorithm-modal"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="algorithm-info-title"
-                    @click=${(event: Event) => event.stopPropagation()}
-                >
-                    <header>
-                        <div>
-                            <p class="eyebrow">Current ranking method</p>
-                            <h3 id="algorithm-info-title">
-                                ${this.rankingAlgorithm.label}
-                            </h3>
-                        </div>
-                        <button
-                            class="secondary"
-                            @click=${() => {
-                                this.showAlgorithmInfo = false;
-                            }}
-                        >
-                            Close
-                        </button>
-                    </header>
-                    <div>
-                        ${descriptionParts.map(
-                            (paragraph) => html`<p>${paragraph}</p>`
-                        )}
-                    </div>
-                </article>
-            </div>
-        `;
-    }
-
     render() {
         const ranked = this.visibleRankedMovies;
         const [left, right] = this.movies;
@@ -1424,208 +1129,37 @@ export class MovieFaceoffRoute
                 </section>
 
                 <aside class="rankings-column">
-                    <article class="rankings-panel surface-panel">
-                        <header class="panel-header rankings-header">
-                            <div class="rankings-heading">
-                                <p class="eyebrow">Live leaderboard</p>
-                                <h2>Rankings</h2>
-                                <p class="panel-description">
-                                    ${ranked.length
-                                        ? `${ranked.length} movies ranked so far`
-                                        : 'Vote a few times to start building your list.'}
-                                </p>
-                            </div>
-                            <div class="rankings-actions">
-                                <label class="ranking-select-field">
-                                    <span>Sort by</span>
-                                    <select
-                                        .value=${this.sortMode}
-                                        ?disabled=${this.isTargetedMode}
-                                        @change=${(event: Event) => {
-                                            this.sortMode = (
-                                                event.currentTarget as HTMLSelectElement
-                                            ).value as MovieFaceoffSortMode;
-                                        }}
-                                    >
-                                        ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
-                                            (algorithm) => html`
-                                                <option value=${algorithm.id}>
-                                                    ${algorithm.label}
-                                                </option>
-                                            `
-                                        )}
-                                    </select>
-                                </label>
-                                <div role="group">
-                                    <button
-                                        class="secondary"
-                                        title="About the current ranking method"
-                                        aria-label="About the current ranking method"
-                                        @click=${() => {
-                                            this.showAlgorithmInfo = true;
-                                        }}
-                                    >
-                                        <jot-icon name="Info"></jot-icon>
-                                        About
-                                    </button>
-                                    <button
-                                        class=${this.editList ? '' : 'secondary'}
-                                        @click=${() => {
-                                            this.editList = !this.editList;
-                                        }}
-                                    >
-                                        ${this.editList ? 'Done' : 'Edit'}
-                                    </button>
-                                </div>
-                            </div>
-                        </header>
-
-                        ${ranked.length
-                            ? html`<ol class="rank-list">
-                                  ${ranked.map(
-                                      (movie, index) => {
-                                          const posterUrl = movie.posterPath
-                                              ? getMoviePosterUrl({
-                                                    poster_path: movie.posterPath,
-                                                })
-                                              : '';
-
-                                          return html`
-                                              <li class="rank-row">
-                                                  <strong class="rank-index"
-                                                      >${index + 1}</strong
-                                                  >
-                                                  <span class="rank-poster" aria-hidden="true">
-                                                      ${posterUrl
-                                                          ? html`<img
-                                                                src=${posterUrl}
-                                                                alt=""
-                                                                loading="lazy"
-                                                            />`
-                                                          : html`<span
-                                                                class="rank-poster-fallback"
-                                                            >
-                                                                <jot-icon
-                                                                    name="Play"
-                                                                ></jot-icon>
-                                                            </span>`}
-                                                  </span>
-                                                  <span class="rank-item">
-                                                      <span class="rank-title-group">
-                                                          <strong class="rank-title"
-                                                              >${movie.title}</strong
-                                                          >
-                                                          <small class="rank-subtitle"
-                                                              >${movie.releaseDate?.split('-')[0] ||
-                                                              'Unknown year'}</small
-                                                          >
-                                                      </span>
-                                                      <span class="rank-meta">
-                                                          <strong class="rank-score"
-                                                              >${this.renderRankValue(movie)}</strong
-                                                          >
-                                                          <button
-                                                              class="outline"
-                                                              @click=${() =>
-                                                                  betterGo(
-                                                                      'movie-faceoff-movie',
-                                                                      {
-                                                                          pathParams: {
-                                                                              id: movie.id,
-                                                                          },
-                                                                      }
-                                                                  )}
-                                                          >
-                                                              Details
-                                                          </button>
-                                                          ${this.editList
-                                                              ? html`<button
-                                                                    class="outline delete-button"
-                                                                    @click=${() =>
-                                                                        void this.excludeMovie(
-                                                                            movie
-                                                                        )}
-                                                                >
-                                                                    Exclude
-                                                                </button>`
-                                                              : nothing}
-                                                      </span>
-                                                  </span>
-                                              </li>
-                                          `;
-                                      }
-                                  )}
-                              </ol>`
-                            : html`<article class="empty-state-panel">
-                                  <jot-icon name="TrendingUp" size="large"></jot-icon>
-                                  <p>Your rankings will appear here after a few faceoffs.</p>
-                              </article>`}
-
-                        ${this.editList && this.excludedMovies.length
-                            ? html`
-                                  <section class="list-section">
-                                      <header class="list-section-header">
-                                          <h3>Excluded</h3>
-                                          <small>${this.excludedMovies.length}</small>
-                                      </header>
-                                      <ul class="excluded-list">
-                                          ${this.excludedMovies.map(
-                                              (movie) => html`
-                                                  <li class="excluded-item">
-                                                      <span class="excluded-copy">
-                                                          <strong>${movie.title}</strong>
-                                                          <small>Hidden from the active pool</small>
-                                                      </span>
-                                                      <button
-                                                          class="secondary"
-                                                          @click=${() =>
-                                                              void this.restoreExcludedMovie(
-                                                                  movie
-                                                              )}
-                                                      >
-                                                          Restore
-                                                      </button>
-                                                  </li>
-                                              `
-                                          )}
-                                      </ul>
-                                  </section>
-                              `
-                            : nothing}
-
-                        ${this.editList && this.unseenMovies.length
-                            ? html`
-                                  <section class="list-section">
-                                      <header class="list-section-header">
-                                          <h3>Not Seen</h3>
-                                          <small>${this.unseenMovies.length}</small>
-                                      </header>
-                                      <ul class="excluded-list">
-                                          ${this.unseenMovies.map(
-                                              (movie) => html`
-                                                  <li class="excluded-item">
-                                                      <span class="excluded-copy">
-                                                          <strong>${movie.title}</strong>
-                                                          <small>Skipped because you have not seen it</small>
-                                                      </span>
-                                                      <button
-                                                          class="secondary"
-                                                          @click=${() =>
-                                                              void this.restoreSeenMovie(movie)}
-                                                      >
-                                                          Mark seen
-                                                      </button>
-                                                  </li>
-                                              `
-                                          )}
-                                      </ul>
-                                  </section>
-                              `
-                            : nothing}
-                    </article>
+                    <movie-faceoff-rankings
+                        .rankedMovies=${ranked}
+                        .excludedMovies=${this.excludedMovies}
+                        .unseenMovies=${this.unseenMovies}
+                        .sortMode=${this.sortMode}
+                        .editList=${this.editList}
+                        .isTargetedMode=${this.isTargetedMode}
+                        .rankingAlgorithm=${this.rankingAlgorithm}
+                        @sort-mode-change=${(e: CustomEvent) => {
+                            this.sortMode = e.detail.sortMode as MovieFaceoffSortMode;
+                        }}
+                        @toggle-edit=${() => {
+                            this.editList = !this.editList;
+                        }}
+                        @exclude-movie=${(e: CustomEvent) => {
+                            void this.excludeMovie(e.detail.movie);
+                        }}
+                        @restore-excluded=${(e: CustomEvent) => {
+                            void this.restoreExcludedMovie(e.detail.movie);
+                        }}
+                        @restore-seen=${(e: CustomEvent) => {
+                            void this.restoreSeenMovie(e.detail.movie);
+                        }}
+                        @navigate-movie=${(e: CustomEvent) => {
+                            betterGo('movie-faceoff-movie', {
+                                pathParams: { id: e.detail.movieId },
+                            });
+                        }}
+                    ></movie-faceoff-rankings>
                 </aside>
             </main>
-            ${this.renderAlgorithmInfoModal()}
         `;
     }
 
@@ -1651,10 +1185,6 @@ export class MovieFaceoffRoute
             .matchup,
             .matchup > *,
             .movie-copy,
-            .rank-item,
-            .rank-title-group,
-            .rankings-actions,
-            .ranking-select-field,
             .feedback-bar > * {
                 min-width: 0;
             }
@@ -1712,9 +1242,7 @@ export class MovieFaceoffRoute
             .faceoff-panel {
                 display: grid;
             }
-            .panel-header,
-            .rankings-header,
-            .list-section-header {
+            .panel-header {
                 position: relative;
                 z-index: 1;
                 display: flex;
@@ -1724,8 +1252,6 @@ export class MovieFaceoffRoute
                 flex-wrap: wrap;
             }
             .panel-header h2,
-            .rankings-header h2,
-            .list-section-header h3,
             .movie-copy h3 {
                 margin: 0;
             }
@@ -1736,8 +1262,7 @@ export class MovieFaceoffRoute
                 letter-spacing: 0.06em;
                 text-transform: uppercase;
             }
-            .faceoff-panel > *,
-            .rankings-panel > * {
+            .faceoff-panel > * {
                 position: relative;
                 z-index: 1;
             }
@@ -1793,12 +1318,8 @@ export class MovieFaceoffRoute
                 );
             }
             .summary-stat p,
-            .panel-description,
             .session-hint,
-            .placeholder-copy p,
-            .empty-state-panel p,
-            .rank-subtitle,
-            .excluded-copy small {
+            .placeholder-copy p {
                 margin: 0;
                 color: var(--pico-muted-color);
             }
@@ -2005,147 +1526,6 @@ export class MovieFaceoffRoute
                 font: inherit;
                 font-size: 0.8em;
             }
-            .rankings-actions {
-                display: flex;
-                gap: 0.75rem;
-                align-items: end;
-                margin-left: auto;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }
-            .ranking-select-field {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.35rem;
-                font-size: 0.9rem;
-            }
-            .rankings-actions select {
-                margin: 0;
-                width: 100%;
-                min-width: 12rem;
-            }
-            .rank-list {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            .rank-row {
-                display: grid;
-                grid-template-columns: auto 4rem minmax(0, 1fr);
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.85rem 1rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .rank-index {
-                width: 2rem;
-                height: 2rem;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 999px;
-                background: var(--pico-primary-background);
-                color: var(--pico-primary-inverse);
-            }
-            .rank-poster {
-                width: 4rem;
-                aspect-ratio: 2 / 3;
-                border-radius: calc(var(--pico-border-radius) * 0.8);
-                overflow: hidden;
-                background: var(--pico-form-element-background-color);
-                display: block;
-            }
-            .rank-poster img,
-            .rank-poster-fallback {
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
-            .rank-poster img {
-                object-fit: cover;
-            }
-            .rank-poster-fallback {
-                display: grid;
-                place-items: center;
-            }
-            .rank-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: start;
-                gap: 0.75rem;
-                text-align: left;
-            }
-            .rank-title-group {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 0.16rem;
-            }
-            .rank-meta {
-                display: inline-flex;
-                gap: 0.5rem;
-                align-items: center;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-                text-align: right;
-            }
-            .rank-score {
-                font-variant-numeric: tabular-nums;
-            }
-            .delete-button {
-                margin-bottom: 0;
-            }
-            .list-section {
-                margin-top: 1.25rem;
-            }
-            .excluded-list {
-                margin: 0.75rem 0 0;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            .excluded-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.75rem 1rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .excluded-copy {
-                display: flex;
-                flex-direction: column;
-                gap: 0.15rem;
-                min-width: 0;
-            }
-            .algorithm-modal-backdrop {
-                position: fixed;
-                inset: 0;
-                z-index: 50;
-                display: grid;
-                place-items: center;
-                padding: 1rem;
-                background: color-mix(in srgb, black 55%, transparent);
-            }
-            .algorithm-modal {
-                width: min(34rem, 100%);
-                margin: 0;
-                max-height: min(80vh, 42rem);
-                overflow: auto;
-            }
-            .algorithm-modal > header {
-                display: flex;
-                align-items: start;
-                justify-content: space-between;
-                gap: 0.75rem;
-            }
-            .empty-state-panel,
             .placeholder-card {
                 display: grid;
                 gap: 0.85rem;
@@ -2212,40 +1592,10 @@ export class MovieFaceoffRoute
                     font-size: 0.56rem;
                     letter-spacing: 0.08em;
                 }
-                .rankings-actions {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
                 .movie-actions button {
                     width: 100%;
                     justify-content: center;
                 }
-                .algorithm-modal-backdrop {
-                    padding: 0.75rem;
-                }
-                .algorithm-modal {
-                    width: 100%;
-                }
-                .excluded-item {
-                    padding: 0.5rem 0.65rem;
-                }
-                .rank-row {
-                    grid-template-columns: auto 3rem minmax(0, 1fr);
-                    padding: 0.65rem 0.7rem;
-                }
-                .rank-poster {
-                    width: 3rem;
-                }
-                .rank-item {
-                    flex-direction: column;
-                }
-                .rank-meta {
-                    width: 100%;
-                    justify-content: space-between;
-                }
-                .rankings-actions button,
-                .ranking-select-field,
-                .ranking-select-field select,
                 .feedback-bar,
                 .feedback-bar button {
                     width: 100%;

@@ -2,7 +2,6 @@ import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation, WebComponentInterface } from '@vaadin/router';
-import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import {
     MovieFaceoffMovie,
@@ -13,7 +12,6 @@ import {
     FaceoffMovie,
     fetchMovieFaceoffIds,
     fetchTmdbMovie,
-    getMoviePosterUrl,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
@@ -40,6 +38,7 @@ import {
 } from '../utils/movie-faceoff-types';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import '../components/jot-icon';
+import '../components/movie-faceoff-card.component';
 import '../components/movie-faceoff-rankings.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
@@ -79,18 +78,8 @@ export class MovieFaceoffRoute
     @state()
     private showUndo = false;
 
-    @state()
-    private swipeOffsets: [number, number] = [0, 0];
-
-    @state()
-    private swipeIntent: ['' | 'skip', '' | 'skip'] = ['', ''];
-
     private undoManager = new MovieFaceoffUndoManager();
     private movieIdPool: number[] | null = null;
-    private gestureHosts: Array<HTMLElement | undefined> = [];
-    private gestures: Array<TinyGesture<HTMLElement> | undefined> = [];
-    private swipeActionTimers: Array<number | undefined> = [];
-    private swipeSettling: [boolean, boolean] = [false, false];
     private pendingTargetMovieId?: number;
     private routeInitialized = false;
     private readonly keyDownHandler = (event: KeyboardEvent) =>
@@ -123,18 +112,10 @@ export class MovieFaceoffRoute
 
     disconnectedCallback() {
         window.removeEventListener('keydown', this.keyDownHandler);
-        this.gestures.forEach((gesture) => gesture?.destroy());
-        this.swipeActionTimers.forEach((timer) => {
-            if (timer) window.clearTimeout(timer);
-        });
         // Clear cache to prevent memory leaks
         this.cachedReplayState = null;
         this.cachedReplayStateVersion = 0;
         super.disconnectedCallback();
-    }
-
-    updated() {
-        this.attachGestures();
     }
 
     private async initializeRoute() {
@@ -303,8 +284,6 @@ export class MovieFaceoffRoute
 
         this.movies = clonePair(entry.pair);
         this.errorMessage = '';
-        this.resetSwipeState(0);
-        this.resetSwipeState(1);
         this.showUndo = this.undoManager.hasEntries;
         this.statusMessage = 'Undid last action';
 
@@ -322,8 +301,6 @@ export class MovieFaceoffRoute
                 return;
             }
             this.movies = [nextState.targetMovie, nextState.pivotMovie];
-            this.resetSwipeState(0);
-            this.resetSwipeState(1);
         }
     }
 
@@ -414,8 +391,6 @@ export class MovieFaceoffRoute
 
         if (!options.preserveCurrentPair) {
             this.movies = [nextState.targetMovie, nextState.pivotMovie];
-            this.resetSwipeState(0);
-            this.resetSwipeState(1);
         }
     }
 
@@ -444,8 +419,6 @@ export class MovieFaceoffRoute
         this.statusMessage = `Placing ${movie.title} using ${this.rankingAlgorithm.label}.`;
         this.errorMessage = '';
         this.movies = [movie, nextState.pivotMovie];
-        this.resetSwipeState(0);
-        this.resetSwipeState(1);
     }
 
     private async maybeStartTargetedInsertionFromUrl() {
@@ -510,8 +483,6 @@ export class MovieFaceoffRoute
             }
 
             this.movies = [left, right];
-            this.resetSwipeState(0);
-            this.resetSwipeState(1);
         } catch (error) {
             this.movies = [null, null];
             this.errorMessage =
@@ -541,83 +512,6 @@ export class MovieFaceoffRoute
             index === 0
                 ? [replacement, this.movies[1]]
                 : [this.movies[0], replacement];
-        this.resetSwipeState(index);
-    }
-
-    private attachGestures() {
-        ([0, 1] as const).forEach((index) => {
-            const stage = this.renderRoot?.querySelector<HTMLElement>(
-                `.movie-swipe-stage[data-index="${index}"]`
-            );
-
-            if (!stage) {
-                this.gestures[index]?.destroy();
-                this.gestures[index] = undefined;
-                this.gestureHosts[index] = undefined;
-                return;
-            }
-
-            if (this.gestureHosts[index] === stage && this.gestures[index]) return;
-
-            this.gestures[index]?.destroy();
-            const gesture = new TinyGesture(stage, {
-                threshold: () => Math.max(45, Math.floor(window.innerWidth * 0.12)),
-                mouseSupport: true,
-            });
-
-            gesture.on('panmove', () => {
-                if (this.swipeSettling[index]) return;
-                if (
-                    gesture.swipingDirection !== 'horizontal' &&
-                    gesture.swipingDirection !== 'pre-horizontal'
-                ) {
-                    return;
-                }
-
-                const rawOffset = gesture.touchMoveX ?? 0;
-                const constrainedOffset =
-                    index === 0
-                        ? Math.max(-132, Math.min(0, rawOffset))
-                        : Math.max(0, Math.min(132, rawOffset));
-
-                const nextOffsets: [number, number] = [...this.swipeOffsets] as [
-                    number,
-                    number,
-                ];
-                nextOffsets[index] = constrainedOffset;
-                this.swipeOffsets = nextOffsets;
-
-                const nextIntent: ['' | 'skip', '' | 'skip'] = [
-                    ...this.swipeIntent,
-                ] as ['' | 'skip', '' | 'skip'];
-                nextIntent[index] =
-                    (index === 0 && constrainedOffset < -12) ||
-                    (index === 1 && constrainedOffset > 12)
-                        ? 'skip'
-                        : '';
-                this.swipeIntent = nextIntent;
-            });
-
-            gesture.on('panend', () => {
-                if (this.swipeSettling[index]) return;
-                const releaseOffset = this.swipeOffsets[index];
-                const releaseIntent = this.swipeIntent[index];
-                if (Math.abs(releaseOffset) >= 72 && releaseIntent === 'skip') {
-                    this.commitSwipe(index);
-                    return;
-                }
-                window.requestAnimationFrame(() => this.resetSwipeState(index));
-            });
-
-            if (index === 0) {
-                gesture.on('swipeleft', () => this.commitSwipe(index));
-            } else {
-                gesture.on('swiperight', () => this.commitSwipe(index));
-            }
-
-            this.gestures[index] = gesture;
-            this.gestureHosts[index] = stage;
-        });
     }
 
     private handleKeyDown(event: KeyboardEvent) {
@@ -744,8 +638,6 @@ export class MovieFaceoffRoute
         });
         this.statusMessage = 'Marked both movies as not seen';
         this.showUndo = true;
-        this.resetSwipeState(0);
-        this.resetSwipeState(1);
 
         if (this.targetedInsertion) {
             this.targetedInsertion = null;
@@ -810,10 +702,6 @@ export class MovieFaceoffRoute
         `;
     }
 
-    private getMovieYear(movie: Pick<FaceoffMovie, 'release_date'>) {
-        return movie.release_date?.split('-')[0] || 'Unknown year';
-    }
-
     private renderTargetedInsertionBanner() {
         const session = this.targetedInsertion;
         if (!session) return nothing;
@@ -846,139 +734,6 @@ export class MovieFaceoffRoute
                     </button>
                 </div>
             </article>
-        `;
-    }
-
-    private renderMoviePlaceholder(index: 0 | 1) {
-        const label =
-            index === 0 ? 'First movie placeholder' : 'Second movie placeholder';
-        const message = this.isLoading ? 'Loading a fresh movie...' : 'No movie loaded';
-
-        return html`
-            <article class="movie-card placeholder-card" aria-label=${label}>
-                <div class="movie-poster placeholder-poster">
-                    <jot-icon name="Play" size="large"></jot-icon>
-                </div>
-                <div class="movie-copy placeholder-copy">
-                    <h3>${message}</h3>
-                    <p>
-                        ${this.errorMessage
-                            ? 'Try again once the catalog is available.'
-                            : 'The next matchup will appear here.'}
-                    </p>
-                </div>
-            </article>
-        `;
-    }
-
-    private resetSwipeState(index: 0 | 1) {
-        const nextOffsets: [number, number] = [...this.swipeOffsets] as [number, number];
-        nextOffsets[index] = 0;
-        this.swipeOffsets = nextOffsets;
-
-        const nextIntent: ['' | 'skip', '' | 'skip'] = [...this.swipeIntent] as [
-            '' | 'skip',
-            '' | 'skip',
-        ];
-        nextIntent[index] = '';
-        this.swipeIntent = nextIntent;
-        this.swipeSettling[index] = false;
-    }
-
-    private commitSwipe(index: 0 | 1) {
-        if (this.swipeSettling[index]) return;
-        this.swipeSettling[index] = true;
-
-        const nextIntent: ['' | 'skip', '' | 'skip'] = [...this.swipeIntent] as [
-            '' | 'skip',
-            '' | 'skip',
-        ];
-        nextIntent[index] = 'skip';
-        this.swipeIntent = nextIntent;
-
-        const nextOffsets: [number, number] = [...this.swipeOffsets] as [number, number];
-        nextOffsets[index] = index === 0 ? -180 : 180;
-        this.swipeOffsets = nextOffsets;
-
-        if (this.swipeActionTimers[index]) {
-            window.clearTimeout(this.swipeActionTimers[index]);
-        }
-
-        this.swipeActionTimers[index] = window.setTimeout(() => {
-            this.swipeActionTimers[index] = undefined;
-            void this.markMovieUnseen(index);
-        }, 140);
-    }
-
-    private renderMovie(movie: FaceoffMovie, index: 0 | 1) {
-        const imageUrl = getMoviePosterUrl(movie);
-        const swipeProgress = Math.min(Math.abs(this.swipeOffsets[index]) / 132, 1);
-        const year = this.getMovieYear(movie);
-        const isTargetedCard = this.targetedInsertion?.targetMovie.id === movie.id;
-
-        return html`
-            <div
-                class="movie-swipe-stage ${this.swipeIntent[index] ? 'skip' : ''} ${this.targetedInsertion ? 'targeted' : ''}"
-                data-index=${index}
-                style=${`--swipe-progress:${swipeProgress};`}
-            >
-                <div class="swipe-hint ${index === 0 ? 'left' : 'right'}" aria-hidden="true">
-                    Not seen
-                </div>
-                <article
-                    class="movie-card ${isTargetedCard ? 'target-card' : ''}"
-                    style=${`transform: translateX(${this.swipeOffsets[index]}px) rotate(${this.swipeOffsets[index] * 0.04}deg);`}
-                >
-                    ${imageUrl
-                        ? html`<button
-                              class="poster-button movie-poster"
-                              aria-label=${`Pick ${movie.title}`}
-                              @click=${() => {
-                                  void this.vote(index);
-                              }}
-                          >
-                              <img src=${imageUrl} alt=${movie.title} />
-                          </button>`
-                        : html`<button
-                              class="poster-button poster-fallback movie-poster"
-                              aria-label=${`Pick ${movie.title}`}
-                              @click=${() => {
-                                  void this.vote(index);
-                              }}
-                          >
-                              <jot-icon name="Play" size="large"></jot-icon>
-                              <span>No poster available</span>
-                          </button>`}
-                    <div class="movie-copy">
-                        <div class="movie-title-row">
-                            <div>
-                                <h3 title=${movie.title}>${movie.title}</h3>
-                                <p>${year}</p>
-                                ${this.targetedInsertion
-                                    ? html`<small class="targeted-card-label">
-                                          ${isTargetedCard
-                                              ? 'Target movie'
-                                              : `Compare against #${
-                                                    this.targetedInsertion.pivotIndex + 1
-                                                }`}
-                                      </small>`
-                                    : nothing}
-                            </div>
-                        </div>
-                    </div>
-                    <footer class="movie-actions">
-                        <button
-                            class="secondary"
-                            @click=${() => {
-                                void this.markMovieUnseen(index);
-                            }}
-                        >
-                            <jot-icon name="EyeOff"></jot-icon>
-                            Not seen
-                        </button>
-                    </footer>
-                </article>
-            </div>
         `;
     }
 
@@ -1061,15 +816,27 @@ export class MovieFaceoffRoute
 
                         <section class="matchup-shell" aria-label="Current matchup">
                             <div class="matchup">
-                                ${left
-                                    ? this.renderMovie(left, 0)
-                                    : this.renderMoviePlaceholder(0)}
+                                <movie-faceoff-card
+                                    .movie=${left}
+                                    .index=${0 as const}
+                                    .loading=${this.isLoading}
+                                    .errorMessage=${this.errorMessage}
+                                    .targetedInsertion=${this.targetedInsertion}
+                                    @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
+                                    @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                                ></movie-faceoff-card>
                                 <div class="matchup-divider" aria-hidden="true">
                                     <span>VS</span>
                                 </div>
-                                ${right
-                                    ? this.renderMovie(right, 1)
-                                    : this.renderMoviePlaceholder(1)}
+                                <movie-faceoff-card
+                                    .movie=${right}
+                                    .index=${1 as const}
+                                    .loading=${this.isLoading}
+                                    .errorMessage=${this.errorMessage}
+                                    .targetedInsertion=${this.targetedInsertion}
+                                    @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
+                                    @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                                ></movie-faceoff-card>
                             </div>
                         </section>
 
@@ -1120,7 +887,7 @@ export class MovieFaceoffRoute
 
 
                             <p class="session-hint">
-                                Swipe outward for not seen. Keyboard shortcuts:
+                                Keyboard shortcuts:
                                 <kbd>Shift</kbd> + <kbd>Arrow</kbd> marks one movie unseen,
                                 <kbd>Down</kbd> marks both.
                             </p>
@@ -1184,7 +951,6 @@ export class MovieFaceoffRoute
             .surface-panel,
             .matchup,
             .matchup > *,
-            .movie-copy,
             .feedback-bar > * {
                 min-width: 0;
             }
@@ -1251,8 +1017,7 @@ export class MovieFaceoffRoute
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .panel-header h2,
-            .movie-copy h3 {
+            .panel-header h2 {
                 margin: 0;
             }
             .eyebrow {
@@ -1318,8 +1083,7 @@ export class MovieFaceoffRoute
                 );
             }
             .summary-stat p,
-            .session-hint,
-            .placeholder-copy p {
+            .session-hint {
                 margin: 0;
                 color: var(--pico-muted-color);
             }
@@ -1396,126 +1160,6 @@ export class MovieFaceoffRoute
                 font-weight: 700;
                 letter-spacing: 0.08em;
             }
-            .movie-swipe-stage {
-                position: relative;
-                min-width: 0;
-                --swipe-progress: 0;
-                padding: 0.25rem 0;
-                overflow: hidden;
-            }
-            .swipe-hint {
-                position: absolute;
-                inset: 0;
-                display: flex;
-                align-items: center;
-                font-size: 0.75rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.08em;
-                color: var(--pico-muted-color);
-                pointer-events: none;
-                opacity: calc(0.08 + var(--swipe-progress) * 0.92);
-                transition: opacity 160ms ease;
-            }
-            .swipe-hint.left {
-                justify-content: flex-start;
-                padding-left: 0.5rem;
-                background: linear-gradient(
-                    90deg,
-                    color-mix(
-                        in srgb,
-                        var(--pico-primary) calc(10% + var(--swipe-progress) * 32%),
-                        transparent
-                    ),
-                    transparent 60%
-                );
-            }
-            .swipe-hint.right {
-                justify-content: flex-end;
-                padding-right: 0.5rem;
-                background: linear-gradient(
-                    270deg,
-                    color-mix(
-                        in srgb,
-                        var(--pico-primary) calc(10% + var(--swipe-progress) * 32%),
-                        transparent
-                    ),
-                    transparent 60%
-                );
-            }
-            .movie-card {
-                box-shadow: none;
-                padding: 0;
-                display: flex;
-                flex-direction: column;
-                gap: 0.85rem;
-                min-height: 100%;
-                margin: 0;
-                transition:
-                    transform 180ms ease,
-                    box-shadow 180ms ease;
-            }
-            .movie-card.target-card {
-                border-color: color-mix(
-                    in srgb,
-                    var(--pico-primary-border) 72%,
-                    var(--pico-card-border-color)
-                );
-            }
-            .movie-title-row {
-                min-width: 0;
-            }
-            .poster-button {
-                padding: 0;
-                cursor: pointer;
-                overflow: hidden;
-                position: relative;
-            }
-            .movie-poster {
-                aspect-ratio: 2 / 3;
-                border-radius: var(--pico-border-radius);
-                overflow: hidden;
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .poster-button img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-            }
-            .poster-button::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(180deg, transparent 25%, rgba(0, 0, 0, 0.25) 100%);
-                pointer-events: none;
-            }
-            .poster-fallback {
-                display: grid;
-                place-items: center;
-                gap: 0.6rem;
-                text-align: center;
-            }
-            .movie-copy h3 {
-                font-size: clamp(1.1rem, 1rem + 0.55vw, 1.5rem);
-                line-height: 1.1;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-            .movie-copy p {
-                margin-top: 0.35rem;
-            }
-            .targeted-card-label {
-                display: inline-flex;
-                margin-top: 0.5rem;
-                font-size: 0.82rem;
-            }
-            .movie-actions {
-                margin-top: auto;
-                margin-bottom: auto;
-            }
             kbd {
                 display: inline-flex;
                 align-items: center;
@@ -1525,28 +1169,6 @@ export class MovieFaceoffRoute
                 border-radius: 0.4rem;
                 font: inherit;
                 font-size: 0.8em;
-            }
-            .placeholder-card {
-                display: grid;
-                gap: 0.85rem;
-                place-items: center;
-                text-align: center;
-                margin: 0;
-            }
-            .placeholder-card {
-                min-height: 100%;
-            }
-            .placeholder-poster {
-                display: grid;
-                place-items: center;
-            }
-            .placeholder-copy {
-                display: grid;
-                gap: 0.35rem;
-                width: 100%;
-            }
-            .placeholder-copy h3 {
-                margin: 0;
             }
             @media (min-width: 1320px) {
                 .layout {
@@ -1591,10 +1213,6 @@ export class MovieFaceoffRoute
                     height: 1.85rem;
                     font-size: 0.56rem;
                     letter-spacing: 0.08em;
-                }
-                .movie-actions button {
-                    width: 100%;
-                    justify-content: center;
                 }
                 .feedback-bar,
                 .feedback-bar button {

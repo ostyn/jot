@@ -16,7 +16,7 @@ export const manualRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'manual',
     label: 'Insert Rank',
     description:
-        'Insert Rank rebuilds a single ordered list by replaying votes in sequence and moving winners ahead of losers as those decisions happen. Because it follows the exact order of the session history, it preserves the chronology of your choices in a way the score-based systems do not.\n\nThis makes it especially useful for experimentation with order-sensitive ideas, but it also means early decisions can shape the list strongly until later votes correct them.',
+        'Replays votes in order and moves winners ahead of losers.\n\nMetric: no separate score, only list position.\n\nPros: matches vote history exactly. Cons: heavily order-dependent.',
     rank: computeManualRankings,
     formatMetric: () => '',
 };

@@ -62,7 +62,7 @@ export const markovRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'markov',
     label: 'Markov Ranking',
     description:
-        'Markov Ranking treats the results as a network and repeatedly moves ranking weight through that network until it stabilizes. A movie gains value not just from its own wins, but from being connected to other strong movies in the graph.\n\nThis gives a more global picture than a direct score, which can be useful when the matchup web is dense, but the result is also more abstract and usually less intuitive to explain at a glance.',
+        'Treats results as a network and spreads ranking weight through it.\n\nMetric: steady-state share of ranking weight.\n\nPros: captures global structure. Cons: abstract and harder to explain.',
     rank: computeMarkovScores(),
     formatMetric: (movie) => `${((movie.score || 0) * 100).toFixed(2)}%`,
 };

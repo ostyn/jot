@@ -37,7 +37,7 @@ export const transitiveRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'transitive',
     label: 'Transitive Rank',
     description:
-        'Transitive Rank rewards a movie not only for direct wins, but also for the downstream strength of the movies it has beaten. If Movie A beat Movie B, and Movie B beat several others, A gets credit for sitting above that chain.\n\nThis can surface strong movies from sparse data, but it can also amplify noisy paths, so it is most useful when you want to explore the structure of the head-to-head graph rather than rely on a conservative score.',
+        'Credits movies for direct wins and the wins of movies they beat.\n\nMetric: total reachable wins in the comparison graph.\n\nPros: can surface strong movies from sparse data. Cons: can amplify noisy chains.',
     rank: computeTransitiveScores,
     formatMetric: (movie) => `${movie.score} wins`,
 };

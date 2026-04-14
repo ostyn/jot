@@ -50,7 +50,7 @@ export const bradleyTerryRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'bradley-terry',
     label: 'Bradley-Terry Ranking',
     description:
-        'Bradley-Terry estimates an underlying strength for each movie that best explains the observed head-to-head wins and losses. Instead of just counting outcomes, it tries to fit a probabilistic model of how likely each movie is to beat another.\n\nIt is one of the more principled pairwise-comparison methods here, especially once you have enough data, but it can feel less transparent than simpler rankings when you are trying to understand a single surprising placement.',
+        'Fits a strength model that best explains the head-to-head results.\n\nMetric: relative strength score. Higher means the model expects more wins.\n\nPros: principled, pairwise-aware. Cons: less transparent than simpler methods.',
     rank: computeBradleyTerryScores(),
-    formatMetric: (movie) => `${(movie.score || 0).toFixed(2)}%`,
+    formatMetric: (movie) => `${(movie.score || 0).toFixed(2)} strength`,
 };

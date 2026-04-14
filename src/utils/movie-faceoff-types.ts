@@ -46,13 +46,13 @@ export function clonePair(pair: FaceoffPair): FaceoffPair {
     return pair.map((movie) => (movie ? { ...movie } : null)) as FaceoffPair;
 }
 
-export function isFaceoffMovie(candidate: unknown): candidate is FaceoffMovie {
+function isFaceoffMovie(candidate: unknown): candidate is FaceoffMovie {
     if (!candidate || typeof candidate !== 'object') return false;
     const movie = candidate as Partial<FaceoffMovie>;
     return typeof movie.id === 'number' && typeof movie.title === 'string';
 }
 
-export function isMovieStateChange(candidate: unknown): candidate is MovieStateChange {
+function isMovieStateChange(candidate: unknown): candidate is MovieStateChange {
     if (!candidate || typeof candidate !== 'object') return false;
     const change = candidate as Partial<MovieStateChange>;
     return typeof change.movieId === 'number';

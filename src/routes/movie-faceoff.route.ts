@@ -230,10 +230,6 @@ export class MovieFaceoffRoute
         } left`;
     }
 
-    private snapshotCurrentPair() {
-        return clonePair(this.movies);
-    }
-
     private async setPoolMode(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
         this.useRankedOnly = useRankedOnly;
@@ -441,7 +437,6 @@ export class MovieFaceoffRoute
     }
 
     private clearTargetedMovieQueryParam() {
-        if (typeof window === 'undefined') return;
         const search = new URLSearchParams(window.location.search);
         if (!search.has('targetMovieId')) return;
         betterGo('movie-faceoff');
@@ -558,7 +553,7 @@ export class MovieFaceoffRoute
         const [left, right] = this.movies;
         if (!left || !right) return;
 
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const winnerMovie = winnerIndex === 0 ? left : right;
         const loserMovie = winnerIndex === 0 ? right : left;
         const eventId = await movieFaceoff.recordVote(winnerMovie, loserMovie);
@@ -593,7 +588,7 @@ export class MovieFaceoffRoute
         if (!left || !right) return;
 
         const movie = index === 0 ? left : right;
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const movieChanges = this.snapshotMovieChanges([movie.id]);
         await movieFaceoff.markMovieUnseen(movie.id);
 
@@ -628,7 +623,7 @@ export class MovieFaceoffRoute
         const [left, right] = this.movies;
         if (!left || !right) return;
 
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const movieChanges = this.snapshotMovieChanges([left.id, right.id]);
         await movieFaceoff.markMoviesUnseen([left.id, right.id]);
         this.pushUndoEntry({
@@ -648,7 +643,7 @@ export class MovieFaceoffRoute
     }
 
     private async excludeMovie(movie: MovieFaceoffRankedMovie) {
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const movieChanges = this.snapshotMovieChanges([movie.id]);
         await movieFaceoff.excludeMovie(movie.id);
         this.pushUndoEntry({
@@ -668,7 +663,7 @@ export class MovieFaceoffRoute
     }
 
     private async restoreExcludedMovie(movie: MovieFaceoffMovie) {
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const movieChanges = this.snapshotMovieChanges([movie.id]);
         await movieFaceoff.restoreMovie(movie.id);
         this.pushUndoEntry({
@@ -681,7 +676,7 @@ export class MovieFaceoffRoute
     }
 
     private async restoreSeenMovie(movie: MovieFaceoffMovie) {
-        const previousPair = this.snapshotCurrentPair();
+        const previousPair = clonePair(this.movies);
         const movieChanges = this.snapshotMovieChanges([movie.id]);
         await movieFaceoff.restoreMovieSeen(movie.id);
         this.pushUndoEntry({
@@ -988,16 +983,13 @@ export class MovieFaceoffRoute
             .header-action-button span {
                 display: inline-block;
             }
-            .targeted-copy,
-            .search-result-copy {
+            .targeted-copy {
                 min-width: 0;
             }
             .targeted-copy h3 {
                 margin: 0;
             }
-            .targeted-copy p:last-child,
-            .search-feedback,
-            .targeted-card-label {
+            .targeted-copy p:last-child {
                 margin: 0;
                 color: var(--pico-muted-color);
             }

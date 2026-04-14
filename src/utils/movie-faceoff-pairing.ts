@@ -87,7 +87,7 @@ export async function getSmartMovie(
     return getRandomMovie(pool, loadMovie);
 }
 
-export async function getWeightedRandomMovie(
+async function getWeightedRandomMovie(
     pool: number[],
     weights: number[],
     loadMovie: LoadMovie

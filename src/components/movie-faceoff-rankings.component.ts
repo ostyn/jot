@@ -1,43 +1,72 @@
-import { css, html, nothing, LitElement } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import {
-    MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
     MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import { getMoviePosterUrl } from '../services/movie-faceoff.service';
+import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
+    buildMovieFaceoffReplayState,
+    getMovieFaceoffRankingAlgorithm,
+    getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
-    type MovieFaceoffRankingAlgorithm,
+    MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
 import './jot-icon';
 
 @customElement('movie-faceoff-rankings')
-export class MovieFaceoffRankings extends LitElement {
-    @property({ attribute: false })
-    rankedMovies: MovieFaceoffRankedMovie[] = [];
-
-    @property({ attribute: false })
-    excludedMovies: MovieFaceoffMovie[] = [];
-
-    @property({ attribute: false })
-    unseenMovies: MovieFaceoffMovie[] = [];
-
-    @property({ type: String })
-    sortMode: MovieFaceoffSortMode = 'elo';
-
-    @property({ type: Boolean })
-    editList = false;
-
+export class MovieFaceoffRankings extends MobxLitElement {
     @property({ type: Boolean })
     isTargetedMode = false;
 
-    @property({ attribute: false })
-    rankingAlgorithm!: MovieFaceoffRankingAlgorithm;
+    @state()
+    private sortMode: MovieFaceoffSortMode = 'elo';
+
+    @state()
+    private editList = false;
 
     @state()
     private showAlgorithmInfo = false;
+
+    private cachedReplayState: MovieFaceoffReplayState | null = null;
+    private cachedReplayStateVersion = 0;
+
+    private get replayState() {
+        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
+        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
+            this.cachedReplayState = buildMovieFaceoffReplayState(
+                movieFaceoff.allEvents,
+                movieFaceoff.allMovies
+            );
+            this.cachedReplayStateVersion = currentVersion;
+        }
+        return this.cachedReplayState;
+    }
+
+    private get rankingAlgorithm() {
+        return getMovieFaceoffRankingAlgorithm(this.sortMode);
+    }
+
+    private get rankedMovies() {
+        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
+            (movie) => !movie.excludedAt && !movie.unseenAt
+        );
+    }
+
+    private get excludedMovies() {
+        return [...movieFaceoff.allMovies]
+            .filter((movie) => movie.excludedAt)
+            .sort((a, b) => a.title.localeCompare(b.title) || b.updatedAt.localeCompare(a.updatedAt));
+    }
+
+    private get unseenMovies() {
+        return [...movieFaceoff.allMovies]
+            .filter((movie) => movie.unseenAt)
+            .sort((a, b) => a.title.localeCompare(b.title) || b.updatedAt.localeCompare(a.updatedAt));
+    }
 
     private emit<T>(name: string, detail: T) {
         this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
@@ -57,6 +86,8 @@ export class MovieFaceoffRankings extends LitElement {
 
     disconnectedCallback() {
         window.removeEventListener('keydown', this.handleKeyDown);
+        this.cachedReplayState = null;
+        this.cachedReplayStateVersion = 0;
         super.disconnectedCallback();
     }
 
@@ -133,9 +164,7 @@ export class MovieFaceoffRankings extends LitElement {
                                 .value=${this.sortMode}
                                 ?disabled=${this.isTargetedMode}
                                 @change=${(event: Event) => {
-                                    this.emit('sort-mode-change', {
-                                        sortMode: (event.currentTarget as HTMLSelectElement).value,
-                                    });
+                                    this.sortMode = (event.currentTarget as HTMLSelectElement).value as MovieFaceoffSortMode;
                                 }}
                             >
                                 ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
@@ -162,7 +191,7 @@ export class MovieFaceoffRankings extends LitElement {
                             <button
                                 class=${this.editList ? '' : 'secondary'}
                                 @click=${() => {
-                                    this.emit('toggle-edit', {});
+                                    this.editList = !this.editList;
                                 }}
                             >
                                 ${this.editList ? 'Done' : 'Edit'}

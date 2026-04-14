@@ -6,7 +6,6 @@ import { base } from '../baseStyles';
 import {
     MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
-    MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import {
     FaceoffMovie,
@@ -34,7 +33,7 @@ import {
     FaceoffPair,
     MovieStateChange,
     TargetedInsertionState,
-    UndoEntry,
+    UndoAction,
 } from '../utils/movie-faceoff-types';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import '../components/jot-icon';
@@ -52,16 +51,10 @@ export class MovieFaceoffRoute
     private movies: FaceoffPair = [null, null];
 
     @state()
-    private sortMode: MovieFaceoffSortMode = 'elo';
-
-    @state()
     private useRankedOnly = false;
 
     @state()
     private useSmartSelection = true;
-
-    @state()
-    private editList = false;
 
     @state()
     private isLoading = false;
@@ -143,42 +136,10 @@ export class MovieFaceoffRoute
         return this.cachedReplayState;
     }
 
-    private get excludedMovies() {
-        return [...movieFaceoff.allMovies]
-            .filter((movie) => Boolean(movie.excludedAt))
-            .sort(
-                (a, b) =>
-                    a.title.localeCompare(b.title) ||
-                    b.updatedAt.localeCompare(a.updatedAt)
-            );
-    }
-
-    private get unseenMovies() {
-        return [...movieFaceoff.allMovies]
-            .filter((movie) => Boolean(movie.unseenAt))
-            .sort(
-                (a, b) =>
-                    a.title.localeCompare(b.title) ||
-                    b.updatedAt.localeCompare(a.updatedAt)
-            );
-    }
-
     private get visibleRankedMovies() {
-        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
+        return getMovieFaceoffRankedMovies(this.replayState, 'elo').filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
-    }
-
-    private get rankingAlgorithm() {
-        return getMovieFaceoffRankingAlgorithm(this.sortMode);
-    }
-
-    private get totalVoteCount() {
-        return movieFaceoff.allEvents.length;
-    }
-
-    private get rankedMovieCount() {
-        return this.visibleRankedMovies.length;
     }
 
     private get availableMovieCount() {
@@ -254,8 +215,22 @@ export class MovieFaceoffRoute
         });
     }
 
-    private pushUndoEntry(entry: UndoEntry) {
-        this.undoManager.push(entry);
+    private async performAction(
+        action: UndoAction,
+        movieIds: number[] | undefined,
+        perform: () => Promise<number | void>,
+        statusMessage: string,
+    ) {
+        const previousPair = clonePair(this.movies);
+        const movieChanges = movieIds ? this.snapshotMovieChanges(movieIds) : undefined;
+        const result = await perform();
+        this.undoManager.push({
+            action,
+            eventId: typeof result === 'number' ? result : undefined,
+            movieChanges,
+            pair: previousPair,
+        });
+        this.statusMessage = statusMessage;
         this.showUndo = true;
     }
 
@@ -343,7 +318,7 @@ export class MovieFaceoffRoute
         return createTargetedInsertionState(
             targetMovie,
             this.visibleRankedMovies,
-            this.sortMode,
+            'manual',
             comparisonsCompleted,
             low,
             high
@@ -379,7 +354,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = nextState.rankedSnapshot.length
-                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${this.rankingAlgorithm.label}.`
+                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${getMovieFaceoffRankingAlgorithm('manual').label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             return;
@@ -391,7 +366,6 @@ export class MovieFaceoffRoute
     }
 
     private async startTargetedInsertion(movie: FaceoffMovie) {
-        this.sortMode = 'manual';
         await movieFaceoff.upsertMoviesMetadata([movie]);
 
         const nextState = this.buildTargetedInsertionState(movie);
@@ -403,7 +377,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = hasRankings
-                ? `Placed ${movie.title} at #${nextState.low + 1} in ${this.rankingAlgorithm.label}.`
+                ? `Placed ${movie.title} at #${nextState.low + 1} in ${getMovieFaceoffRankingAlgorithm('manual').label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             this.errorMessage = hasRankings
@@ -412,7 +386,7 @@ export class MovieFaceoffRoute
             return;
         }
 
-        this.statusMessage = `Placing ${movie.title} using ${this.rankingAlgorithm.label}.`;
+        this.statusMessage = `Placing ${movie.title} using ${getMovieFaceoffRankingAlgorithm('manual').label}.`;
         this.errorMessage = '';
         this.movies = [movie, nextState.pivotMovie];
     }
@@ -553,33 +527,17 @@ export class MovieFaceoffRoute
         const [left, right] = this.movies;
         if (!left || !right) return;
 
-        const previousPair = clonePair(this.movies);
-        const winnerMovie = winnerIndex === 0 ? left : right;
-        const loserMovie = winnerIndex === 0 ? right : left;
-        const eventId = await movieFaceoff.recordVote(winnerMovie, loserMovie);
-
-        this.pushUndoEntry({
-            action: 'vote',
-            eventId,
-            pair: previousPair,
-        });
-        this.statusMessage = 'Recorded vote';
-        this.showUndo = true;
+        const winner = winnerIndex === 0 ? left : right;
+        const loser = winnerIndex === 0 ? right : left;
+        await this.performAction('vote', undefined,
+            () => movieFaceoff.recordVote(winner, loser), 'Recorded vote');
 
         if (this.targetedInsertion) {
             const { low, high, comparisonsCompleted } = advanceTargetedInsertion(
-                this.targetedInsertion,
-                winnerIndex === 0
-            );
-
-            await this.refreshTargetedInsertion({
-                comparisonsCompleted,
-                low,
-                high,
-            });
+                this.targetedInsertion, winnerIndex === 0);
+            await this.refreshTargetedInsertion({ comparisonsCompleted, low, high });
             return;
         }
-
         await this.displayNewPair();
     }
 
@@ -588,17 +546,8 @@ export class MovieFaceoffRoute
         if (!left || !right) return;
 
         const movie = index === 0 ? left : right;
-        const previousPair = clonePair(this.movies);
-        const movieChanges = this.snapshotMovieChanges([movie.id]);
-        await movieFaceoff.markMovieUnseen(movie.id);
-
-        this.pushUndoEntry({
-            action: index === 0 ? 'not-seen-left' : 'not-seen-right',
-            movieChanges,
-            pair: previousPair,
-        });
-        this.statusMessage = 'Marked as not seen';
-        this.showUndo = true;
+        await this.performAction(index === 0 ? 'not-seen-left' : 'not-seen-right',
+            [movie.id], () => movieFaceoff.markMovieUnseen(movie.id), 'Marked as not seen');
 
         if (this.targetedInsertion) {
             if (this.targetedInsertion.targetMovie.id === movie.id) {
@@ -609,13 +558,9 @@ export class MovieFaceoffRoute
                 await this.displayNewPair();
                 return;
             }
-
-            await this.refreshTargetedInsertion({
-                preserveCurrentPair: false,
-            });
+            await this.refreshTargetedInsertion({ preserveCurrentPair: false });
             return;
         }
-
         await this.replaceUnavailableMovie(index);
     }
 
@@ -623,16 +568,9 @@ export class MovieFaceoffRoute
         const [left, right] = this.movies;
         if (!left || !right) return;
 
-        const previousPair = clonePair(this.movies);
-        const movieChanges = this.snapshotMovieChanges([left.id, right.id]);
-        await movieFaceoff.markMoviesUnseen([left.id, right.id]);
-        this.pushUndoEntry({
-            action: 'not-seen-both',
-            movieChanges,
-            pair: previousPair,
-        });
-        this.statusMessage = 'Marked both movies as not seen';
-        this.showUndo = true;
+        await this.performAction('not-seen-both', [left.id, right.id],
+            () => movieFaceoff.markMoviesUnseen([left.id, right.id]),
+            'Marked both movies as not seen');
 
         if (this.targetedInsertion) {
             this.targetedInsertion = null;
@@ -643,49 +581,22 @@ export class MovieFaceoffRoute
     }
 
     private async excludeMovie(movie: MovieFaceoffRankedMovie) {
-        const previousPair = clonePair(this.movies);
-        const movieChanges = this.snapshotMovieChanges([movie.id]);
-        await movieFaceoff.excludeMovie(movie.id);
-        this.pushUndoEntry({
-            action: 'exclude',
-            movieChanges,
-            pair: previousPair,
-        });
-        this.statusMessage = `Excluded ${movie.title}`;
-        this.showUndo = true;
+        await this.performAction('exclude', [movie.id],
+            () => movieFaceoff.excludeMovie(movie.id), `Excluded ${movie.title}`);
 
-        const currentIds = this.movies
-            .filter(Boolean)
-            .map((currentMovie) => currentMovie!.id);
-        if (currentIds.includes(movie.id)) {
+        if (this.movies.some((m) => m?.id === movie.id)) {
             await this.displayNewPair();
         }
     }
 
     private async restoreExcludedMovie(movie: MovieFaceoffMovie) {
-        const previousPair = clonePair(this.movies);
-        const movieChanges = this.snapshotMovieChanges([movie.id]);
-        await movieFaceoff.restoreMovie(movie.id);
-        this.pushUndoEntry({
-            action: 'restore-excluded',
-            movieChanges,
-            pair: previousPair,
-        });
-        this.statusMessage = `Restored ${movie.title}`;
-        this.showUndo = true;
+        await this.performAction('restore-excluded', [movie.id],
+            () => movieFaceoff.restoreMovie(movie.id), `Restored ${movie.title}`);
     }
 
     private async restoreSeenMovie(movie: MovieFaceoffMovie) {
-        const previousPair = clonePair(this.movies);
-        const movieChanges = this.snapshotMovieChanges([movie.id]);
-        await movieFaceoff.restoreMovieSeen(movie.id);
-        this.pushUndoEntry({
-            action: 'restore-seen',
-            movieChanges,
-            pair: previousPair,
-        });
-        this.statusMessage = `Marked ${movie.title} as seen again`;
-        this.showUndo = true;
+        await this.performAction('restore-seen', [movie.id],
+            () => movieFaceoff.restoreMovieSeen(movie.id), `Marked ${movie.title} as seen again`);
     }
 
     private renderSummaryStat(label: string, value: string | number, accent = false) {
@@ -712,7 +623,7 @@ export class MovieFaceoffRoute
                     <p class="eyebrow">Targeted placement</p>
                     <h3>${session.targetMovie.title}</h3>
                     <p>
-                        Compare it against key movies in ${this.rankingAlgorithm.label}.
+                        Compare it against key movies in ${getMovieFaceoffRankingAlgorithm('manual').label}.
                         Current estimated slot: #${estimatedPlacement}.
                     </p>
                 </div>
@@ -733,7 +644,6 @@ export class MovieFaceoffRoute
     }
 
     render() {
-        const ranked = this.visibleRankedMovies;
         const [left, right] = this.movies;
         const statusTone = this.sessionStatusTone;
         const statusLabel = this.statusMessage || this.sessionStatusLabel;
@@ -836,7 +746,7 @@ export class MovieFaceoffRoute
                         </section>
 
                         <footer class="session-panel">
-                            <div class="matchup-actions" role="group" aria-label="Current matchup actions">
+                            <div style="justify-self:start" role="group" aria-label="Current matchup actions">
                                 <button
                                     class="secondary"
                                     ?disabled=${this.isTargetedMode}
@@ -869,10 +779,10 @@ export class MovieFaceoffRoute
                             <div class="summary-grid session-summary">
                                 ${this.renderSummaryStat(
                                     'Ranked',
-                                    this.rankedMovieCount,
+                                    this.visibleRankedMovies.length,
                                     true
                                 )}
-                                ${this.renderSummaryStat('Votes', this.totalVoteCount)}
+                                ${this.renderSummaryStat('Votes', movieFaceoff.allEvents.length)}
                                 ${this.renderSummaryStat(
                                     'Available',
                                     this.availableMovieCount ?? '...'
@@ -892,19 +802,7 @@ export class MovieFaceoffRoute
 
                 <aside class="rankings-column">
                     <movie-faceoff-rankings
-                        .rankedMovies=${ranked}
-                        .excludedMovies=${this.excludedMovies}
-                        .unseenMovies=${this.unseenMovies}
-                        .sortMode=${this.sortMode}
-                        .editList=${this.editList}
-                        .isTargetedMode=${this.isTargetedMode}
-                        .rankingAlgorithm=${this.rankingAlgorithm}
-                        @sort-mode-change=${(e: CustomEvent) => {
-                            this.sortMode = e.detail.sortMode as MovieFaceoffSortMode;
-                        }}
-                        @toggle-edit=${() => {
-                            this.editList = !this.editList;
-                        }}
+                        .isTargetedMode=${!!this.targetedInsertion}
                         @exclude-movie=${(e: CustomEvent) => {
                             void this.excludeMovie(e.detail.movie);
                         }}
@@ -956,6 +854,8 @@ export class MovieFaceoffRoute
             }
             .targeted-banner {
                 display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
                 gap: 0.75rem;
                 padding: 1rem;
                 border-radius: var(--pico-border-radius);
@@ -965,14 +865,11 @@ export class MovieFaceoffRoute
                     var(--pico-card-background-color)
                 );
             }
-            .targeted-banner {
-                grid-template-columns: minmax(0, 1fr) auto;
-                align-items: center;
-            }
             .targeted-meta {
                 display: flex;
+                flex-direction: column;
+                align-items: flex-end;
                 gap: 0.75rem;
-                align-items: start;
                 flex-wrap: wrap;
             }
             .header-action-button {
@@ -993,13 +890,6 @@ export class MovieFaceoffRoute
                 margin: 0;
                 color: var(--pico-muted-color);
             }
-            .targeted-meta {
-                flex-direction: column;
-                align-items: flex-end;
-            }
-            .faceoff-panel {
-                display: grid;
-            }
             .panel-header {
                 position: relative;
                 z-index: 1;
@@ -1018,10 +908,6 @@ export class MovieFaceoffRoute
                 font-size: 0.78rem;
                 letter-spacing: 0.06em;
                 text-transform: uppercase;
-            }
-            .faceoff-panel > * {
-                position: relative;
-                z-index: 1;
             }
             .pool-toggle {
                 width: fit-content;
@@ -1087,9 +973,6 @@ export class MovieFaceoffRoute
                 gap: 1rem;
                 background: transparent;
                 border: 0;
-            }
-            .matchup-actions {
-                justify-self: start;
             }
             .status-banner {
                 display: flex;

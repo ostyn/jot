@@ -8,7 +8,7 @@ export const glickoRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     rank: (replay) =>
         Array.from(replay.ratings.values()).sort((a, b) => {
             // Sort by rating, but consider rating deviation for ties
-            const ratingDiff = b.rating - a.rating;
+            const ratingDiff = (b.glickoRating ?? b.rating) - (a.glickoRating ?? a.rating);
             if (Math.abs(ratingDiff) > 1) return ratingDiff;
 
             // For near-equal ratings, prefer lower RD (more certain)
@@ -17,7 +17,7 @@ export const glickoRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
             return aRD - bRD;
         }),
     formatMetric: (movie) => {
-        const rating = Math.round(movie.rating);
+        const rating = Math.round(movie.glickoRating ?? movie.rating);
         const rd = Math.round(movie.ratingDeviation || 350);
         return `${rating}±${rd}`;
     },

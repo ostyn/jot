@@ -22,6 +22,7 @@ function syncRankedMovieMetadata(
             createdAt: movie?.createdAt || new Date(0).toISOString(),
             updatedAt: movie?.updatedAt || new Date(0).toISOString(),
             rating: 1500,
+            glickoRating: 1500,
             winCount: 0,
             lossCount: 0,
             ratingDeviation: 350, // Glicko default RD (high uncertainty)
@@ -45,49 +46,33 @@ function syncRankedMovieMetadata(
 }
 
 function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceoffRankedMovie) {
-    // Glicko constants
-    const SCALE = 173.7178; // Converts Elo scale to Glicko scale
-    const DEFAULT_VOLATILITY = 0.06;
+    const Q = Math.log(10) / 400;
+    const MIN_RD = 30;
+    const MAX_RD = 350;
 
-    // Convert to Glicko scale
-    const winnerRating = (winner.rating - 1500) / SCALE;
-    const loserRating = (loser.rating - 1500) / SCALE;
-    const winnerRD = (winner.ratingDeviation || 350) / SCALE;
-    const loserRD = (loser.ratingDeviation || 350) / SCALE;
+    const applyResult = (
+        player: MovieFaceoffRankedMovie,
+        opponent: MovieFaceoffRankedMovie,
+        score: 0 | 1
+    ) => {
+        const rating = player.glickoRating ?? 1500;
+        const opponentRating = opponent.glickoRating ?? 1500;
+        const rd = Math.max(player.ratingDeviation || MAX_RD, MIN_RD);
+        const opponentRD = Math.max(opponent.ratingDeviation || MAX_RD, MIN_RD);
 
-    // g(RD) function
-    const gWinner = 1 / Math.sqrt(1 + 3 * winnerRD * winnerRD / (Math.PI * Math.PI));
-    const gLoser = 1 / Math.sqrt(1 + 3 * loserRD * loserRD / (Math.PI * Math.PI));
+        const g = 1 / Math.sqrt(1 + (3 * Q * Q * opponentRD * opponentRD) / (Math.PI * Math.PI));
+        const expected = 1 / (1 + 10 ** ((-g * (rating - opponentRating)) / 400));
+        const dSquared = 1 / (Q * Q * g * g * expected * (1 - expected));
+        const inverseVariance = 1 / (rd * rd) + 1 / dSquared;
+        const newRating = rating + (Q / inverseVariance) * g * (score - expected);
+        const newRD = Math.sqrt(1 / inverseVariance);
 
-    // Expected outcome
-    const EWinner = 1 / (1 + Math.exp(-gLoser * (winnerRating - loserRating)));
-    const ELoser = 1 / (1 + Math.exp(-gWinner * (loserRating - winnerRating)));
+        player.glickoRating = newRating;
+        player.ratingDeviation = Math.min(Math.max(newRD, MIN_RD), MAX_RD);
+    };
 
-    // Variance
-    const vWinner = 1 / (gLoser * gLoser * EWinner * (1 - EWinner));
-    const vLoser = 1 / (gWinner * gWinner * ELoser * (1 - ELoser));
-
-    // Delta (rating change)
-    const deltaWinner = vWinner * gLoser * (1 - EWinner);
-    const deltaLoser = vLoser * gWinner * (0 - ELoser);
-
-    // Update volatility (simplified - full algorithm needs iterative solution)
-    const winnerVolatility = winner.ratingVolatility || DEFAULT_VOLATILITY;
-    const loserVolatility = loser.ratingVolatility || DEFAULT_VOLATILITY;
-
-    // Update RD
-    const newWinnerRD = Math.sqrt(winnerRD * winnerRD + winnerVolatility * winnerVolatility);
-    const newLoserRD = Math.sqrt(loserRD * loserRD + loserVolatility * loserVolatility);
-
-    // Update rating
-    const newWinnerRating = winnerRating + (1 / (newWinnerRD * newWinnerRD + vWinner)) * deltaWinner;
-    const newLoserRating = loserRating + (1 / (newLoserRD * newLoserRD + vLoser)) * deltaLoser;
-
-    // Convert back to Elo scale
-    winner.rating = newWinnerRating * SCALE + 1500;
-    loser.rating = newLoserRating * SCALE + 1500;
-    winner.ratingDeviation = Math.min(newWinnerRD * SCALE, 350); // Cap RD
-    loser.ratingDeviation = Math.min(newLoserRD * SCALE, 350);
+    applyResult(winner, loser, 1);
+    applyResult(loser, winner, 0);
 }
 
 function insertManualRank(list: number[], winnerId: number, loserId: number) {

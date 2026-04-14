@@ -37,6 +37,7 @@ export interface MovieFaceoffExportData {
 
 export interface MovieFaceoffRankedMovie extends MovieFaceoffMovie {
     rating: number;
+    glickoRating?: number;
     winCount: number;
     lossCount: number;
     score?: number;

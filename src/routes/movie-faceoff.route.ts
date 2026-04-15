@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import { base } from '../baseStyles';
+import { movieFaceoffShared } from '../movieFaceoffStyles';
 import {
     MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
@@ -14,10 +15,8 @@ import {
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
-    buildMovieFaceoffReplayState,
     getMovieFaceoffRankingAlgorithm,
     getMovieFaceoffRankedMovies,
-    MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
 import {
     getCandidatePool,
@@ -105,9 +104,6 @@ export class MovieFaceoffRoute
 
     disconnectedCallback() {
         window.removeEventListener('keydown', this.keyDownHandler);
-        // Clear cache to prevent memory leaks
-        this.cachedReplayState = null;
-        this.cachedReplayStateVersion = 0;
         super.disconnectedCallback();
     }
 
@@ -120,20 +116,8 @@ export class MovieFaceoffRoute
         }
     }
 
-    private cachedReplayState: MovieFaceoffReplayState | null = null;
-    private cachedReplayStateVersion = 0;
-
     private get replayState() {
-        // Check if we need to rebuild the replay state
-        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
-        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
-            this.cachedReplayState = buildMovieFaceoffReplayState(
-                movieFaceoff.allEvents,
-                movieFaceoff.allMovies
-            );
-            this.cachedReplayStateVersion = currentVersion;
-        }
-        return this.cachedReplayState;
+        return movieFaceoff.replayState;
     }
 
     private get visibleRankedMovies() {
@@ -620,8 +604,10 @@ export class MovieFaceoffRoute
         return html`
             <article class="targeted-banner">
                 <div class="targeted-copy">
-                    <p class="eyebrow">Targeted placement</p>
-                    <h3>${session.targetMovie.title}</h3>
+                    <hgroup>
+                        <p class="eyebrow">Targeted placement</p>
+                        <h3>${session.targetMovie.title}</h3>
+                    </hgroup>
                     <p>
                         Compare it against key movies in ${getMovieFaceoffRankingAlgorithm('manual').label}.
                         Current estimated slot: #${estimatedPlacement}.
@@ -665,10 +651,10 @@ export class MovieFaceoffRoute
                 <section class="faceoff-column">
                     <article class="faceoff-panel surface-panel">
                         <header class="panel-header">
-                            <div>
+                            <hgroup>
                                 <p class="eyebrow">Which would you rather watch?</p>
                                 <h2>Current faceoff</h2>
-                            </div>
+                            </hgroup>
                             <div role="group" class="pool-toggle" aria-label="Movie pool">
                                 <button
                                     class=${this.useRankedOnly ? 'outline' : ''}
@@ -825,6 +811,7 @@ export class MovieFaceoffRoute
 
     static styles = [
         base,
+        movieFaceoffShared,
         css`
             :host {
                 display: flex;
@@ -883,9 +870,6 @@ export class MovieFaceoffRoute
             .targeted-copy {
                 min-width: 0;
             }
-            .targeted-copy h3 {
-                margin: 0;
-            }
             .targeted-copy p:last-child {
                 margin: 0;
                 color: var(--pico-muted-color);
@@ -898,16 +882,6 @@ export class MovieFaceoffRoute
                 align-items: start;
                 gap: 0.75rem;
                 flex-wrap: wrap;
-            }
-            .panel-header h2 {
-                margin: 0;
-            }
-            .eyebrow {
-                margin: 0 0 0.2rem;
-                color: var(--pico-muted-color);
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
             }
             .pool-toggle {
                 width: fit-content;

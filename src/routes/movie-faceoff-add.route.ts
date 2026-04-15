@@ -2,6 +2,7 @@ import { css, html, nothing } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
+import { movieFaceoffShared } from '../movieFaceoffStyles';
 import '../components/jot-icon';
 import '../components/utility-page-header.component';
 import {
@@ -73,42 +74,44 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
             <main class="layout">
                 <section class="surface-panel search-panel">
                     <header class="panel-header">
-                        <div>
+                        <hgroup>
                             <p class="eyebrow">Targeted placement</p>
                             <h2>Search for a movie to add</h2>
-                        </div>
-                        <p class="panel-description">
+                        </hgroup>
+                        <p class="text-muted">
                             Pick a movie and we’ll send it back to Movie Faceoff to
                             place it against key ranked movies.
                         </p>
                     </header>
 
                     <form
-                        class="search-form"
+                        role="search"
                         @submit=${(event: Event) => {
                             void this.handleMovieSearch(event);
                         }}
                     >
-                        <input
-                            type="search"
-                            .value=${this.searchQuery}
-                            placeholder="Search for a movie title"
-                            ?disabled=${this.isSearching}
-                            @input=${(event: InputEvent) => {
-                                this.searchQuery = (
-                                    event.currentTarget as HTMLInputElement
-                                ).value;
-                                this.searchErrorMessage = '';
-                            }}
-                        />
-                        <button type="submit">
-                            <jot-icon name="Search"></jot-icon>
-                            ${this.isSearching ? 'Searching...' : 'Search'}
-                        </button>
+                        <div role="group">
+                            <input
+                                type="search"
+                                .value=${this.searchQuery}
+                                placeholder="Search for a movie title"
+                                ?disabled=${this.isSearching}
+                                @input=${(event: InputEvent) => {
+                                    this.searchQuery = (
+                                        event.currentTarget as HTMLInputElement
+                                    ).value;
+                                    this.searchErrorMessage = '';
+                                }}
+                            />
+                            <button type="submit">
+                                <jot-icon name="Search"></jot-icon>
+                                ${this.isSearching ? 'Searching...' : 'Search'}
+                            </button>
+                        </div>
                     </form>
 
                     ${this.searchErrorMessage
-                        ? html`<p class="search-feedback error">
+                        ? html`<p class="text-muted" style="color:var(--pico-del-color)">
                               ${this.searchErrorMessage}
                           </p>`
                         : nothing}
@@ -160,6 +163,7 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
 
     static styles = [
         base,
+        movieFaceoffShared,
         css`
             :host {
                 display: flex;
@@ -185,35 +189,6 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                 align-items: start;
                 gap: 0.75rem;
                 flex-wrap: wrap;
-            }
-            .panel-header h2 {
-                margin: 0;
-            }
-            .eyebrow {
-                margin: 0 0 0.25rem;
-                color: var(--pico-muted-color);
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
-            }
-            .panel-description,
-            .search-feedback,
-            .search-result-copy small {
-                margin: 0;
-                color: var(--pico-muted-color);
-            }
-            .search-form {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) auto;
-                gap: 0.75rem;
-                align-items: center;
-            }
-            .search-form input,
-            .search-form button {
-                margin: 0;
-            }
-            .search-feedback.error {
-                color: var(--pico-del-color);
             }
             .search-results-list {
                 list-style: none;
@@ -274,7 +249,6 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                 :host {
                     width: 100%;
                 }
-                .search-form,
                 .search-result {
                     grid-template-columns: minmax(0, 1fr);
                 }

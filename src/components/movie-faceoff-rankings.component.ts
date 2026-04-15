@@ -1,7 +1,8 @@
 import { css, html, nothing } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
+import { movieFaceoffShared } from '../movieFaceoffStyles';
 import {
     MovieFaceoffRankedMovie,
     MovieFaceoffSortMode,
@@ -9,11 +10,9 @@ import {
 import { getMoviePosterUrl } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
-    buildMovieFaceoffReplayState,
     getMovieFaceoffRankingAlgorithm,
     getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
-    MovieFaceoffReplayState,
 } from '../utils/movie-faceoff-rankings';
 import './jot-icon';
 
@@ -25,25 +24,11 @@ export class MovieFaceoffRankings extends MobxLitElement {
     @state()
     private sortMode: MovieFaceoffSortMode = 'elo';
 
-    @state()
-    private editList = false;
-
-    @state()
-    private showAlgorithmInfo = false;
-
-    private cachedReplayState: MovieFaceoffReplayState | null = null;
-    private cachedReplayStateVersion = 0;
+    @query('dialog')
+    private dialogRef!: HTMLDialogElement;
 
     private get replayState() {
-        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
-        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
-            this.cachedReplayState = buildMovieFaceoffReplayState(
-                movieFaceoff.allEvents,
-                movieFaceoff.allMovies
-            );
-            this.cachedReplayStateVersion = currentVersion;
-        }
-        return this.cachedReplayState;
+        return movieFaceoff.replayState;
     }
 
     private get rankingAlgorithm() {
@@ -72,74 +57,8 @@ export class MovieFaceoffRankings extends MobxLitElement {
         this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
     }
 
-    private handleKeyDown = (event: KeyboardEvent) => {
-        if (this.showAlgorithmInfo && event.key === 'Escape') {
-            event.preventDefault();
-            this.showAlgorithmInfo = false;
-        }
-    };
-
-    connectedCallback() {
-        super.connectedCallback();
-        window.addEventListener('keydown', this.handleKeyDown);
-    }
-
-    disconnectedCallback() {
-        window.removeEventListener('keydown', this.handleKeyDown);
-        this.cachedReplayState = null;
-        this.cachedReplayStateVersion = 0;
-        super.disconnectedCallback();
-    }
-
     private renderRankValue(movie: MovieFaceoffRankedMovie) {
         return this.rankingAlgorithm.formatMetric(movie);
-    }
-
-    private renderAlgorithmInfoModal() {
-        if (!this.showAlgorithmInfo) return nothing;
-
-        const descriptionParts = this.rankingAlgorithm.description
-            .split('\n\n')
-            .filter(Boolean);
-
-        return html`
-            <div
-                class="algorithm-modal-backdrop"
-                @click=${() => {
-                    this.showAlgorithmInfo = false;
-                }}
-            >
-                <article
-                    class="algorithm-modal"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="algorithm-info-title"
-                    @click=${(event: Event) => event.stopPropagation()}
-                >
-                    <header>
-                        <div>
-                            <p class="eyebrow">Current ranking method</p>
-                            <h3 id="algorithm-info-title">
-                                ${this.rankingAlgorithm.label}
-                            </h3>
-                        </div>
-                        <button
-                            class="secondary"
-                            @click=${() => {
-                                this.showAlgorithmInfo = false;
-                            }}
-                        >
-                            Close
-                        </button>
-                    </header>
-                    <div>
-                        ${descriptionParts.map(
-                            (paragraph) => html`<p>${paragraph}</p>`
-                        )}
-                    </div>
-                </article>
-            </div>
-        `;
     }
 
     render() {
@@ -148,15 +67,15 @@ export class MovieFaceoffRankings extends MobxLitElement {
         return html`
             <article class="rankings-panel surface-panel">
                 <header class="panel-header rankings-header">
-                    <div class="rankings-heading">
+                    <hgroup class="rankings-heading">
                         <p class="eyebrow">Live leaderboard</p>
                         <h2>Rankings</h2>
-                        <p class="panel-description">
+                        <p class="text-muted">
                             ${ranked.length
                                 ? `${ranked.length} movies ranked so far`
                                 : 'Vote a few times to start building your list.'}
                         </p>
-                    </div>
+                    </hgroup>
                     <div class="rankings-actions">
                         <label class="ranking-select-field">
                             <span>Sort by</span>
@@ -176,27 +95,17 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                 )}
                             </select>
                         </label>
-                        <div role="group">
-                            <button
-                                class="secondary"
-                                title="About the current ranking method"
-                                aria-label="About the current ranking method"
-                                @click=${() => {
-                                    this.showAlgorithmInfo = true;
-                                }}
-                            >
-                                <jot-icon name="Info"></jot-icon>
-                                About
-                            </button>
-                            <button
-                                class=${this.editList ? '' : 'secondary'}
-                                @click=${() => {
-                                    this.editList = !this.editList;
-                                }}
-                            >
-                                ${this.editList ? 'Done' : 'Edit'}
-                            </button>
-                        </div>
+                        <button
+                            class="secondary"
+                            title="About the current ranking method"
+                            aria-label="About the current ranking method"
+                            @click=${() => {
+                                this.dialogRef.showModal();
+                            }}
+                        >
+                            <jot-icon name="Info"></jot-icon>
+                            About
+                        </button>
                     </div>
                 </header>
 
@@ -244,26 +153,26 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                                   <strong class="rank-score"
                                                       >${this.renderRankValue(movie)}</strong
                                                   >
-                                                  <button
-                                                      class="outline"
-                                                      @click=${() =>
-                                                          this.emit('navigate-movie', {
-                                                              movieId: movie.id,
-                                                          })}
-                                                  >
-                                                      Details
-                                                  </button>
-                                                  ${this.editList
-                                                      ? html`<button
-                                                            class="outline delete-button"
-                                                            @click=${() =>
-                                                                this.emit('exclude-movie', {
-                                                                    movie,
-                                                                })}
-                                                        >
-                                                            Exclude
-                                                        </button>`
-                                                      : nothing}
+                                                  <span role="group">
+                                                      <button
+                                                          class="outline"
+                                                          @click=${() =>
+                                                              this.emit('navigate-movie', {
+                                                                  movieId: movie.id,
+                                                              })}
+                                                      >
+                                                          Details
+                                                      </button>
+                                                      <button
+                                                          class="outline"
+                                                          @click=${() =>
+                                                              this.emit('exclude-movie', {
+                                                                  movie,
+                                                              })}
+                                                      >
+                                                          Hide
+                                                      </button>
+                                                  </span>
                                               </span>
                                           </span>
                                       </li>
@@ -276,13 +185,10 @@ export class MovieFaceoffRankings extends MobxLitElement {
                           <p>Your rankings will appear here after a few faceoffs.</p>
                       </article>`}
 
-                ${this.editList && this.excludedMovies.length
+                ${this.excludedMovies.length
                     ? html`
-                          <section class="list-section">
-                              <header class="list-section-header">
-                                  <h3>Excluded</h3>
-                                  <small>${this.excludedMovies.length}</small>
-                              </header>
+                          <details>
+                              <summary>Hidden (${this.excludedMovies.length})</summary>
                               <ul class="excluded-list">
                                   ${this.excludedMovies.map(
                                       (movie) => html`
@@ -304,17 +210,14 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                       `
                                   )}
                               </ul>
-                          </section>
+                          </details>
                       `
                     : nothing}
 
-                ${this.editList && this.unseenMovies.length
+                ${this.unseenMovies.length
                     ? html`
-                          <section class="list-section">
-                              <header class="list-section-header">
-                                  <h3>Not Seen</h3>
-                                  <small>${this.unseenMovies.length}</small>
-                              </header>
+                          <details>
+                              <summary>Not seen (${this.unseenMovies.length})</summary>
                               <ul class="excluded-list">
                                   ${this.unseenMovies.map(
                                       (movie) => html`
@@ -336,16 +239,33 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                       `
                                   )}
                               </ul>
-                          </section>
+                          </details>
                       `
                     : nothing}
             </article>
-            ${this.renderAlgorithmInfoModal()}
+            <dialog @click=${(e: Event) => {
+                if ((e.target as Element).nodeName === 'DIALOG') (e.target as HTMLDialogElement).close();
+            }}>
+                <article>
+                    <header>
+                        <p class="eyebrow">Current ranking method</p>
+                        <h3>${this.rankingAlgorithm.label}</h3>
+                    </header>
+                    ${this.rankingAlgorithm.description
+                        .split('\n\n')
+                        .filter(Boolean)
+                        .map((paragraph) => html`<p>${paragraph}</p>`)}
+                    <footer>
+                        <button @click=${() => this.dialogRef.close()}>Close</button>
+                    </footer>
+                </article>
+            </dialog>
         `;
     }
 
     static styles = [
         base,
+        movieFaceoffShared,
         css`
             :host {
                 display: block;
@@ -361,8 +281,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 z-index: 1;
             }
             .panel-header,
-            .rankings-header,
-            .list-section-header {
+            .rankings-header {
                 position: relative;
                 z-index: 1;
                 display: flex;
@@ -371,19 +290,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .panel-header h2,
-            .rankings-header h2,
-            .list-section-header h3 {
-                margin: 0;
-            }
-            .eyebrow {
-                margin: 0 0 0.2rem;
-                color: var(--pico-muted-color);
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
-            }
-            .panel-description,
             .rank-subtitle,
             .excluded-copy small {
                 margin: 0;
@@ -435,12 +341,16 @@ export class MovieFaceoffRankings extends MobxLitElement {
             .rank-index {
                 width: 2rem;
                 height: 2rem;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
+                display: grid;
+                place-items: center;
                 border-radius: 999px;
                 background: var(--pico-primary-background);
                 color: var(--pico-primary-inverse);
+                font-size: 0.85rem;
+                line-height: 1;
+                flex-shrink: 0;
+                padding: 0;
+                --pico-line-height: 1;
             }
             .rank-poster {
                 width: 4rem;
@@ -465,36 +375,29 @@ export class MovieFaceoffRankings extends MobxLitElement {
             }
             .rank-item {
                 display: flex;
-                justify-content: space-between;
-                align-items: start;
-                gap: 0.75rem;
+                flex-direction: column;
+                gap: 0.5rem;
                 text-align: left;
             }
             .rank-title-group {
-                flex: 1;
                 display: flex;
                 flex-direction: column;
                 gap: 0.16rem;
             }
             .rank-meta {
-                display: inline-flex;
+                display: flex;
                 gap: 0.5rem;
                 align-items: center;
                 flex-wrap: wrap;
-                justify-content: flex-end;
-                text-align: right;
+                justify-content: space-between;
             }
             .rank-score {
                 font-variant-numeric: tabular-nums;
             }
-            .delete-button {
-                margin-bottom: 0;
-            }
-            .list-section {
-                margin-top: 1.25rem;
-            }
             .excluded-list {
-                margin: 0.75rem 0 0;
+                margin: 0;
+                padding: 0;
+                list-style: none;
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
@@ -525,37 +428,13 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 margin: 0;
                 color: var(--pico-muted-color);
             }
-            .algorithm-modal-backdrop {
-                position: fixed;
-                inset: 0;
-                z-index: 50;
-                display: grid;
-                place-items: center;
-                padding: 1rem;
+            dialog::backdrop {
                 background: color-mix(in srgb, black 55%, transparent);
-            }
-            .algorithm-modal {
-                width: min(34rem, 100%);
-                margin: 0;
-                max-height: min(80vh, 42rem);
-                overflow: auto;
-            }
-            .algorithm-modal > header {
-                display: flex;
-                align-items: start;
-                justify-content: space-between;
-                gap: 0.75rem;
             }
             @media (max-width: 640px) {
                 .rankings-actions {
                     flex-direction: column;
                     align-items: stretch;
-                }
-                .algorithm-modal-backdrop {
-                    padding: 0.75rem;
-                }
-                .algorithm-modal {
-                    width: 100%;
                 }
                 .excluded-item {
                     padding: 0.5rem 0.65rem;
@@ -566,13 +445,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 }
                 .rank-poster {
                     width: 3rem;
-                }
-                .rank-item {
-                    flex-direction: column;
-                }
-                .rank-meta {
-                    width: 100%;
-                    justify-content: space-between;
                 }
                 .rankings-actions button,
                 .ranking-select-field,

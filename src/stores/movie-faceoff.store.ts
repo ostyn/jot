@@ -6,6 +6,7 @@ import {
 } from '../interfaces/movie-faceoff.interface';
 import { FaceoffMovie } from '../services/movie-faceoff.service';
 import { movieFaceoffDao } from '../dao/MovieFaceoffDao';
+import { buildMovieFaceoffReplayState, MovieFaceoffReplayState } from '../utils/movie-faceoff-rankings';
 
 const initialEvents = await movieFaceoffDao.getEvents();
 const initialMovies = await movieFaceoffDao.getMovies();
@@ -44,6 +45,11 @@ class MovieFaceoffStore {
 
     constructor() {
         makeObservable(this);
+    }
+
+    @computed
+    get replayState(): MovieFaceoffReplayState {
+        return buildMovieFaceoffReplayState(this.allEvents, this.allMovies);
     }
 
     @computed

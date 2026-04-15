@@ -49,7 +49,7 @@ export class MovieFaceoffCard extends LitElement {
         const message = this.loading ? 'Loading a fresh movie...' : 'No movie loaded';
 
         return html`
-            <article class="movie-card placeholder-card" aria-label=${label}>
+            <div class="movie-card placeholder-card" aria-label=${label}>
                 <div class="movie-poster placeholder-poster">
                     <jot-icon name="Play" size="large"></jot-icon>
                 </div>
@@ -61,7 +61,7 @@ export class MovieFaceoffCard extends LitElement {
                             : 'The next matchup will appear here.'}
                     </p>
                 </div>
-            </article>
+            </div>
         `;
     }
 
@@ -71,7 +71,7 @@ export class MovieFaceoffCard extends LitElement {
         const isTargetedCard = this.targetedInsertion?.targetMovie.id === movie.id;
 
         return html`
-            <article class="movie-card ${isTargetedCard ? 'target-card' : ''}">
+            <div class="movie-card ${isTargetedCard ? 'target-card' : ''}">
                 ${imageUrl
                     ? html`<button
                           class="poster-button movie-poster"
@@ -114,7 +114,7 @@ export class MovieFaceoffCard extends LitElement {
                         Not seen
                     </button>
                 </footer>
-            </article>
+            </div>
         `;
     }
 
@@ -127,20 +127,10 @@ export class MovieFaceoffCard extends LitElement {
                 flex: 1;
             }
             .movie-card {
-                box-shadow: none;
-                padding: 0;
                 display: flex;
                 flex-direction: column;
                 gap: 0.85rem;
                 min-height: 100%;
-                margin: 0;
-            }
-            .movie-card.target-card {
-                border-color: color-mix(
-                    in srgb,
-                    var(--pico-primary-border) 72%,
-                    var(--pico-card-border-color)
-                );
             }
             .movie-title-row {
                 min-width: 0;

@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import { base } from '../baseStyles';
+import { movieFaceoffShared } from '../movieFaceoffStyles';
 import '../components/jot-icon';
 import '../components/utility-page-header.component';
 import {
@@ -12,11 +13,7 @@ import {
     getMoviePosterUrl,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
-import {
-    buildMovieFaceoffReplayState,
-    MOVIE_FACEOFF_RANKING_ALGORITHMS,
-    MovieFaceoffReplayState,
-} from '../utils/movie-faceoff-rankings';
+import { MOVIE_FACEOFF_RANKING_ALGORITHMS } from '../utils/movie-faceoff-rankings';
 
 type RankingSnapshot = {
     id: string;
@@ -56,20 +53,8 @@ export class MovieFaceoffMovieRoute
         await this.loadMovie();
     }
 
-    private cachedReplayState: MovieFaceoffReplayState | null = null;
-    private cachedReplayStateVersion = 0;
-
     private get replayState() {
-        // Check if we need to rebuild the replay state
-        const currentVersion = movieFaceoff.allEvents.length + movieFaceoff.allMovies.length;
-        if (!this.cachedReplayState || this.cachedReplayStateVersion !== currentVersion) {
-            this.cachedReplayState = buildMovieFaceoffReplayState(
-                movieFaceoff.allEvents,
-                movieFaceoff.allMovies
-            );
-            this.cachedReplayStateVersion = currentVersion;
-        }
-        return this.cachedReplayState;
+        return movieFaceoff.replayState;
     }
 
     private get rankingSnapshots(): RankingSnapshot[] {
@@ -96,13 +81,6 @@ export class MovieFaceoffMovieRoute
     private get storedMovie() {
         if (!this.movieId) return undefined;
         return movieFaceoff.movieMap.get(this.movieId);
-    }
-
-    disconnectedCallback() {
-        // Clear cache to prevent memory leaks
-        this.cachedReplayState = null;
-        this.cachedReplayStateVersion = 0;
-        super.disconnectedCallback();
     }
 
     private async loadMovie() {
@@ -212,8 +190,10 @@ export class MovieFaceoffMovieRoute
                                             </div>`}
                                   </div>
                                   <div class="hero-copy">
-                                      <p class="eyebrow">Movie Faceoff</p>
-                                      <h2>${title}${year ? html` <span>(${year})</span>` : nothing}</h2>
+                                      <hgroup>
+                                          <p class="eyebrow">Movie Faceoff</p>
+                                          <h2>${title}${year ? html` <span>(${year})</span>` : nothing}</h2>
+                                      </hgroup>
                                       ${details?.tagline
                                           ? html`<p class="tagline">${details.tagline}</p>`
                                           : nothing}
@@ -261,10 +241,10 @@ export class MovieFaceoffMovieRoute
                           <section class="detail-stack">
                               <article class="surface-panel section-card rankings-card">
                                   <header class="section-header">
-                                      <div>
+                                      <hgroup>
                                           <p class="eyebrow">Ranking snapshot</p>
                                           <h3>Compare rankings</h3>
-                                      </div>
+                                      </hgroup>
                                   </header>
 
                                   <div class="stats-grid">
@@ -337,6 +317,7 @@ export class MovieFaceoffMovieRoute
 
     static styles = [
         base,
+        movieFaceoffShared,
         css`
             :host {
                 display: flex;
@@ -407,20 +388,9 @@ export class MovieFaceoffMovieRoute
             .ranking-copy {
                 min-width: 0;
             }
-            .hero-copy h2,
-            .section-header h3 {
-                margin: 0;
-            }
             .hero-copy h2 span {
                 color: var(--pico-muted-color);
                 font-weight: 500;
-            }
-            .eyebrow {
-                margin: 0 0 0.25rem;
-                color: var(--pico-muted-color);
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
-                text-transform: uppercase;
             }
             .tagline,
             .summary,

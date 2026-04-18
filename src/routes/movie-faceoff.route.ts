@@ -854,6 +854,11 @@ export class MovieFaceoffRoute
                                 pathParams: { id: e.detail.movieId },
                             });
                         }}
+                        @rank-movie=${(e: CustomEvent) => {
+                            betterGo('movie-faceoff', {
+                                queryParams: { targetMovieId: e.detail.movieId },
+                            });
+                        }}
                     ></movie-faceoff-rankings>
                 </aside>
             </main>

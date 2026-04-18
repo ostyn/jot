@@ -216,25 +216,36 @@ export class MovieFaceoffRankings extends MobxLitElement {
                           <details>
                               <summary>Not seen (${this.unseenMovies.length})</summary>
                               <ul class="excluded-list">
-                                  ${this.unseenMovies.map(
-                                      (movie) => html`
-                                          <li class="excluded-item">
-                                              <span class="excluded-copy">
-                                                  <strong>${movie.title}</strong>
-                                                  <small>Skipped because you have not seen it</small>
+                                  ${this.unseenMovies.map((movie) => {
+                                      const posterUrl = movie.posterPath
+                                          ? getMoviePosterUrl({ poster_path: movie.posterPath })
+                                          : '';
+                                      return html`
+                                          <li class="rank-row rank-row--no-index">
+                                              <span class="rank-poster" aria-hidden="true">
+                                                  ${posterUrl
+                                                      ? html`<img src=${posterUrl} alt="" loading="lazy" />`
+                                                      : html`<span class="rank-poster-fallback">
+                                                            <jot-icon name="Play"></jot-icon>
+                                                        </span>`}
                                               </span>
-                                              <button
-                                                  class="secondary"
-                                                  @click=${() =>
-                                                      this.emit('restore-seen', {
-                                                          movie,
-                                                      })}
-                                              >
-                                                  Mark seen
-                                              </button>
+                                              <span class="rank-item">
+                                                  <span class="rank-title-group">
+                                                      <strong>${movie.title}</strong>
+                                                      <small class="rank-subtitle">${movie.releaseDate?.split('-')[0] || 'Unknown year'}</small>
+                                                  </span>
+                                                  <span class="rank-meta">
+                                                      <button
+                                                          class="outline"
+                                                          @click=${() => this.emit('navigate-movie', { movieId: movie.id })}
+                                                      >
+                                                          Details
+                                                      </button>
+                                                  </span>
+                                              </span>
                                           </li>
-                                      `
-                                  )}
+                                      `;
+                                  })}
                               </ul>
                           </details>
                       `
@@ -310,6 +321,9 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 padding: 0.85rem 1rem;
                 border-radius: var(--pico-border-radius);
                 background: var(--pico-card-sectioning-background-color);
+            }
+            .rank-row--no-index {
+                grid-template-columns: 4rem minmax(0, 1fr);
             }
             .rank-index {
                 width: 2rem;
@@ -417,6 +431,9 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 .rank-row {
                     grid-template-columns: auto 3rem minmax(0, 1fr);
                     padding: 0.65rem 0.7rem;
+                }
+                .rank-row--no-index {
+                    grid-template-columns: 3rem minmax(0, 1fr);
                 }
                 .rank-poster {
                     width: 3rem;

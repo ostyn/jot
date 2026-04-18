@@ -5,8 +5,10 @@ import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
 import {
+    MOVIE_FACEOFF_SORT_MODES,
     MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
+    MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import {
     FaceoffMovie,
@@ -53,9 +55,6 @@ export class MovieFaceoffRoute
     private useRankedOnly = false;
 
     @state()
-    private useSmartSelection = true;
-
-    @state()
     private isLoading = false;
 
     @state()
@@ -70,20 +69,38 @@ export class MovieFaceoffRoute
     @state()
     private showUndo = false;
 
+    @state()
+    private sortMode: MovieFaceoffSortMode = 'elo';
+
     private undoManager = new MovieFaceoffUndoManager();
     private movieIdPool: number[] | null = null;
     private pendingTargetMovieId?: number;
+    private pendingPairIds?: [number, number];
     private routeInitialized = false;
     private readonly keyDownHandler = (event: KeyboardEvent) =>
         this.handleKeyDown(event);
 
     async onAfterEnter(location: RouterLocation) {
         const search = new URLSearchParams(location.search);
+
         const targetMovieId = Number(search.get('targetMovieId'));
         this.pendingTargetMovieId =
             Number.isFinite(targetMovieId) && targetMovieId > 0
                 ? targetMovieId
                 : undefined;
+
+        const sortParam = search.get('sort');
+        if (sortParam && (MOVIE_FACEOFF_SORT_MODES as readonly string[]).includes(sortParam)) {
+            this.sortMode = sortParam as MovieFaceoffSortMode;
+        }
+
+        const leftId = Number(search.get('left'));
+        const rightId = Number(search.get('right'));
+        if (Number.isFinite(leftId) && leftId > 0 && Number.isFinite(rightId) && rightId > 0) {
+            this.pendingPairIds = [leftId, rightId];
+        }
+
+        this.useRankedOnly = search.get('pool') === 'mine';
 
         if (!this.routeInitialized) return;
 
@@ -96,8 +113,6 @@ export class MovieFaceoffRoute
         if (this.undoManager.hasEntries) {
             this.showUndo = true;
         }
-        // Initialize settings from localStorage
-        this.useSmartSelection = localStorage.getItem('movieFaceoff_smartSelection') !== 'false';
         void this.initializeRoute();
         window.addEventListener('keydown', this.keyDownHandler);
     }
@@ -107,13 +122,37 @@ export class MovieFaceoffRoute
         super.disconnectedCallback();
     }
 
+    private updateQueryParams(params: Record<string, string | number | undefined>) {
+        const url = new URL(window.location.href);
+        for (const [key, value] of Object.entries(params)) {
+            if (value === undefined) url.searchParams.delete(key);
+            else url.searchParams.set(key, String(value));
+        }
+        history.replaceState(null, '', url);
+    }
+
     private async initializeRoute() {
         await movieFaceoff.refresh();
         this.routeInitialized = true;
         const startedFromUrl = await this.maybeStartTargetedInsertionFromUrl();
-        if (!startedFromUrl) {
-            await this.displayNewPair();
+        if (startedFromUrl) return;
+
+        if (this.pendingPairIds) {
+            const [leftId, rightId] = this.pendingPairIds;
+            this.pendingPairIds = undefined;
+            try {
+                const [left, right] = await Promise.all([
+                    this.loadMovie(leftId),
+                    this.loadMovie(rightId),
+                ]);
+                this.movies = [left, right];
+                return;
+            } catch {
+                // Fall through to displayNewPair if restoration fails
+            }
         }
+
+        await this.displayNewPair();
     }
 
     private get replayState() {
@@ -121,7 +160,7 @@ export class MovieFaceoffRoute
     }
 
     private get visibleRankedMovies() {
-        return getMovieFaceoffRankedMovies(this.replayState, 'elo').filter(
+        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
     }
@@ -178,13 +217,7 @@ export class MovieFaceoffRoute
     private async setPoolMode(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
         this.useRankedOnly = useRankedOnly;
-        await this.displayNewPair();
-    }
-
-    private async setSmartSelection(useSmartSelection: boolean) {
-        if (this.useSmartSelection === useSmartSelection) return;
-        this.useSmartSelection = useSmartSelection;
-        localStorage.setItem('movieFaceoff_smartSelection', `${useSmartSelection}`);
+        this.updateQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
         await this.displayNewPair();
     }
 
@@ -206,6 +239,9 @@ export class MovieFaceoffRoute
         statusMessage: string,
     ) {
         const previousPair = clonePair(this.movies);
+        const previousTargetedInsertion = this.targetedInsertion
+            ? { ...this.targetedInsertion }
+            : null;
         const movieChanges = movieIds ? this.snapshotMovieChanges(movieIds) : undefined;
         const result = await perform();
         this.undoManager.push({
@@ -213,6 +249,7 @@ export class MovieFaceoffRoute
             eventId: typeof result === 'number' ? result : undefined,
             movieChanges,
             pair: previousPair,
+            targetedInsertion: previousTargetedInsertion,
         });
         this.statusMessage = statusMessage;
         this.showUndo = true;
@@ -238,25 +275,11 @@ export class MovieFaceoffRoute
         }
 
         this.movies = clonePair(entry.pair);
+        this.targetedInsertion = entry.targetedInsertion ?? null;
+        this.syncPairToUrl();
         this.errorMessage = '';
         this.showUndo = this.undoManager.hasEntries;
         this.statusMessage = 'Undid last action';
-
-        if (this.targetedInsertion) {
-            const nextState = this.buildTargetedInsertionState(
-                this.targetedInsertion.targetMovie
-            );
-            this.targetedInsertion = nextState.complete ? null : nextState;
-            if (nextState.complete) {
-                this.pendingTargetMovieId = undefined;
-                this.clearTargetedMovieQueryParam();
-                this.statusMessage =
-                    'Undid the last targeted vote. Targeted placement needs another ranked comparison.';
-                await this.displayNewPair();
-                return;
-            }
-            this.movies = [nextState.targetMovie, nextState.pivotMovie];
-        }
     }
 
     private async ensureMovieIdPool() {
@@ -302,7 +325,7 @@ export class MovieFaceoffRoute
         return createTargetedInsertionState(
             targetMovie,
             this.visibleRankedMovies,
-            'manual',
+            this.sortMode,
             comparisonsCompleted,
             low,
             high
@@ -338,7 +361,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = nextState.rankedSnapshot.length
-                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${getMovieFaceoffRankingAlgorithm('manual').label}.`
+                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             return;
@@ -346,12 +369,21 @@ export class MovieFaceoffRoute
 
         if (!options.preserveCurrentPair) {
             this.movies = [nextState.targetMovie, nextState.pivotMovie];
+            this.syncPairToUrl();
+        }
+    }
+
+    private switchToManualSort() {
+        if (this.sortMode !== 'manual') {
+            this.sortMode = 'manual';
+            this.updateQueryParams({ sort: 'manual' });
         }
     }
 
     private async startTargetedInsertion(movie: FaceoffMovie) {
         await movieFaceoff.upsertMoviesMetadata([movie]);
 
+        this.switchToManualSort();
         const nextState = this.buildTargetedInsertionState(movie);
         this.targetedInsertion = nextState;
 
@@ -361,7 +393,7 @@ export class MovieFaceoffRoute
             this.pendingTargetMovieId = undefined;
             this.clearTargetedMovieQueryParam();
             this.statusMessage = hasRankings
-                ? `Placed ${movie.title} at #${nextState.low + 1} in ${getMovieFaceoffRankingAlgorithm('manual').label}.`
+                ? `Placed ${movie.title} at #${nextState.low + 1} in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`
                 : 'Saved that movie. Rank a few movies first, then use targeted placement.';
             await this.displayNewPair();
             this.errorMessage = hasRankings
@@ -370,9 +402,10 @@ export class MovieFaceoffRoute
             return;
         }
 
-        this.statusMessage = `Placing ${movie.title} using ${getMovieFaceoffRankingAlgorithm('manual').label}.`;
+        this.statusMessage = `Placing ${movie.title} using ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`;
         this.errorMessage = '';
         this.movies = [movie, nextState.pivotMovie];
+        this.syncPairToUrl();
     }
 
     private async maybeStartTargetedInsertionFromUrl() {
@@ -395,9 +428,7 @@ export class MovieFaceoffRoute
     }
 
     private clearTargetedMovieQueryParam() {
-        const search = new URLSearchParams(window.location.search);
-        if (!search.has('targetMovieId')) return;
-        betterGo('movie-faceoff');
+        this.updateQueryParams({ targetMovieId: undefined });
     }
 
     private cancelTargetedInsertion() {
@@ -415,8 +446,7 @@ export class MovieFaceoffRoute
         this.isLoading = true;
         this.errorMessage = '';
         try {
-            // Only use smart selection in "My movies" mode with smart pairing enabled
-            const useSmart = this.useRankedOnly && this.useSmartSelection;
+            const useSmart = this.useRankedOnly;
             const left = await (useSmart ? this.pickSmartMovie() : this.pickRandomMovie());
             if (!left) {
                 this.movies = [null, null];
@@ -436,6 +466,7 @@ export class MovieFaceoffRoute
             }
 
             this.movies = [left, right];
+            this.syncPairToUrl();
         } catch (error) {
             this.movies = [null, null];
             this.errorMessage =
@@ -443,6 +474,14 @@ export class MovieFaceoffRoute
         } finally {
             this.isLoading = false;
         }
+    }
+
+    private syncPairToUrl() {
+        const [left, right] = this.movies;
+        this.updateQueryParams({
+            left: left?.id,
+            right: right?.id,
+        });
     }
 
     private async replaceUnavailableMovie(index: 0 | 1) {
@@ -453,8 +492,7 @@ export class MovieFaceoffRoute
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
-        // Only use smart selection in "My movies" mode with smart pairing enabled
-        const useSmart = this.useRankedOnly && this.useSmartSelection;
+        const useSmart = this.useRankedOnly;
         const replacement = await (useSmart ? this.pickSmartMovie(exclude, otherMovie) : this.pickRandomMovie(exclude));
         if (!replacement) {
             await this.displayNewPair();
@@ -465,6 +503,7 @@ export class MovieFaceoffRoute
             index === 0
                 ? [replacement, this.movies[1]]
                 : [this.movies[0], replacement];
+        this.syncPairToUrl();
     }
 
     private handleKeyDown(event: KeyboardEvent) {
@@ -530,6 +569,12 @@ export class MovieFaceoffRoute
         if (!left || !right) return;
 
         const movie = index === 0 ? left : right;
+        const rating = this.replayState.ratings.get(movie.id);
+        const totalVotes = (rating?.winCount ?? 0) + (rating?.lossCount ?? 0);
+        if (totalVotes > 0 && !confirm(
+            `"${movie.title}" has ${totalVotes} vote${totalVotes === 1 ? '' : 's'}. Mark as not seen? (You can undo this.)`
+        )) return;
+
         await this.performAction(index === 0 ? 'not-seen-left' : 'not-seen-right',
             [movie.id], () => movieFaceoff.markMovieUnseen(movie.id), 'Marked as not seen');
 
@@ -551,6 +596,14 @@ export class MovieFaceoffRoute
     private async markBothMoviesUnseen() {
         const [left, right] = this.movies;
         if (!left || !right) return;
+
+        const leftRating = this.replayState.ratings.get(left.id);
+        const rightRating = this.replayState.ratings.get(right.id);
+        const totalVotes = (leftRating?.winCount ?? 0) + (leftRating?.lossCount ?? 0)
+            + (rightRating?.winCount ?? 0) + (rightRating?.lossCount ?? 0);
+        if (totalVotes > 0 && !confirm(
+            `This will mark both movies as not seen (${totalVotes} total vote${totalVotes === 1 ? '' : 's'}). Continue? (You can undo this.)`
+        )) return;
 
         await this.performAction('not-seen-both', [left.id, right.id],
             () => movieFaceoff.markMoviesUnseen([left.id, right.id]),
@@ -609,7 +662,7 @@ export class MovieFaceoffRoute
                         <h3>${session.targetMovie.title}</h3>
                     </hgroup>
                     <p>
-                        Compare it against key movies in ${getMovieFaceoffRankingAlgorithm('manual').label}.
+                        Compare it against key movies in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.
                         Current estimated slot: #${estimatedPlacement}.
                     </p>
                 </div>
@@ -644,7 +697,7 @@ export class MovieFaceoffRoute
                     }}
                 >
                     <jot-icon name="Search"></jot-icon>
-                    <span>Add movie</span>
+                    <span>Find movie</span>
                 </button>
             </utility-page-header>
             <main class="layout">
@@ -679,23 +732,6 @@ export class MovieFaceoffRoute
                             </div>
                         </header>
 
-                        ${this.useRankedOnly
-                            ? html`<div class="selection-controls">
-                                  <label class="smart-selection-label">
-                                      <input
-                                          type="checkbox"
-                                          .checked=${this.useSmartSelection}
-                                          ?disabled=${this.isTargetedMode}
-                                          @change=${(event: Event) => {
-                                              const target = event.target as HTMLInputElement;
-                                              void this.setSmartSelection(target.checked);
-                                          }}
-                                      />
-                                      <span>Smart pairing</span>
-                                  </label>
-                              </div>`
-                            : nothing}
-
                         ${this.renderTargetedInsertionBanner()}
 
                         ${this.errorMessage
@@ -715,6 +751,10 @@ export class MovieFaceoffRoute
                                     .targetedInsertion=${this.targetedInsertion}
                                     @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
                                     @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                                    @faceoff-details=${(e: CustomEvent) => {
+                                        const movie = this.movies[e.detail.index as 0 | 1];
+                                        if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
+                                    }}
                                 ></movie-faceoff-card>
                                 <div class="matchup-divider" aria-hidden="true">
                                     <span>VS</span>
@@ -727,6 +767,10 @@ export class MovieFaceoffRoute
                                     .targetedInsertion=${this.targetedInsertion}
                                     @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
                                     @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                                    @faceoff-details=${(e: CustomEvent) => {
+                                        const movie = this.movies[e.detail.index as 0 | 1];
+                                        if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
+                                    }}
                                 ></movie-faceoff-card>
                             </div>
                         </section>
@@ -789,6 +833,13 @@ export class MovieFaceoffRoute
                 <aside class="rankings-column">
                     <movie-faceoff-rankings
                         .isTargetedMode=${!!this.targetedInsertion}
+                        .sortMode=${this.sortMode}
+                        @sort-change=${(e: CustomEvent) => {
+                            this.sortMode = e.detail.sortMode;
+                            this.updateQueryParams({
+                                sort: this.sortMode === 'elo' ? undefined : this.sortMode,
+                            });
+                        }}
                         @exclude-movie=${(e: CustomEvent) => {
                             void this.excludeMovie(e.detail.movie);
                         }}
@@ -885,25 +936,6 @@ export class MovieFaceoffRoute
             }
             .pool-toggle {
                 width: fit-content;
-            }
-            .selection-controls {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                margin-top: 0.5rem;
-                padding: 0.5rem 0;
-            }
-            .smart-selection-label {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                cursor: pointer;
-                margin: 0;
-                user-select: none;
-            }
-            .smart-selection-label input[type="checkbox"] {
-                margin: 0;
-                cursor: pointer;
             }
             .feedback-bar {
                 display: grid;

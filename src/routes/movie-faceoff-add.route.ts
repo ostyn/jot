@@ -57,31 +57,28 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
     }
 
     private selectMovie(movie: FaceoffMovie) {
-        betterGo('movie-faceoff', {
-            queryParams: {
-                targetMovieId: movie.id,
-            },
+        betterGo('movie-faceoff-movie', {
+            pathParams: { id: movie.id },
         });
     }
 
     render() {
         return html`
             <utility-page-header
-                title="Add Movie"
+                title="Find Movie"
                 backHref="/movie-faceoff"
                 backLabel="Movie Faceoff"
+                useHistoryBack
             ></utility-page-header>
             <main class="layout">
                 <section class="surface-panel search-panel">
                     <header class="panel-header">
                         <hgroup>
-                            <p class="eyebrow">Targeted placement</p>
-                            <h2>Search for a movie to add</h2>
+                            <h2>Find a movie</h2>
+                            <p class="text-muted">
+                                Search TMDB and view details or start a ranking session.
+                            </p>
                         </hgroup>
-                        <p class="text-muted">
-                            Pick a movie and we’ll send it back to Movie Faceoff to
-                            place it against key ranked movies.
-                        </p>
                     </header>
 
                     <form
@@ -146,9 +143,6 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                                                       <strong>${movie.title}</strong>
                                                       <small>${this.getMovieYear(movie)}</small>
                                                   </span>
-                                                  <span class="search-result-action">
-                                                      Start placement
-                                                  </span>
                                               </button>
                                           </li>
                                       `;
@@ -201,7 +195,7 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
             .search-result {
                 width: 100%;
                 display: grid;
-                grid-template-columns: 3rem minmax(0, 1fr) auto;
+                grid-template-columns: 3rem minmax(0, 1fr);
                 gap: 0.75rem;
                 align-items: center;
                 padding: 0.75rem 0.85rem;
@@ -239,11 +233,6 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
-            }
-            .search-result-action {
-                color: var(--pico-primary);
-                font-size: 0.9rem;
-                white-space: nowrap;
             }
             @media (max-width: 640px) {
                 :host {

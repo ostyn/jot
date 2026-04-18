@@ -1,5 +1,5 @@
 import { css, html, nothing } from 'lit';
-import { customElement, property, query, state } from 'lit/decorators.js';
+import { customElement, property, query } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
@@ -21,8 +21,8 @@ export class MovieFaceoffRankings extends MobxLitElement {
     @property({ type: Boolean })
     isTargetedMode = false;
 
-    @state()
-    private sortMode: MovieFaceoffSortMode = 'elo';
+    @property({ attribute: false })
+    sortMode: MovieFaceoffSortMode = 'elo';
 
     @query('dialog')
     private dialogRef!: HTMLDialogElement;
@@ -66,7 +66,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
 
         return html`
             <article class="rankings-panel surface-panel">
-                <header class="panel-header rankings-header">
+                <header class="panel-header">
                     <hgroup class="rankings-heading">
                         <p class="eyebrow">Live leaderboard</p>
                         <h2>Rankings</h2>
@@ -76,38 +76,34 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                 : 'Vote a few times to start building your list.'}
                         </p>
                     </hgroup>
-                    <div class="rankings-actions">
-                        <label class="ranking-select-field">
-                            <span>Sort by</span>
-                            <select
-                                .value=${this.sortMode}
-                                ?disabled=${this.isTargetedMode}
-                                @change=${(event: Event) => {
-                                    this.sortMode = (event.currentTarget as HTMLSelectElement).value as MovieFaceoffSortMode;
-                                }}
-                            >
-                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
-                                    (algorithm) => html`
-                                        <option value=${algorithm.id}>
-                                            ${algorithm.label}
-                                        </option>
-                                    `
-                                )}
-                            </select>
-                        </label>
-                        <button
-                            class="secondary"
-                            title="About the current ranking method"
-                            aria-label="About the current ranking method"
-                            @click=${() => {
-                                this.dialogRef.showModal();
+                </header>
+
+                <div class="rankings-controls" role="group">
+                    <select
+                            ?disabled=${this.isTargetedMode}
+                            @change=${(event: Event) => {
+                                const sortMode = (event.currentTarget as HTMLSelectElement).value as MovieFaceoffSortMode;
+                                this.emit('sort-change', { sortMode });
                             }}
                         >
-                            <jot-icon name="Info"></jot-icon>
-                            About
-                        </button>
-                    </div>
-                </header>
+                            ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
+                                (algorithm) => html`
+                                    <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
+                                        ${algorithm.label}
+                                    </option>
+                                `
+                            )}
+                    </select>
+                    <button
+                        class="outline"
+                        @click=${() => {
+                            this.dialogRef.showModal();
+                        }}
+                    >
+                        <jot-icon name="Info"></jot-icon>
+                        About
+                    </button>
+                </div>
 
                 ${ranked.length
                     ? html`<ol class="rank-list">
@@ -164,13 +160,14 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                                           Details
                                                       </button>
                                                       <button
-                                                          class="outline"
+                                                          class="outline hide-button"
+                                                          aria-label=${`Hide ${movie.title}`}
                                                           @click=${() =>
                                                               this.emit('exclude-movie', {
                                                                   movie,
                                                               })}
                                                       >
-                                                          Hide
+                                                          <jot-icon name="XCircle"></jot-icon>
                                                       </button>
                                                   </span>
                                               </span>
@@ -280,46 +277,22 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 position: relative;
                 z-index: 1;
             }
-            .panel-header,
-            .rankings-header {
+            .panel-header {
                 position: relative;
                 z-index: 1;
-                display: flex;
-                justify-content: space-between;
-                align-items: start;
-                gap: 0.75rem;
-                flex-wrap: wrap;
             }
             .rank-subtitle,
             .excluded-copy small {
                 margin: 0;
                 color: var(--pico-muted-color);
             }
-            .rankings-actions {
-                display: flex;
-                gap: 0.75rem;
-                align-items: end;
-                margin-left: auto;
-                flex-wrap: wrap;
-                justify-content: flex-end;
+            .rankings-controls select,
+            .rankings-controls button {
+                margin: 0;
             }
-            .rankings-actions,
-            .ranking-select-field,
             .rank-item,
             .rank-title-group {
                 min-width: 0;
-            }
-            .ranking-select-field {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.35rem;
-                font-size: 0.9rem;
-            }
-            .rankings-actions select {
-                margin: 0;
-                width: 100%;
-                min-width: 12rem;
             }
             .rank-list {
                 margin: 0;
@@ -384,6 +357,12 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 flex-direction: column;
                 gap: 0.16rem;
             }
+            .hide-button {
+                color: var(--pico-del-color);
+                border-color: var(--pico-del-color);
+                padding: 0.25rem;
+                margin: 0;
+            }
             .rank-meta {
                 display: flex;
                 gap: 0.5rem;
@@ -432,10 +411,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 background: color-mix(in srgb, black 55%, transparent);
             }
             @media (max-width: 640px) {
-                .rankings-actions {
-                    flex-direction: column;
-                    align-items: stretch;
-                }
                 .excluded-item {
                     padding: 0.5rem 0.65rem;
                 }
@@ -445,11 +420,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 }
                 .rank-poster {
                     width: 3rem;
-                }
-                .rankings-actions button,
-                .ranking-select-field,
-                .ranking-select-field select {
-                    width: 100%;
                 }
             }
         `,

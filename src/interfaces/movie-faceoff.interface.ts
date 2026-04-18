@@ -1,12 +1,12 @@
 export const MOVIE_FACEOFF_SORT_MODES = [
     'elo',
+    'glicko',
     'wins',
-    'transitive',
+    'bradley-terry',
     'manual',
     'copeland',
+    'transitive',
     'markov',
-    'bradley-terry',
-    'glicko',
 ] as const;
 
 export type MovieFaceoffSortMode = (typeof MOVIE_FACEOFF_SORT_MODES)[number];

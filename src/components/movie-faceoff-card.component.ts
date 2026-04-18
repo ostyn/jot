@@ -113,6 +113,13 @@ export class MovieFaceoffCard extends LitElement {
                         <jot-icon name="EyeOff"></jot-icon>
                         Not seen
                     </button>
+                    <button
+                        class="outline info-button"
+                        aria-label=${`Details for ${movie.title}`}
+                        @click=${() => this.emit('faceoff-details')}
+                    >
+                        <jot-icon name="Info"></jot-icon>
+                    </button>
                 </footer>
             </div>
         `;
@@ -142,6 +149,7 @@ export class MovieFaceoffCard extends LitElement {
                 margin: 0;
                 font-size: clamp(1.1rem, 1rem + 0.55vw, 1.5rem);
                 line-height: 1.1;
+                min-height: 2.2em;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
@@ -189,8 +197,16 @@ export class MovieFaceoffCard extends LitElement {
                 color: var(--pico-muted-color);
             }
             .movie-actions {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 0.5rem;
                 margin-top: auto;
                 margin-bottom: auto;
+            }
+            .info-button {
+                aspect-ratio: 1;
+                padding: 0;
+                margin: 0;
             }
             .placeholder-card {
                 display: grid;

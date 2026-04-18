@@ -15,13 +15,13 @@ export { buildMovieFaceoffReplayState } from './replay-state';
 export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgorithm[] =
     [
         eloRankingAlgorithm,
+        glickoRankingAlgorithm,
         winsRankingAlgorithm,
-        transitiveRankingAlgorithm,
+        bradleyTerryRankingAlgorithm,
         manualRankingAlgorithm,
         copelandRankingAlgorithm,
+        transitiveRankingAlgorithm,
         markovRankingAlgorithm,
-        bradleyTerryRankingAlgorithm,
-        glickoRankingAlgorithm,
     ];
 
 const rankingAlgorithmMap = new Map<MovieFaceoffSortMode, MovieFaceoffRankingAlgorithm>(

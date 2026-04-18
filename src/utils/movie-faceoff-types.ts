@@ -25,6 +25,7 @@ export type UndoEntry = {
     eventId?: number;
     movieChanges?: MovieStateChange[];
     pair: FaceoffPair;
+    targetedInsertion?: TargetedInsertionState | null;
 };
 
 export type TargetedInsertionState = {

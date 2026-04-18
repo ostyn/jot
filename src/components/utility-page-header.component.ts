@@ -13,10 +13,16 @@ export class UtilityPageHeader extends LitElement {
     @property()
     backLabel = 'Tools';
 
+    @property({ type: Boolean })
+    useHistoryBack = false;
+
     render() {
         return html`
             <header class="utility-header">
-                <a class="back-link" href=${this.backHref}>
+                <a class="back-link" href=${this.backHref} @click=${this.useHistoryBack ? (e: Event) => {
+                    e.preventDefault();
+                    history.back();
+                } : undefined}>
                     <jot-icon name="ChevronLeft"></jot-icon>
                     <span>${this.backLabel}</span>
                 </a>

@@ -6,6 +6,7 @@ import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
 import '../components/jot-icon';
 import '../components/utility-page-header.component';
+import { betterGo } from './route-config';
 import {
     FaceoffMovieDetails,
     fetchTmdbMovieDetails,
@@ -150,7 +151,23 @@ export class MovieFaceoffMovieRoute
                 title=${title}
                 backHref="/movie-faceoff"
                 backLabel="Movie Faceoff"
-            ></utility-page-header>
+                useHistoryBack
+            >
+                ${this.movieId ? html`
+                    <button
+                        slot="actions"
+                        class="outline header-action-button"
+                        @click=${() => {
+                            betterGo('movie-faceoff', {
+                                queryParams: { targetMovieId: this.movieId },
+                            });
+                        }}
+                    >
+                        <jot-icon name="TrendingUp"></jot-icon>
+                        <span>Rank</span>
+                    </button>
+                ` : nothing}
+            </utility-page-header>
             <main class="layout">
                 ${this.errorMessage
                     ? html`<article class="surface-panel error-panel">
@@ -325,6 +342,11 @@ export class MovieFaceoffMovieRoute
                 gap: var(--pico-spacing);
                 width: min(100%, 90rem);
                 margin-inline: auto;
+            }
+            .header-action-button {
+                margin: 0;
+                padding-inline: 0.7rem;
+                min-height: 2.25rem;
             }
             .layout {
                 display: grid;

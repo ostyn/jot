@@ -1,4 +1,4 @@
-import { css, html, nothing } from 'lit';
+import { css, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { RouterLocation, WebComponentInterface } from '@vaadin/router';
@@ -38,7 +38,7 @@ import {
 } from '../utils/movie-faceoff-types';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import '../components/jot-icon';
-import '../components/movie-faceoff-card.component';
+import '../components/movie-faceoff-matchup.component';
 import '../components/movie-faceoff-pool-toggle.component';
 import '../components/movie-faceoff-rankings.component';
 import '../components/movie-faceoff-status-bar.component';
@@ -628,7 +628,6 @@ export class MovieFaceoffRoute
     }
 
     render() {
-        const [left, right] = this.movies;
         const statusTone = this.sessionStatusTone;
         const statusLabel = this.statusMessage || this.sessionStatusLabel;
 
@@ -670,46 +669,18 @@ export class MovieFaceoffRoute
                             }}
                         ></movie-faceoff-targeted-banner>
 
-                        ${this.errorMessage
-                            ? html`<aside class="status-banner error" role="alert">
-                                  <jot-icon name="AlertTriangle"></jot-icon>
-                                  <span>${this.errorMessage}</span>
-                              </aside>`
-                            : nothing}
-
-                        <section class="matchup-shell" aria-label="Current matchup">
-                            <div class="matchup">
-                                <movie-faceoff-card
-                                    .movie=${left}
-                                    .index=${0 as const}
-                                    .loading=${this.isLoading}
-                                    .errorMessage=${this.errorMessage}
-                                    .targetedInsertion=${this.targetedInsertion}
-                                    @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
-                                    @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
-                                    @faceoff-details=${(e: CustomEvent) => {
-                                        const movie = this.movies[e.detail.index as 0 | 1];
-                                        if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
-                                    }}
-                                ></movie-faceoff-card>
-                                <div class="matchup-divider" aria-hidden="true">
-                                    <span>VS</span>
-                                </div>
-                                <movie-faceoff-card
-                                    .movie=${right}
-                                    .index=${1 as const}
-                                    .loading=${this.isLoading}
-                                    .errorMessage=${this.errorMessage}
-                                    .targetedInsertion=${this.targetedInsertion}
-                                    @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
-                                    @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
-                                    @faceoff-details=${(e: CustomEvent) => {
-                                        const movie = this.movies[e.detail.index as 0 | 1];
-                                        if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
-                                    }}
-                                ></movie-faceoff-card>
-                            </div>
-                        </section>
+                        <movie-faceoff-matchup
+                            .movies=${this.movies}
+                            .loading=${this.isLoading}
+                            .errorMessage=${this.errorMessage}
+                            .targetedInsertion=${this.targetedInsertion}
+                            @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
+                            @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                            @faceoff-details=${(e: CustomEvent) => {
+                                const movie = this.movies[e.detail.index as 0 | 1];
+                                if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
+                            }}
+                        ></movie-faceoff-matchup>
 
                         <footer class="session-panel">
                             <div style="justify-self:start" role="group" aria-label="Current matchup actions">
@@ -791,9 +762,7 @@ export class MovieFaceoffRoute
             }
             .faceoff-column,
             .rankings-column,
-            .surface-panel,
-            .matchup,
-            .matchup > * {
+            .surface-panel {
                 min-width: 0;
             }
             .surface-panel {
@@ -824,42 +793,6 @@ export class MovieFaceoffRoute
                 background: transparent;
                 border: 0;
             }
-            .status-banner {
-                display: flex;
-                align-items: center;
-                gap: 0.65rem;
-                margin: 0;
-            }
-            .status-banner.error {
-                color: var(--pico-del-color);
-            }
-            .matchup {
-                position: relative;
-                display: flex;
-                gap: 1rem;
-                align-items: start;
-            }
-            .matchup > * {
-                flex: 1;
-            }
-            .matchup-divider {
-                flex: none;
-                display: grid;
-                place-items: center;
-                align-self: center;
-            }
-            .matchup-divider span {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 2.5rem;
-                height: 2.5rem;
-                border-radius: 999px;
-                background: var(--pico-card-sectioning-background-color);
-                font-size: 0.75rem;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-            }
             @media (min-width: 1320px) {
                 .layout {
                     grid-template-columns: minmax(0, 1fr) 26rem;
@@ -871,23 +804,6 @@ export class MovieFaceoffRoute
                 }
                 .header-action-button span {
                     display: none;
-                }
-                .matchup {
-                    gap: 0.55rem;
-                    align-items: stretch;
-                }
-                .matchup-divider {
-                    position: absolute;
-                    inset: 34% auto auto 50%;
-                    transform: translate(-50%, -50%);
-                    z-index: 2;
-                    pointer-events: none;
-                }
-                .matchup-divider span {
-                    width: 1.85rem;
-                    height: 1.85rem;
-                    font-size: 0.56rem;
-                    letter-spacing: 0.08em;
                 }
             }
         `,

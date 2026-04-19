@@ -293,14 +293,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 width: 3rem;
                 padding: 0;
             }
-            .movie-list {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
             .rank-index {
                 width: 2rem;
                 height: 2rem;

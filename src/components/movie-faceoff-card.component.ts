@@ -166,6 +166,9 @@ export class MovieFaceoffCard extends LitElement {
             }
             .movie-poster {
                 aspect-ratio: 2 / 3;
+                max-height: 50vh;
+                width: auto;
+                margin-inline: auto;
                 border-radius: var(--pico-border-radius);
                 overflow: hidden;
                 background: var(--pico-card-sectioning-background-color);

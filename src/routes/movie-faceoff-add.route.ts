@@ -174,14 +174,6 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .movie-list {
-                list-style: none;
-                padding: 0;
-                margin: 0;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
             @media (max-width: 640px) {
                 :host {
                     width: 100%;

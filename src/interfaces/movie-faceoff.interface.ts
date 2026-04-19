@@ -17,6 +17,7 @@ export interface MovieFaceoffEvent {
     type: 'vote';
     winnerId: number;
     loserId: number;
+    targetId?: number;
 }
 
 export interface MovieFaceoffMovie {

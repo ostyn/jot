@@ -1,6 +1,8 @@
 import { parseISO } from 'date-fns';
 import Dexie from 'dexie';
 import { EditTools, Entry, Entry_v3 } from '../interfaces/entry.interface';
+import { MovieFaceoffEvent } from '../interfaces/movie-faceoff.interface';
+import { inferTargetIds } from '../utils/movie-faceoff-backfill';
 
 export const db = new Dexie('jot');
 db.version(3).stores({
@@ -49,6 +51,31 @@ db.version(8)
         readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
         movieFaceoffEvents: '++id, createdAt, type, winnerId, loserId',
         movieFaceoffMovies: 'id, excludedAt, unseenAt, updatedAt',
+    });
+db.version(9)
+    .stores({
+        moods: 'id',
+        activities: 'id',
+        entries: 'id, date',
+        notes: 'id, date, path',
+        readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
+        movieFaceoffEvents: '++id, createdAt, type, winnerId, loserId',
+        movieFaceoffMovies: 'id, excludedAt, unseenAt, updatedAt',
+    })
+    .upgrade(async (trans) => {
+        const events = (await trans
+            .table('movieFaceoffEvents')
+            .toArray()) as MovieFaceoffEvent[];
+        const targetIdByEventId = inferTargetIds(events);
+        if (!targetIdByEventId.size) return;
+        await trans
+            .table('movieFaceoffEvents')
+            .toCollection()
+            .modify((event: MovieFaceoffEvent) => {
+                if (event.id !== undefined && targetIdByEventId.has(event.id)) {
+                    event.targetId = targetIdByEventId.get(event.id);
+                }
+            });
     });
 export interface EntryVersion {
     version: number;
@@ -139,6 +166,17 @@ export const versions: { [key: number]: EntryVersion } = {
     8: {
         version: 8,
         description: 'Added movieFaceoff',
+        needUpgrade: () => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
+    9: {
+        version: 9,
+        description: 'Backfill targetId on movieFaceoffEvents from targeted ranking sessions',
         needUpgrade: () => false,
         upgrade: (entry: Entry) => entry,
         importTransform: (entry: Entry) => {

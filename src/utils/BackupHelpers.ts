@@ -12,6 +12,7 @@ import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { moods } from '../stores/moods.store';
 import { notes } from '../stores/notes.store';
 import { reading } from '../stores/reading.store';
+import { inferTargetIds } from './movie-faceoff-backfill';
 
 export interface JsonExport {
     entries: Entry[];
@@ -106,6 +107,9 @@ export function prepJsonForImport({
                 type: 'vote',
                 winnerId: legacyEvent.winnerId,
                 loserId: legacyEvent.loserId,
+                ...(typeof event.targetId === 'number'
+                    ? { targetId: event.targetId }
+                    : {}),
             });
             return;
         }
@@ -148,6 +152,17 @@ export function prepJsonForImport({
     });
 
     if (movieFaceoff) {
+        const needsBackfill = nextMovieFaceoffEvents.some(
+            (event) => event.targetId === undefined
+        );
+        if (needsBackfill) {
+            const inferred = inferTargetIds(nextMovieFaceoffEvents);
+            for (const event of nextMovieFaceoffEvents) {
+                if (event.id !== undefined && event.targetId === undefined && inferred.has(event.id)) {
+                    event.targetId = inferred.get(event.id);
+                }
+            }
+        }
         movieFaceoff.events = nextMovieFaceoffEvents;
         movieFaceoff.movies = movieFaceoff.movies.map((movie) => ({
             ...movie,

@@ -552,8 +552,9 @@ export class MovieFaceoffRoute
 
         const winner = winnerIndex === 0 ? left : right;
         const loser = winnerIndex === 0 ? right : left;
+        const targetId = this.targetedInsertion?.targetMovie.id;
         await this.performAction('vote', undefined,
-            () => movieFaceoff.recordVote(winner, loser), 'Recorded vote');
+            () => movieFaceoff.recordVote(winner, loser, targetId), 'Recorded vote');
 
         if (this.targetedInsertion) {
             const { low, high, comparisonsCompleted } = advanceTargetedInsertion(

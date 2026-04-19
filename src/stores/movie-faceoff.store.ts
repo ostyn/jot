@@ -110,7 +110,8 @@ class MovieFaceoffStore {
     @action.bound
     async recordVote(
         winnerMovie: FaceoffMovie,
-        loserMovie: FaceoffMovie
+        loserMovie: FaceoffMovie,
+        targetId?: number
     ) {
         await this.upsertMoviesMetadata([winnerMovie, loserMovie]);
         const event: Omit<MovieFaceoffEvent, 'id'> = {
@@ -118,6 +119,7 @@ class MovieFaceoffStore {
             type: 'vote',
             winnerId: winnerMovie.id,
             loserId: loserMovie.id,
+            ...(targetId !== undefined ? { targetId } : {}),
         };
         const id = await movieFaceoffDao.addEvent(event);
         runInAction(() => {

@@ -75,7 +75,29 @@ function updateGlickoRatings(winner: MovieFaceoffRankedMovie, loser: MovieFaceof
     applyResult(loser, winner, 0);
 }
 
-function insertManualRank(list: number[], winnerId: number, loserId: number) {
+function insertManualRank(
+    list: number[],
+    winnerId: number,
+    loserId: number,
+    targetId?: number
+) {
+    // Targeted mode: only the target moves. Pivot keeps its existing position.
+    if (targetId !== undefined) {
+        const targetIsWinner = targetId === winnerId;
+        const pivotId = targetIsWinner ? loserId : winnerId;
+
+        const nextList = list.filter((id) => id !== targetId);
+        let pivotIndex = nextList.indexOf(pivotId);
+        if (pivotIndex === -1) {
+            nextList.push(pivotId);
+            pivotIndex = nextList.length - 1;
+        }
+
+        const insertAt = targetIsWinner ? pivotIndex : pivotIndex + 1;
+        nextList.splice(insertAt, 0, targetId);
+        return nextList;
+    }
+
     // Create a position map for O(1) lookups
     const positionMap = new Map<number, number>();
     list.forEach((id, index) => positionMap.set(id, index));
@@ -157,7 +179,7 @@ export function buildMovieFaceoffReplayState(
             beatMap.set(winnerId, new Set());
         }
         beatMap.get(winnerId)?.add(loserId);
-        manualList = insertManualRank(manualList, winnerId, loserId);
+        manualList = insertManualRank(manualList, winnerId, loserId, event.targetId);
     }
 
     for (const [movieId] of ratings) {

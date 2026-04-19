@@ -3,6 +3,7 @@ import { customElement, property } from 'lit/decorators.js';
 import { base } from '../baseStyles';
 import { ReadingItem } from '../interfaces/reading-item.interface';
 import { hostnameFromUrl, statusLabel } from '../utils/reading-helpers';
+import './jot-icon';
 
 @customElement('reading-card')
 export class ReadingCard extends LitElement {

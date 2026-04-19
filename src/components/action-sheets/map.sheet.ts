@@ -19,6 +19,7 @@ import {
 import { base } from '../../baseStyles';
 import { locationService } from '../../services/location.service';
 import { dispatchEvent, Events } from '../../utils/Helpers';
+import '../jot-icon';
 import leaflet from '/node_modules/leaflet/dist/leaflet.css?inline';
 
 @customElement('map-sheet')

@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { base } from '../baseStyles';
+import './jot-icon';
 
 @customElement('utility-page-header')
 export class UtilityPageHeader extends LitElement {

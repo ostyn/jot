@@ -8,6 +8,7 @@ import { activities } from '../stores/activities.store';
 import { Sheet } from './action-sheets/action-sheet';
 import { ActivityEditSheet } from './action-sheets/activity-edit.sheet';
 import './activity.component';
+import './jot-icon';
 
 @customElement('activity-grid')
 export class ActivityGridComponent extends MobxLitElement {

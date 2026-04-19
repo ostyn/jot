@@ -5,6 +5,7 @@ import { animate } from '@lit-labs/motion';
 import { format } from 'date-fns';
 import { base } from '../baseStyles';
 import '../components/calendar-wrapper.component';
+import '../components/jot-icon';
 import { EditTools } from '../interfaces/entry.interface';
 import { GoogleDriveService } from '../services/google-drive.service';
 import { activities } from '../stores/activities.store';

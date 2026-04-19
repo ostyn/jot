@@ -10,7 +10,7 @@
         "dev": "vite",
         "build": "tsc && vite build",
         "preview": "vite preview",
-        "analyze": "npx lit-analyzer --quiet src/**/*.ts",
+        "analyze": "npx lit-analyzer --quiet --rules.no-missing-import error src/**/*.ts",
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",

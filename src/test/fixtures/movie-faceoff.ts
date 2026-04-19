@@ -1,6 +1,8 @@
 import {
     MovieFaceoffEvent,
     MovieFaceoffMovie,
+    MovieFaceoffRankedMovie,
+    MovieFaceoffSortMode,
 } from '../../interfaces/movie-faceoff.interface';
 import {
     buildMovieFaceoffReplayState,
@@ -76,4 +78,26 @@ export function rankedIds(
     primaryAlgorithms?: readonly MovieFaceoffRankingAlgorithm[]
 ): number[] {
     return algorithm.rank(state, primaryAlgorithms).map((m) => m.id);
+}
+
+/**
+ * Build a minimal stub ranking algorithm that returns movies in a fixed
+ * order. Useful for testing aggregate algorithms without coupling to the
+ * real primary implementations.
+ */
+export function stubAlgorithm(
+    id: string,
+    rankedOrder: number[],
+    state: MovieFaceoffReplayState
+): MovieFaceoffRankingAlgorithm {
+    return {
+        id: id as MovieFaceoffSortMode,
+        label: id,
+        description: '',
+        rank: () =>
+            rankedOrder
+                .map((movieId) => state.ratings.get(movieId))
+                .filter((m): m is MovieFaceoffRankedMovie => Boolean(m)),
+        formatMetric: () => '',
+    };
 }

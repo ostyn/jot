@@ -5,7 +5,9 @@ import { eloRankingAlgorithm } from './algorithms/elo';
 import { glickoRankingAlgorithm } from './algorithms/glicko';
 import { manualRankingAlgorithm } from './algorithms/manual';
 import { markovRankingAlgorithm } from './algorithms/markov';
+import { rrfRankingAlgorithm } from './algorithms/rrf';
 import { transitiveRankingAlgorithm } from './algorithms/transitive';
+import { trimmedMeanRankingAlgorithm } from './algorithms/trimmed-mean';
 import { winsRankingAlgorithm } from './algorithms/wins';
 import { MovieFaceoffRankingAlgorithm, MovieFaceoffReplayState } from './types';
 
@@ -14,6 +16,8 @@ export { buildMovieFaceoffReplayState } from './replay-state';
 
 export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgorithm[] =
     [
+        rrfRankingAlgorithm,
+        trimmedMeanRankingAlgorithm,
         eloRankingAlgorithm,
         glickoRankingAlgorithm,
         winsRankingAlgorithm,
@@ -38,5 +42,8 @@ export function getMovieFaceoffRankedMovies(
     replay: MovieFaceoffReplayState,
     sortMode: MovieFaceoffSortMode
 ) {
-    return getMovieFaceoffRankingAlgorithm(sortMode).rank(replay);
+    return getMovieFaceoffRankingAlgorithm(sortMode).rank(
+        replay,
+        MOVIE_FACEOFF_RANKING_ALGORITHMS
+    );
 }

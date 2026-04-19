@@ -21,6 +21,10 @@ export interface MovieFaceoffRankingAlgorithm {
     id: MovieFaceoffSortMode;
     label: string;
     description: string;
-    rank: (replay: MovieFaceoffReplayState) => MovieFaceoffRankedMovie[];
+    isAggregate?: boolean;
+    rank: (
+        replay: MovieFaceoffReplayState,
+        primaryAlgorithms?: readonly MovieFaceoffRankingAlgorithm[]
+    ) => MovieFaceoffRankedMovie[];
     formatMetric: (movie: MovieFaceoffRankedMovie) => string;
 }

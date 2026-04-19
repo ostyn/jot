@@ -105,7 +105,7 @@ export class MovieFaceoffCard extends LitElement {
                         </div>
                     </div>
                 </div>
-                <footer class="movie-actions">
+                <footer class="movie-actions" role="group">
                     <button
                         class="secondary"
                         @click=${() => this.emit('faceoff-unseen')}
@@ -197,16 +197,17 @@ export class MovieFaceoffCard extends LitElement {
                 color: var(--pico-muted-color);
             }
             .movie-actions {
-                display: grid;
-                grid-template-columns: 1fr auto;
-                gap: 0.5rem;
+                display: flex;
                 margin-top: auto;
                 margin-bottom: auto;
             }
-            .info-button {
-                aspect-ratio: 1;
+            .movie-actions .secondary {
+                flex: 1;
+            }
+            .movie-actions .info-button {
+                flex: 0 0 3rem;
+                width: 3rem;
                 padding: 0;
-                margin: 0;
             }
             .placeholder-card {
                 display: grid;

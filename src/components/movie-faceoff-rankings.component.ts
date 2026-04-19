@@ -86,22 +86,33 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                 this.emit('sort-change', { sortMode });
                             }}
                         >
-                            ${MOVIE_FACEOFF_RANKING_ALGORITHMS.map(
-                                (algorithm) => html`
-                                    <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
-                                        ${algorithm.label}
-                                    </option>
-                                `
-                            )}
+                            <optgroup label="Combined">
+                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.filter((a) => a.isAggregate).map(
+                                    (algorithm) => html`
+                                        <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
+                                            ${algorithm.label}
+                                        </option>
+                                    `
+                                )}
+                            </optgroup>
+                            <optgroup label="Individual">
+                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.filter((a) => !a.isAggregate).map(
+                                    (algorithm) => html`
+                                        <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
+                                            ${algorithm.label}
+                                        </option>
+                                    `
+                                )}
+                            </optgroup>
                     </select>
                     <button
-                        class="outline"
+                        class="outline info-button"
+                        aria-label="About the current ranking method"
                         @click=${() => {
                             this.dialogRef.showModal();
                         }}
                     >
                         <jot-icon name="Info"></jot-icon>
-                        About
                     </button>
                 </div>
 
@@ -300,6 +311,11 @@ export class MovieFaceoffRankings extends MobxLitElement {
             .rankings-controls select,
             .rankings-controls button {
                 margin: 0;
+            }
+            .rankings-controls .info-button {
+                flex: 0 0 3rem;
+                width: 3rem;
+                padding: 0;
             }
             .rank-item,
             .rank-title-group {

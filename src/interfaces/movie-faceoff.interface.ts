@@ -1,4 +1,6 @@
 export const MOVIE_FACEOFF_SORT_MODES = [
+    'rrf',
+    'trimmed-mean',
     'elo',
     'glicko',
     'wins',

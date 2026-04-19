@@ -64,7 +64,7 @@ export class MovieFaceoffMovieRoute
 
         return MOVIE_FACEOFF_RANKING_ALGORITHMS.map((algorithm) => {
             const ranked = algorithm
-                .rank(this.replayState)
+                .rank(this.replayState, MOVIE_FACEOFF_RANKING_ALGORITHMS)
                 .filter((movie) => !movie.excludedAt && !movie.unseenAt);
             const index = ranked.findIndex((movie) => movie.id === movieId);
             const rankedMovie = index === -1 ? undefined : ranked[index];

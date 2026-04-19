@@ -39,6 +39,7 @@ import {
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import '../components/jot-icon';
 import '../components/movie-faceoff-card.component';
+import '../components/movie-faceoff-pool-toggle.component';
 import '../components/movie-faceoff-rankings.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
@@ -709,28 +710,13 @@ export class MovieFaceoffRoute
                                 <p class="eyebrow">Which would you rather watch?</p>
                                 <h2>Current faceoff</h2>
                             </hgroup>
-                            <div role="group" class="pool-toggle" aria-label="Movie pool">
-                                <button
-                                    class=${this.useRankedOnly ? 'outline' : ''}
-                                    aria-pressed=${!this.useRankedOnly}
-                                    ?disabled=${this.isTargetedMode}
-                                    @click=${() => {
-                                        void this.setPoolMode(false);
-                                    }}
-                                >
-                                    All movies
-                                </button>
-                                <button
-                                    class=${this.useRankedOnly ? '' : 'outline'}
-                                    aria-pressed=${this.useRankedOnly}
-                                    ?disabled=${this.isTargetedMode}
-                                    @click=${() => {
-                                        void this.setPoolMode(true);
-                                    }}
-                                >
-                                    My movies
-                                </button>
-                            </div>
+                            <movie-faceoff-pool-toggle
+                                .useRankedOnly=${this.useRankedOnly}
+                                ?disabled=${this.isTargetedMode}
+                                @pool-change=${(e: CustomEvent) => {
+                                    void this.setPoolMode(e.detail.useRankedOnly);
+                                }}
+                            ></movie-faceoff-pool-toggle>
                         </header>
 
                         ${this.renderTargetedInsertionBanner()}
@@ -940,9 +926,6 @@ export class MovieFaceoffRoute
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .pool-toggle {
-                width: fit-content;
-            }
             .feedback-bar {
                 display: grid;
                 grid-template-columns: minmax(0, 1fr) auto;
@@ -1062,11 +1045,6 @@ export class MovieFaceoffRoute
                     grid-template-columns: minmax(0, 1fr) 26rem;
                 }
             }
-            @media (max-width: 900px) {
-                .pool-toggle {
-                    width: 100%;
-                }
-            }
             @media (max-width: 640px) {
                 :host {
                     width: 100%;
@@ -1077,12 +1055,6 @@ export class MovieFaceoffRoute
                 }
                 .targeted-meta {
                     align-items: stretch;
-                }
-                .pool-toggle {
-                    width: 100%;
-                }
-                .pool-toggle button {
-                    width: 100%;
                 }
                 .matchup {
                     gap: 0.55rem;

@@ -20,6 +20,8 @@ import {
     getCandidatePool,
     getRandomMovie,
     getSmartMovie,
+    pickRandomMovieId,
+    pickSmartMovieId,
 } from '../utils/movie-faceoff-pairing';
 import {
     clonePair,
@@ -75,6 +77,7 @@ export class MovieFaceoffRoute
 
     private undoManager = new MovieFaceoffUndoManager();
     private movieIdPool: number[] | null = null;
+    private movieIdPoolPromise?: Promise<number[]>;
     private pendingTargetMovieId?: number;
     private pendingPairIds?: [number, number];
     private routeInitialized = false;
@@ -143,7 +146,8 @@ export class MovieFaceoffRoute
     }
 
     private async initializeRoute() {
-        await movieFaceoff.refresh();
+        this.ensureMovieIdPool().catch(() => {});
+        await movieFaceoff.ensureLoaded();
         this.routeInitialized = true;
         const startedFromUrl = await this.maybeStartTargetedInsertionFromUrl();
         if (startedFromUrl) return;
@@ -280,10 +284,21 @@ export class MovieFaceoffRoute
         this.statusMessage = 'Undid last action';
     }
 
-    private async ensureMovieIdPool() {
-        if (this.movieIdPool) return this.movieIdPool;
-        this.movieIdPool = await fetchMovieFaceoffIds();
-        return this.movieIdPool;
+    private ensureMovieIdPool(): Promise<number[]> {
+        if (this.movieIdPool) return Promise.resolve(this.movieIdPool);
+        if (!this.movieIdPoolPromise) {
+            this.movieIdPoolPromise = fetchMovieFaceoffIds().then(
+                (ids) => {
+                    this.movieIdPool = ids;
+                    return ids;
+                },
+                (error) => {
+                    this.movieIdPoolPromise = undefined;
+                    throw error;
+                }
+            );
+        }
+        return this.movieIdPoolPromise;
     }
 
     private async buildCandidatePool(exclude: number[] = []) {
@@ -336,9 +351,14 @@ export class MovieFaceoffRoute
         this.isLoading = true;
         this.errorMessage = '';
         try {
+            const pool = await this.buildCandidatePool();
+            const ratings = this.replayState.ratings;
             const useSmart = this.useRankedOnly;
-            const left = await (useSmart ? this.pickSmartMovie() : this.pickRandomMovie());
-            if (!left) {
+
+            const leftId = useSmart
+                ? pickSmartMovieId(pool, ratings)
+                : pickRandomMovieId(pool);
+            if (leftId === null) {
                 this.movies = [null, null];
                 this.errorMessage = this.useRankedOnly
                     ? 'Rank at least two movies before using ranked-only mode.'
@@ -346,15 +366,26 @@ export class MovieFaceoffRoute
                 return;
             }
 
-            const right = await (useSmart ? this.pickSmartMovie([left.id], left) : this.pickRandomMovie([left.id]));
-            if (!right) {
-                this.movies = [left, null];
+            const rightPool = pool.filter((id) => id !== leftId);
+            const rightId = useSmart
+                ? pickSmartMovieId(rightPool, ratings, leftId)
+                : pickRandomMovieId(rightPool);
+            if (rightId === null) {
+                try {
+                    this.movies = [await this.loadMovie(leftId), null];
+                } catch {
+                    this.movies = [null, null];
+                }
                 this.errorMessage = this.useRankedOnly
                     ? 'Rank at least two movies before using ranked-only mode.'
                     : 'Unable to find a second movie right now.';
                 return;
             }
 
+            const [left, right] = await Promise.all([
+                this.loadMovie(leftId),
+                this.loadMovie(rightId),
+            ]);
             this.movies = [left, right];
             this.syncPairToUrl();
         } catch (error) {

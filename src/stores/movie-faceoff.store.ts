@@ -8,9 +8,6 @@ import { FaceoffMovie } from '../services/movie-faceoff.service';
 import { movieFaceoffDao } from '../dao/MovieFaceoffDao';
 import { buildMovieFaceoffReplayState, MovieFaceoffReplayState } from '../utils/movie-faceoff-rankings';
 
-const initialEvents = await movieFaceoffDao.getEvents();
-const initialMovies = await movieFaceoffDao.getMovies();
-
 function upsertById<T extends { id: number }>(items: T[], nextItem: T): T[] {
     const index = items.findIndex((item) => item.id === nextItem.id);
     if (index === -1) return [...items, nextItem];
@@ -38,13 +35,21 @@ function toStoredMovie(
 
 class MovieFaceoffStore {
     @observable
-    allEvents: MovieFaceoffEvent[] = initialEvents;
+    allEvents: MovieFaceoffEvent[] = [];
 
     @observable
-    allMovies: MovieFaceoffMovie[] = initialMovies;
+    allMovies: MovieFaceoffMovie[] = [];
+
+    private loadPromise?: Promise<void>;
 
     constructor() {
         makeObservable(this);
+    }
+
+    @action.bound
+    ensureLoaded() {
+        if (!this.loadPromise) this.loadPromise = this.refresh();
+        return this.loadPromise;
     }
 
     @computed

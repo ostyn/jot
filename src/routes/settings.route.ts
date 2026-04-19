@@ -16,8 +16,9 @@ import { go } from './route-config';
 @customElement('settings-route')
 export class SettingsRoute extends MobxLitElement {
     sub: any;
-    exportBackup() {
+    async exportBackup() {
         if (confirm('Download complete backup file of all personal data?')) {
+            await movieFaceoff.ensureLoaded();
             this.download(
                 `Jot Backup ${format(
                     new Date(),

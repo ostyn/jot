@@ -44,6 +44,7 @@ export class BackupRoute extends LitElement {
     };
     sync = async () => {
         this.isLoading = true;
+        await movieFaceoff.ensureLoaded();
         await this.gdrive.addFile(
             'Backup.json',
             createExportContents(),

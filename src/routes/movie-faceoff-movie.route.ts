@@ -51,7 +51,7 @@ export class MovieFaceoffMovieRoute
         }
 
         this.movieId = rawId;
-        await this.loadMovie();
+        await Promise.all([movieFaceoff.ensureLoaded(), this.loadMovie()]);
     }
 
     private get replayState() {

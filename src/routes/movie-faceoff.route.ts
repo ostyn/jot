@@ -5,7 +5,6 @@ import { RouterLocation, WebComponentInterface } from '@vaadin/router';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
 import {
-    MOVIE_FACEOFF_SORT_MODES,
     MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
     MovieFaceoffSortMode,
@@ -37,6 +36,10 @@ import {
     UndoAction,
 } from '../utils/movie-faceoff-types';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
+import {
+    parseMovieFaceoffUrl,
+    updateMovieFaceoffQueryParams,
+} from '../utils/movie-faceoff-url-sync';
 import '../components/jot-icon';
 import '../components/movie-faceoff-matchup.component';
 import '../components/movie-faceoff-pool-toggle.component';
@@ -84,26 +87,12 @@ export class MovieFaceoffRoute
         this.handleKeyDown(event);
 
     async onAfterEnter(location: RouterLocation) {
-        const search = new URLSearchParams(location.search);
+        const urlState = parseMovieFaceoffUrl(location.search);
 
-        const targetMovieId = Number(search.get('targetMovieId'));
-        this.pendingTargetMovieId =
-            Number.isFinite(targetMovieId) && targetMovieId > 0
-                ? targetMovieId
-                : undefined;
-
-        const sortParam = search.get('sort');
-        if (sortParam && (MOVIE_FACEOFF_SORT_MODES as readonly string[]).includes(sortParam)) {
-            this.sortMode = sortParam as MovieFaceoffSortMode;
-        }
-
-        const leftId = Number(search.get('left'));
-        const rightId = Number(search.get('right'));
-        if (Number.isFinite(leftId) && leftId > 0 && Number.isFinite(rightId) && rightId > 0) {
-            this.pendingPairIds = [leftId, rightId];
-        }
-
-        this.useRankedOnly = search.get('pool') === 'mine';
+        this.pendingTargetMovieId = urlState.targetMovieId;
+        if (urlState.sortMode) this.sortMode = urlState.sortMode;
+        if (urlState.pairIds) this.pendingPairIds = urlState.pairIds;
+        this.useRankedOnly = urlState.useRankedOnly;
 
         if (!this.routeInitialized) return;
 
@@ -123,15 +112,6 @@ export class MovieFaceoffRoute
     disconnectedCallback() {
         window.removeEventListener('keydown', this.keyDownHandler);
         super.disconnectedCallback();
-    }
-
-    private updateQueryParams(params: Record<string, string | number | undefined>) {
-        const url = new URL(window.location.href);
-        for (const [key, value] of Object.entries(params)) {
-            if (value === undefined) url.searchParams.delete(key);
-            else url.searchParams.set(key, String(value));
-        }
-        history.replaceState(null, '', url);
     }
 
     private async initializeRoute() {
@@ -207,7 +187,7 @@ export class MovieFaceoffRoute
     private async setPoolMode(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
         this.useRankedOnly = useRankedOnly;
-        this.updateQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
+        updateMovieFaceoffQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
         await this.displayNewPair();
     }
 
@@ -366,7 +346,7 @@ export class MovieFaceoffRoute
     private switchToManualSort() {
         if (this.sortMode !== 'manual') {
             this.sortMode = 'manual';
-            this.updateQueryParams({ sort: 'manual' });
+            updateMovieFaceoffQueryParams({ sort: 'manual' });
         }
     }
 
@@ -418,7 +398,7 @@ export class MovieFaceoffRoute
     }
 
     private clearTargetedMovieQueryParam() {
-        this.updateQueryParams({ targetMovieId: undefined });
+        updateMovieFaceoffQueryParams({ targetMovieId: undefined });
     }
 
     private cancelTargetedInsertion() {
@@ -468,7 +448,7 @@ export class MovieFaceoffRoute
 
     private syncPairToUrl() {
         const [left, right] = this.movies;
-        this.updateQueryParams({
+        updateMovieFaceoffQueryParams({
             left: left?.id,
             right: right?.id,
         });
@@ -714,7 +694,7 @@ export class MovieFaceoffRoute
                         .sortMode=${this.sortMode}
                         @sort-change=${(e: CustomEvent) => {
                             this.sortMode = e.detail.sortMode;
-                            this.updateQueryParams({
+                            updateMovieFaceoffQueryParams({
                                 sort: this.sortMode === 'elo' ? undefined : this.sortMode,
                             });
                         }}

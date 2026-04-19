@@ -6,6 +6,9 @@ import { base } from '../../baseStyles';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { EntryEditStore } from '../../routes/entry-edit.route';
 import { activities } from '../../stores/activities.store';
+import '../activity-detail-stats.component';
+import '../activity-detail.component';
+import '../activity.component';
 import { QuickSet2 } from '../quick-set2.component';
 import { Sheet } from './action-sheet';
 

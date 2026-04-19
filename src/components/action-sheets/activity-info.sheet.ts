@@ -8,6 +8,9 @@ import { go } from '../../routes/route-config';
 import { activities } from '../../stores/activities.store';
 import { DateHelpers } from '../../utils/DateHelpers';
 import '../activity-detail-stats.component';
+import '../activity-detail.component';
+import '../activity.component';
+import '../calendar-wrapper.component';
 import { Sheet } from './action-sheet';
 
 @customElement('activity-info-sheet')

@@ -4,6 +4,7 @@ import { base } from '../baseStyles';
 import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { MoodsSheet } from '../components/action-sheets/moods.sheet';
+import '../components/entry.component';
 import { Activity } from '../interfaces/activity.interface';
 import { EditTools, Entry } from '../interfaces/entry.interface';
 import { Mood } from '../interfaces/mood.interface';

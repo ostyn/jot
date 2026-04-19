@@ -4,6 +4,7 @@ import { base } from '../baseStyles';
 import { StatsDetailEntry } from '../interfaces/stats.interface';
 import { activities } from '../stores/activities.store';
 import { dispatchEvent, Events } from '../utils/Helpers';
+import './activity-detail.component';
 
 @customElement('activity-detail-stats')
 export class ActivityDetailStatsComponent extends LitElement {

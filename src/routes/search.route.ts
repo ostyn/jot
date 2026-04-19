@@ -12,6 +12,8 @@ import { ActivityDetailSelectSheet } from '../components/action-sheets/activity-
 import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { DateSheet } from '../components/action-sheets/date.sheet';
+import '../components/activity.component';
+import '../components/entry.component';
 import { Entry } from '../interfaces/entry.interface';
 import { activities } from '../stores/activities.store';
 import { entries } from '../stores/entries.store';

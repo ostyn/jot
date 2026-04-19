@@ -9,6 +9,8 @@ import { Sheet } from '../components/action-sheets/action-sheet';
 import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import { ActivitySheet } from '../components/action-sheets/activity.sheet';
 import { DateSheet } from '../components/action-sheets/date.sheet';
+import '../components/activity-detail.component';
+import '../components/activity.component';
 import '../components/calendar-wrapper.component';
 import '../components/entry-link.component';
 import '../components/mood.component';

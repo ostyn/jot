@@ -7,6 +7,8 @@ import { EntryEditStore } from '../routes/entry-edit.route';
 import { activities } from '../stores/activities.store';
 import { Sheet } from './action-sheets/action-sheet';
 import { ActivityDetailEditSheet } from './action-sheets/activity-detail-edit.sheet';
+import './activity-detail.component';
+import './activity.component';
 
 @customElement('quick-set2')
 export class QuickSet2 extends MobxLitElement {

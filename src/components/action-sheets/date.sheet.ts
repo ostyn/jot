@@ -16,6 +16,7 @@ import {
 import { TypesCalendar } from 'vanilla-calendar-pro';
 import { base } from '../../baseStyles';
 import { dispatchEvent, Events } from '../../utils/Helpers';
+import '../calendar-wrapper.component';
 
 @customElement('date-sheet')
 export class DateSheet extends LitElement {

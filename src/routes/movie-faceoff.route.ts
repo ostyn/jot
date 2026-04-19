@@ -15,19 +15,12 @@ import {
     fetchTmdbMovie,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
-import {
-    getMovieFaceoffRankingAlgorithm,
-    getMovieFaceoffRankedMovies,
-} from '../utils/movie-faceoff-rankings';
+import { getMovieFaceoffRankedMovies } from '../utils/movie-faceoff-rankings';
 import {
     getCandidatePool,
     getRandomMovie,
     getSmartMovie,
 } from '../utils/movie-faceoff-pairing';
-import {
-    advanceTargetedInsertion,
-    createTargetedInsertionState,
-} from '../utils/movie-faceoff-targeted-insertion';
 import {
     clonePair,
     FaceoffPair,
@@ -36,6 +29,7 @@ import {
     UndoAction,
 } from '../utils/movie-faceoff-types';
 import { createMovieFaceoffKeyboardHandler } from '../utils/movie-faceoff-keyboard';
+import { MovieFaceoffTargetedInsertionController } from '../utils/movie-faceoff-targeted-insertion-controller';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import {
     parseMovieFaceoffUrl,
@@ -84,6 +78,33 @@ export class MovieFaceoffRoute
     private pendingTargetMovieId?: number;
     private pendingPairIds?: [number, number];
     private routeInitialized = false;
+    private readonly targetedInsertionController =
+        new MovieFaceoffTargetedInsertionController({
+            getSession: () => this.targetedInsertion,
+            setSession: (next) => {
+                this.targetedInsertion = next;
+            },
+            setPendingTargetMovieId: (id) => {
+                this.pendingTargetMovieId = id;
+            },
+            getRankedSnapshot: () => this.visibleRankedMovies,
+            getSortMode: () => this.sortMode,
+            switchToManualSort: () => this.switchToManualSort(),
+            setStatusMessage: (message) => {
+                this.statusMessage = message;
+            },
+            setErrorMessage: (message) => {
+                this.errorMessage = message;
+            },
+            setMovies: (movies) => {
+                this.movies = movies;
+            },
+            syncPairToUrl: () => this.syncPairToUrl(),
+            displayNewPair: () => this.displayNewPair(),
+            upsertMoviesMetadata: (movies) =>
+                movieFaceoff.upsertMoviesMetadata(movies),
+            fetchMovie: (id) => fetchTmdbMovie(id),
+        });
     private readonly keyDownHandler = createMovieFaceoffKeyboardHandler({
         hasTargetedInsertion: () => Boolean(this.targetedInsertion),
         hasMoviePair: () => Boolean(this.movies[0] && this.movies[1]),
@@ -293,63 +314,6 @@ export class MovieFaceoffRoute
         return getRandomMovie(pool, this.loadMovie);
     }
 
-    private buildTargetedInsertionState(
-        targetMovie: FaceoffMovie,
-        comparisonsCompleted = 0,
-        low = 0,
-        high?: number
-    ): TargetedInsertionState {
-        return createTargetedInsertionState(
-            targetMovie,
-            this.visibleRankedMovies,
-            this.sortMode,
-            comparisonsCompleted,
-            low,
-            high
-        );
-    }
-
-    private async refreshTargetedInsertion(
-        options: {
-            comparisonsCompleted?: number;
-            low?: number;
-            high?: number;
-            preserveCurrentPair?: boolean;
-        } = {}
-    ) {
-        const session = this.targetedInsertion;
-        if (!session) return;
-
-        const nextState = this.buildTargetedInsertionState(
-            session.targetMovie,
-            options.comparisonsCompleted ?? session.comparisonsCompleted,
-            options.low ?? session.low,
-            options.high ?? session.high
-        );
-
-        this.targetedInsertion = nextState;
-
-        if (nextState.complete) {
-            const estimatedPlacement = Math.min(
-                nextState.rankedSnapshot.length + 1,
-                nextState.low + 1
-            );
-            this.targetedInsertion = null;
-            this.pendingTargetMovieId = undefined;
-            this.clearTargetedMovieQueryParam();
-            this.statusMessage = nextState.rankedSnapshot.length
-                ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`
-                : 'Saved that movie. Rank a few movies first, then use targeted placement.';
-            await this.displayNewPair();
-            return;
-        }
-
-        if (!options.preserveCurrentPair) {
-            this.movies = [nextState.targetMovie, nextState.pivotMovie];
-            this.syncPairToUrl();
-        }
-    }
-
     private switchToManualSort() {
         if (this.sortMode !== 'manual') {
             this.sortMode = 'manual';
@@ -357,65 +321,14 @@ export class MovieFaceoffRoute
         }
     }
 
-    private async startTargetedInsertion(movie: FaceoffMovie) {
-        await movieFaceoff.upsertMoviesMetadata([movie]);
-
-        this.switchToManualSort();
-        const nextState = this.buildTargetedInsertionState(movie);
-        this.targetedInsertion = nextState;
-
-        if (nextState.complete) {
-            const hasRankings = nextState.rankedSnapshot.length > 0;
-            this.targetedInsertion = null;
-            this.pendingTargetMovieId = undefined;
-            this.clearTargetedMovieQueryParam();
-            this.statusMessage = hasRankings
-                ? `Placed ${movie.title} at #${nextState.low + 1} in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`
-                : 'Saved that movie. Rank a few movies first, then use targeted placement.';
-            await this.displayNewPair();
-            this.errorMessage = hasRankings
-                ? ''
-                : 'Targeted placement needs at least one ranked movie to compare against.';
-            return;
-        }
-
-        this.statusMessage = `Placing ${movie.title} using ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.`;
-        this.errorMessage = '';
-        this.movies = [movie, nextState.pivotMovie];
-        this.syncPairToUrl();
-    }
-
-    private async maybeStartTargetedInsertionFromUrl() {
-        if (!this.pendingTargetMovieId) return false;
-        if (this.targetedInsertion?.targetMovie.id === this.pendingTargetMovieId) {
-            return true;
-        }
-
-        try {
-            const movie = await fetchTmdbMovie(this.pendingTargetMovieId);
-            await this.startTargetedInsertion(movie);
-            return true;
-        } catch (error) {
-            this.errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : 'Unable to start targeted placement.';
-            return false;
-        }
-    }
-
-    private clearTargetedMovieQueryParam() {
-        updateMovieFaceoffQueryParams({ targetMovieId: undefined });
+    private maybeStartTargetedInsertionFromUrl() {
+        return this.targetedInsertionController.maybeStartFromUrl(
+            this.pendingTargetMovieId
+        );
     }
 
     private cancelTargetedInsertion() {
-        if (!this.targetedInsertion) return;
-        const targetTitle = this.targetedInsertion.targetMovie.title;
-        this.targetedInsertion = null;
-        this.pendingTargetMovieId = undefined;
-        this.clearTargetedMovieQueryParam();
-        this.statusMessage = `Stopped targeted placement for ${targetTitle}.`;
-        void this.displayNewPair();
+        this.targetedInsertionController.cancel();
     }
 
     private async displayNewPair() {
@@ -493,12 +406,10 @@ export class MovieFaceoffRoute
         await this.performAction('vote', undefined,
             () => movieFaceoff.recordVote(winner, loser, targetId), 'Recorded vote');
 
-        if (this.targetedInsertion) {
-            const { low, high, comparisonsCompleted } = advanceTargetedInsertion(
-                this.targetedInsertion, winnerIndex === 0);
-            await this.refreshTargetedInsertion({ comparisonsCompleted, low, high });
-            return;
-        }
+        const advanced = await this.targetedInsertionController.advanceAfterVote(
+            winnerIndex === 0
+        );
+        if (advanced) return;
         await this.displayNewPair();
     }
 
@@ -517,15 +428,12 @@ export class MovieFaceoffRoute
             [movie.id], () => movieFaceoff.markMovieUnseen(movie.id), 'Marked as not seen');
 
         if (this.targetedInsertion) {
-            if (this.targetedInsertion.targetMovie.id === movie.id) {
-                this.targetedInsertion = null;
-                this.pendingTargetMovieId = undefined;
-                this.clearTargetedMovieQueryParam();
+            if (this.targetedInsertionController.clearForTargetRemoved(movie.id)) {
                 this.statusMessage = `Marked ${movie.title} as not seen and stopped targeted placement`;
                 await this.displayNewPair();
                 return;
             }
-            await this.refreshTargetedInsertion({ preserveCurrentPair: false });
+            await this.targetedInsertionController.refresh({ preserveCurrentPair: false });
             return;
         }
         await this.replaceUnavailableMovie(index);
@@ -547,11 +455,7 @@ export class MovieFaceoffRoute
             () => movieFaceoff.markMoviesUnseen([left.id, right.id]),
             'Marked both movies as not seen');
 
-        if (this.targetedInsertion) {
-            this.targetedInsertion = null;
-            this.pendingTargetMovieId = undefined;
-            this.clearTargetedMovieQueryParam();
-        }
+        this.targetedInsertionController.clearSilent();
         await this.displayNewPair();
     }
 

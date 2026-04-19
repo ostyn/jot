@@ -7,6 +7,7 @@ export class MovieListItem extends LitElement {
     @property() posterUrl = '';
     @property() title = '';
     @property() subtitle = '';
+    @property({ reflect: true }) layout: 'compact' | 'stacked' = 'compact';
 
     render() {
         return html`
@@ -32,18 +33,15 @@ export class MovieListItem extends LitElement {
 
     static styles = css`
         :host {
-            display: grid;
-            grid-template-columns: 4rem minmax(0, 1fr);
+            display: flex;
             align-items: center;
             gap: 0.75rem;
             padding: 0.85rem 1rem;
             border-radius: var(--pico-border-radius);
             background: var(--pico-card-sectioning-background-color);
         }
-        :host(:has(> [slot='leading'])) {
-            grid-template-columns: auto 4rem minmax(0, 1fr);
-        }
         .poster {
+            flex: 0 0 4rem;
             width: 4rem;
             aspect-ratio: 2 / 3;
             border-radius: calc(var(--pico-border-radius) * 0.8);
@@ -65,17 +63,33 @@ export class MovieListItem extends LitElement {
             place-items: center;
         }
         .body {
+            flex: 1 1 auto;
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem 0.75rem;
             text-align: left;
             min-width: 0;
+        }
+        :host([layout='stacked']) .body {
+            flex-direction: column;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+        :host([layout='stacked']) slot[name='trailing'] {
+            display: contents;
         }
         .title-group {
             display: flex;
             flex-direction: column;
             gap: 0.16rem;
             min-width: 0;
+            flex: 1 1 8rem;
+        }
+        :host([layout='stacked']) .title-group {
+            flex: none;
         }
         .title {
             display: -webkit-box;
@@ -87,15 +101,18 @@ export class MovieListItem extends LitElement {
             margin: 0;
             color: var(--pico-muted-color);
         }
+        ::slotted([slot='trailing']) {
+            flex-shrink: 0;
+        }
+        :host([layout='stacked']) ::slotted([slot='trailing']) {
+            flex-shrink: 1;
+        }
         @media (max-width: 640px) {
             :host {
-                grid-template-columns: 3rem minmax(0, 1fr);
                 padding: 0.65rem 0.7rem;
             }
-            :host(:has(> [slot='leading'])) {
-                grid-template-columns: auto 3rem minmax(0, 1fr);
-            }
             .poster {
+                flex: 0 0 3rem;
                 width: 3rem;
             }
         }

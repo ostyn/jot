@@ -130,6 +130,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                   return html`
                                       <li>
                                           <movie-list-item
+                                              layout="stacked"
                                               .posterUrl=${posterUrl}
                                               .title=${movie.title}
                                               .subtitle=${movie.releaseDate?.split('-')[0] ||
@@ -138,31 +139,27 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                               <strong slot="leading" class="rank-index"
                                                   >${index + 1}</strong
                                               >
-                                              <span slot="trailing" class="rank-meta">
-                                                  <strong class="rank-score"
-                                                      >${this.renderRankValue(movie)}</strong
+                                              <strong slot="trailing" class="rank-score"
+                                                  >${this.renderRankValue(movie)}</strong
+                                              >
+                                              <span slot="trailing" role="group">
+                                                  <button
+                                                      class="outline"
+                                                      @click=${() =>
+                                                          this.emit('navigate-movie', {
+                                                              movieId: movie.id,
+                                                          })}
                                                   >
-                                                  <span role="group">
-                                                      <button
-                                                          class="outline"
-                                                          @click=${() =>
-                                                              this.emit('navigate-movie', {
-                                                                  movieId: movie.id,
-                                                              })}
-                                                      >
-                                                          Details
-                                                      </button>
-                                                      <button
-                                                          class="outline hide-button"
-                                                          aria-label=${`Hide ${movie.title}`}
-                                                          @click=${() =>
-                                                              this.emit('exclude-movie', {
-                                                                  movie,
-                                                              })}
-                                                      >
-                                                          <jot-icon name="XCircle"></jot-icon>
-                                                      </button>
-                                                  </span>
+                                                      Details
+                                                  </button>
+                                                  <button
+                                                      class="outline hide-button"
+                                                      aria-label=${`Hide ${movie.title}`}
+                                                      @click=${() =>
+                                                          this.emit('exclude-movie', { movie })}
+                                                  >
+                                                      <jot-icon name="XCircle"></jot-icon>
+                                                  </button>
                                               </span>
                                           </movie-list-item>
                                       </li>
@@ -323,13 +320,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 border-color: var(--pico-del-color);
                 padding: 0.25rem;
                 margin: 0;
-            }
-            .rank-meta {
-                display: flex;
-                gap: 0.5rem;
-                align-items: center;
-                flex-wrap: wrap;
-                justify-content: space-between;
             }
             .rank-score {
                 font-variant-numeric: tabular-nums;

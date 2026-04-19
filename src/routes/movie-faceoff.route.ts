@@ -35,6 +35,7 @@ import {
     TargetedInsertionState,
     UndoAction,
 } from '../utils/movie-faceoff-types';
+import { createMovieFaceoffKeyboardHandler } from '../utils/movie-faceoff-keyboard';
 import { MovieFaceoffUndoManager } from '../utils/movie-faceoff-undo';
 import {
     parseMovieFaceoffUrl,
@@ -83,8 +84,14 @@ export class MovieFaceoffRoute
     private pendingTargetMovieId?: number;
     private pendingPairIds?: [number, number];
     private routeInitialized = false;
-    private readonly keyDownHandler = (event: KeyboardEvent) =>
-        this.handleKeyDown(event);
+    private readonly keyDownHandler = createMovieFaceoffKeyboardHandler({
+        hasTargetedInsertion: () => Boolean(this.targetedInsertion),
+        hasMoviePair: () => Boolean(this.movies[0] && this.movies[1]),
+        cancelTargetedInsertion: () => this.cancelTargetedInsertion(),
+        markMovieUnseen: (index) => void this.markMovieUnseen(index),
+        markBothMoviesUnseen: () => void this.markBothMoviesUnseen(),
+        vote: (index) => void this.vote(index),
+    });
 
     async onAfterEnter(location: RouterLocation) {
         const urlState = parseMovieFaceoffUrl(location.search);
@@ -474,46 +481,6 @@ export class MovieFaceoffRoute
                 ? [replacement, this.movies[1]]
                 : [this.movies[0], replacement];
         this.syncPairToUrl();
-    }
-
-    private handleKeyDown(event: KeyboardEvent) {
-        if (this.targetedInsertion && event.key === 'Escape') {
-            event.preventDefault();
-            this.cancelTargetedInsertion();
-            return;
-        }
-
-        const [left, right] = this.movies;
-        if (!left || !right) return;
-
-        if (event.shiftKey && event.key === 'ArrowLeft') {
-            event.preventDefault();
-            void this.markMovieUnseen(0);
-            return;
-        }
-
-        if (event.shiftKey && event.key === 'ArrowRight') {
-            event.preventDefault();
-            void this.markMovieUnseen(1);
-            return;
-        }
-
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            void this.markBothMoviesUnseen();
-            return;
-        }
-
-        if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            void this.vote(0);
-            return;
-        }
-
-        if (event.key === 'ArrowRight') {
-            event.preventDefault();
-            void this.vote(1);
-        }
     }
 
     private async vote(winnerIndex: 0 | 1) {

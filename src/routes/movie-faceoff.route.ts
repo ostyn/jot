@@ -41,6 +41,7 @@ import '../components/jot-icon';
 import '../components/movie-faceoff-card.component';
 import '../components/movie-faceoff-pool-toggle.component';
 import '../components/movie-faceoff-rankings.component';
+import '../components/movie-faceoff-targeted-banner.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
 
@@ -200,19 +201,6 @@ export class MovieFaceoffRoute
 
     private get isTargetedMode() {
         return Boolean(this.targetedInsertion);
-    }
-
-    private get targetedProgressLabel() {
-        const session = this.targetedInsertion;
-        if (!session) return '';
-        const remainingWindow = Math.max(session.high - session.low, 0);
-        if (session.complete) return 'Placement locked';
-        if (!session.rankedSnapshot.length) return 'Need more ranked movies';
-        return `${session.comparisonsCompleted} comparison${
-            session.comparisonsCompleted === 1 ? '' : 's'
-        } made, ${remainingWindow + 1} possible slot${
-            remainingWindow === 0 ? '' : 's'
-        } left`;
     }
 
     private async setPoolMode(useRankedOnly: boolean) {
@@ -647,43 +635,6 @@ export class MovieFaceoffRoute
         `;
     }
 
-    private renderTargetedInsertionBanner() {
-        const session = this.targetedInsertion;
-        if (!session) return nothing;
-
-        const estimatedPlacement = Math.min(
-            session.rankedSnapshot.length + 1,
-            session.low + 1
-        );
-
-        return html`
-            <article class="targeted-banner">
-                <div class="targeted-copy">
-                    <hgroup>
-                        <p class="eyebrow">Targeted placement</p>
-                        <h3>${session.targetMovie.title}</h3>
-                    </hgroup>
-                    <p>
-                        Compare it against key movies in ${getMovieFaceoffRankingAlgorithm(this.sortMode).label}.
-                        Current estimated slot: #${estimatedPlacement}.
-                    </p>
-                </div>
-                <div class="targeted-meta">
-                    <strong>${this.targetedProgressLabel}</strong>
-                    <button
-                        class="secondary"
-                        @click=${() => {
-                            this.cancelTargetedInsertion();
-                        }}
-                    >
-                        <jot-icon name="XCircle"></jot-icon>
-                        Cancel
-                    </button>
-                </div>
-            </article>
-        `;
-    }
-
     render() {
         const [left, right] = this.movies;
         const statusTone = this.sessionStatusTone;
@@ -719,7 +670,13 @@ export class MovieFaceoffRoute
                             ></movie-faceoff-pool-toggle>
                         </header>
 
-                        ${this.renderTargetedInsertionBanner()}
+                        <movie-faceoff-targeted-banner
+                            .targetedInsertion=${this.targetedInsertion}
+                            .sortMode=${this.sortMode}
+                            @cancel-targeted-insertion=${() => {
+                                this.cancelTargetedInsertion();
+                            }}
+                        ></movie-faceoff-targeted-banner>
 
                         ${this.errorMessage
                             ? html`<aside class="status-banner error" role="alert">
@@ -882,26 +839,6 @@ export class MovieFaceoffRoute
                 overflow: hidden;
                 margin: 0;
             }
-            .targeted-banner {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) auto;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 1rem;
-                border-radius: var(--pico-border-radius);
-                background: color-mix(
-                    in srgb,
-                    var(--pico-card-sectioning-background-color) 78%,
-                    var(--pico-card-background-color)
-                );
-            }
-            .targeted-meta {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 0.75rem;
-                flex-wrap: wrap;
-            }
             .header-action-button {
                 margin: 0;
                 padding-inline: 0.7rem;
@@ -909,13 +846,6 @@ export class MovieFaceoffRoute
             }
             .header-action-button span {
                 display: inline-block;
-            }
-            .targeted-copy {
-                min-width: 0;
-            }
-            .targeted-copy p:last-child {
-                margin: 0;
-                color: var(--pico-muted-color);
             }
             .panel-header {
                 position: relative;
@@ -1049,12 +979,8 @@ export class MovieFaceoffRoute
                 :host {
                     width: 100%;
                 }
-                .targeted-banner,
                 .header-action-button span {
                     display: none;
-                }
-                .targeted-meta {
-                    align-items: stretch;
                 }
                 .matchup {
                     gap: 0.55rem;

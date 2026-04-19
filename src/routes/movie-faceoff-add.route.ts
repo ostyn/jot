@@ -4,6 +4,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
 import '../components/jot-icon';
+import '../components/movie-list-item.component';
 import '../components/utility-page-header.component';
 import {
     FaceoffMovie,
@@ -115,35 +116,24 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
 
                     ${this.searchResults.length
                         ? html`
-                              <ul class="search-results-list">
+                              <ul class="movie-list">
                                   ${this.searchResults.map((movie) => {
                                       const posterUrl = getMoviePosterUrl(movie);
                                       return html`
                                           <li>
-                                              <button
-                                                  class="search-result"
-                                                  @click=${() => {
-                                                      this.selectMovie(movie);
-                                                  }}
+                                              <movie-list-item
+                                                  .posterUrl=${posterUrl}
+                                                  .title=${movie.title}
+                                                  .subtitle=${this.getMovieYear(movie)}
                                               >
-                                                  <span class="search-result-poster">
-                                                      ${posterUrl
-                                                          ? html`<img
-                                                                src=${posterUrl}
-                                                                alt=""
-                                                                loading="lazy"
-                                                            />`
-                                                          : html`<span
-                                                                class="search-result-poster-fallback"
-                                                            >
-                                                                <jot-icon name="Play"></jot-icon>
-                                                            </span>`}
-                                                  </span>
-                                                  <span class="search-result-copy">
-                                                      <strong>${movie.title}</strong>
-                                                      <small>${this.getMovieYear(movie)}</small>
-                                                  </span>
-                                              </button>
+                                                  <button
+                                                      slot="trailing"
+                                                      class="outline"
+                                                      @click=${() => this.selectMovie(movie)}
+                                                  >
+                                                      Details
+                                                  </button>
+                                              </movie-list-item>
                                           </li>
                                       `;
                                   })}
@@ -184,62 +174,17 @@ export class MovieFaceoffAddRoute extends MobxLitElement {
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .search-results-list {
+            .movie-list {
                 list-style: none;
                 padding: 0;
                 margin: 0;
                 display: flex;
                 flex-direction: column;
-                gap: 0.65rem;
-            }
-            .search-result {
-                width: 100%;
-                display: grid;
-                grid-template-columns: 3rem minmax(0, 1fr);
                 gap: 0.75rem;
-                align-items: center;
-                padding: 0.75rem 0.85rem;
-                text-align: left;
-            }
-            .search-result-poster {
-                width: 3rem;
-                aspect-ratio: 2 / 3;
-                overflow: hidden;
-                border-radius: calc(var(--pico-border-radius) * 0.8);
-                background: var(--pico-form-element-background-color);
-                display: block;
-            }
-            .search-result-poster img,
-            .search-result-poster-fallback {
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
-            .search-result-poster img {
-                object-fit: cover;
-            }
-            .search-result-poster-fallback {
-                display: grid;
-                place-items: center;
-            }
-            .search-result-copy {
-                display: flex;
-                flex-direction: column;
-                gap: 0.2rem;
-                min-width: 0;
-            }
-            .search-result-copy strong {
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
             }
             @media (max-width: 640px) {
                 :host {
                     width: 100%;
-                }
-                .search-result {
-                    grid-template-columns: minmax(0, 1fr);
                 }
             }
         `,

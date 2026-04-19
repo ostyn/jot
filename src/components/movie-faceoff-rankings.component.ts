@@ -15,6 +15,7 @@ import {
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../utils/movie-faceoff-rankings';
 import './jot-icon';
+import './movie-list-item.component';
 
 @customElement('movie-faceoff-rankings')
 export class MovieFaceoffRankings extends MobxLitElement {
@@ -117,7 +118,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 </div>
 
                 ${ranked.length
-                    ? html`<ol class="rank-list">
+                    ? html`<ol class="movie-list">
                           ${ranked.map(
                               (movie, index) => {
                                   const posterUrl = movie.posterPath
@@ -127,36 +128,17 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                       : '';
 
                                   return html`
-                                      <li class="rank-row">
-                                          <strong class="rank-index"
-                                              >${index + 1}</strong
+                                      <li>
+                                          <movie-list-item
+                                              .posterUrl=${posterUrl}
+                                              .title=${movie.title}
+                                              .subtitle=${movie.releaseDate?.split('-')[0] ||
+                                              'Unknown year'}
                                           >
-                                          <span class="rank-poster" aria-hidden="true">
-                                              ${posterUrl
-                                                  ? html`<img
-                                                        src=${posterUrl}
-                                                        alt=""
-                                                        loading="lazy"
-                                                    />`
-                                                  : html`<span
-                                                        class="rank-poster-fallback"
-                                                    >
-                                                        <jot-icon
-                                                            name="Play"
-                                                        ></jot-icon>
-                                                    </span>`}
-                                          </span>
-                                          <span class="rank-item">
-                                              <span class="rank-title-group">
-                                                  <strong class="rank-title"
-                                                      >${movie.title}</strong
-                                                  >
-                                                  <small class="rank-subtitle"
-                                                      >${movie.releaseDate?.split('-')[0] ||
-                                                      'Unknown year'}</small
-                                                  >
-                                              </span>
-                                              <span class="rank-meta">
+                                              <strong slot="leading" class="rank-index"
+                                                  >${index + 1}</strong
+                                              >
+                                              <span slot="trailing" class="rank-meta">
                                                   <strong class="rank-score"
                                                       >${this.renderRankValue(movie)}</strong
                                                   >
@@ -182,7 +164,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                                       </button>
                                                   </span>
                                               </span>
-                                          </span>
+                                          </movie-list-item>
                                       </li>
                                   `;
                               }
@@ -197,26 +179,32 @@ export class MovieFaceoffRankings extends MobxLitElement {
                     ? html`
                           <details>
                               <summary>Hidden (${this.excludedMovies.length})</summary>
-                              <ul class="excluded-list">
-                                  ${this.excludedMovies.map(
-                                      (movie) => html`
-                                          <li class="excluded-item">
-                                              <span class="excluded-copy">
-                                                  <strong>${movie.title}</strong>
-                                                  <small>Hidden from the active pool</small>
-                                              </span>
-                                              <button
-                                                  class="secondary"
-                                                  @click=${() =>
-                                                      this.emit('restore-excluded', {
-                                                          movie,
-                                                      })}
+                              <ul class="movie-list">
+                                  ${this.excludedMovies.map((movie) => {
+                                      const posterUrl = movie.posterPath
+                                          ? getMoviePosterUrl({ poster_path: movie.posterPath })
+                                          : '';
+                                      return html`
+                                          <li>
+                                              <movie-list-item
+                                                  .posterUrl=${posterUrl}
+                                                  .title=${movie.title}
+                                                  .subtitle=${'Hidden from the active pool'}
                                               >
-                                                  Restore
-                                              </button>
+                                                  <button
+                                                      slot="trailing"
+                                                      class="secondary"
+                                                      @click=${() =>
+                                                          this.emit('restore-excluded', {
+                                                              movie,
+                                                          })}
+                                                  >
+                                                      Restore
+                                                  </button>
+                                              </movie-list-item>
                                           </li>
-                                      `
-                                  )}
+                                      `;
+                                  })}
                               </ul>
                           </details>
                       `
@@ -226,34 +214,30 @@ export class MovieFaceoffRankings extends MobxLitElement {
                     ? html`
                           <details>
                               <summary>Not seen (${this.unseenMovies.length})</summary>
-                              <ul class="excluded-list">
+                              <ul class="movie-list">
                                   ${this.unseenMovies.map((movie) => {
                                       const posterUrl = movie.posterPath
                                           ? getMoviePosterUrl({ poster_path: movie.posterPath })
                                           : '';
                                       return html`
-                                          <li class="rank-row rank-row--no-index">
-                                              <span class="rank-poster" aria-hidden="true">
-                                                  ${posterUrl
-                                                      ? html`<img src=${posterUrl} alt="" loading="lazy" />`
-                                                      : html`<span class="rank-poster-fallback">
-                                                            <jot-icon name="Play"></jot-icon>
-                                                        </span>`}
-                                              </span>
-                                              <span class="rank-item">
-                                                  <span class="rank-title-group">
-                                                      <strong>${movie.title}</strong>
-                                                      <small class="rank-subtitle">${movie.releaseDate?.split('-')[0] || 'Unknown year'}</small>
-                                                  </span>
-                                                  <span class="rank-meta">
-                                                      <button
-                                                          class="outline"
-                                                          @click=${() => this.emit('navigate-movie', { movieId: movie.id })}
-                                                      >
-                                                          Details
-                                                      </button>
-                                                  </span>
-                                              </span>
+                                          <li>
+                                              <movie-list-item
+                                                  .posterUrl=${posterUrl}
+                                                  .title=${movie.title}
+                                                  .subtitle=${movie.releaseDate?.split('-')[0] ||
+                                                  'Unknown year'}
+                                              >
+                                                  <button
+                                                      slot="trailing"
+                                                      class="outline"
+                                                      @click=${() =>
+                                                          this.emit('navigate-movie', {
+                                                              movieId: movie.id,
+                                                          })}
+                                                  >
+                                                      Details
+                                                  </button>
+                                              </movie-list-item>
                                           </li>
                                       `;
                                   })}
@@ -303,11 +287,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 position: relative;
                 z-index: 1;
             }
-            .rank-subtitle,
-            .excluded-copy small {
-                margin: 0;
-                color: var(--pico-muted-color);
-            }
             .rankings-controls select,
             .rankings-controls button {
                 margin: 0;
@@ -317,29 +296,13 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 width: 3rem;
                 padding: 0;
             }
-            .rank-item,
-            .rank-title-group {
-                min-width: 0;
-            }
-            .rank-list {
+            .movie-list {
                 margin: 0;
                 padding: 0;
                 list-style: none;
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
-            }
-            .rank-row {
-                display: grid;
-                grid-template-columns: auto 4rem minmax(0, 1fr);
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.85rem 1rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .rank-row--no-index {
-                grid-template-columns: 4rem minmax(0, 1fr);
             }
             .rank-index {
                 width: 2rem;
@@ -354,38 +317,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 flex-shrink: 0;
                 padding: 0;
                 --pico-line-height: 1;
-            }
-            .rank-poster {
-                width: 4rem;
-                aspect-ratio: 2 / 3;
-                border-radius: calc(var(--pico-border-radius) * 0.8);
-                overflow: hidden;
-                background: var(--pico-form-element-background-color);
-                display: block;
-            }
-            .rank-poster img,
-            .rank-poster-fallback {
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
-            .rank-poster img {
-                object-fit: cover;
-            }
-            .rank-poster-fallback {
-                display: grid;
-                place-items: center;
-            }
-            .rank-item {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-                text-align: left;
-            }
-            .rank-title-group {
-                display: flex;
-                flex-direction: column;
-                gap: 0.16rem;
             }
             .hide-button {
                 color: var(--pico-del-color);
@@ -403,29 +334,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
             .rank-score {
                 font-variant-numeric: tabular-nums;
             }
-            .excluded-list {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-            }
-            .excluded-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.75rem 1rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .excluded-copy {
-                display: flex;
-                flex-direction: column;
-                gap: 0.15rem;
-                min-width: 0;
-            }
             .empty-state-panel {
                 display: grid;
                 gap: 0.85rem;
@@ -439,21 +347,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
             }
             dialog::backdrop {
                 background: color-mix(in srgb, black 55%, transparent);
-            }
-            @media (max-width: 640px) {
-                .excluded-item {
-                    padding: 0.5rem 0.65rem;
-                }
-                .rank-row {
-                    grid-template-columns: auto 3rem minmax(0, 1fr);
-                    padding: 0.65rem 0.7rem;
-                }
-                .rank-row--no-index {
-                    grid-template-columns: 3rem minmax(0, 1fr);
-                }
-                .rank-poster {
-                    width: 3rem;
-                }
             }
         `,
     ];

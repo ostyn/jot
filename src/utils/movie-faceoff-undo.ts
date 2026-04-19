@@ -20,10 +20,12 @@ export class MovieFaceoffUndoManager {
     restore(): void {
         try {
             const raw = window.sessionStorage.getItem(UNDO_STACK_STORAGE_KEY);
-            if (!raw) return;
+            if (!raw) {
+                this.stack = [];
+                return;
+            }
             const parsed: unknown = JSON.parse(raw);
-            if (!Array.isArray(parsed)) return;
-            this.stack = parsed.filter(isUndoEntry);
+            this.stack = Array.isArray(parsed) ? parsed.filter(isUndoEntry) : [];
         } catch (_error) {
             this.stack = [];
         }

@@ -18,7 +18,16 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "plugins": [
+      {
+        "name": "ts-lit-plugin",
+        "rules": {
+          "no-missing-import": "error"
+        }
+      }
+    ]
   },
   "include": ["src",  "node_modules/vite-plugin-pwa/client.d.ts" ]
 }

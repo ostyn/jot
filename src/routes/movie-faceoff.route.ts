@@ -41,6 +41,7 @@ import '../components/jot-icon';
 import '../components/movie-faceoff-card.component';
 import '../components/movie-faceoff-pool-toggle.component';
 import '../components/movie-faceoff-rankings.component';
+import '../components/movie-faceoff-status-bar.component';
 import '../components/movie-faceoff-targeted-banner.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
@@ -626,15 +627,6 @@ export class MovieFaceoffRoute
             () => movieFaceoff.restoreMovieSeen(movie.id), `Marked ${movie.title} as seen again`);
     }
 
-    private renderSummaryStat(label: string, value: string | number, accent = false) {
-        return html`
-            <article class="summary-stat ${accent ? 'accent' : ''}">
-                <p>${label}</p>
-                <strong>${value}</strong>
-            </article>
-        `;
-    }
-
     render() {
         const [left, right] = this.movies;
         const statusTone = this.sessionStatusTone;
@@ -732,44 +724,15 @@ export class MovieFaceoffRoute
                                     Mark both unseen
                                 </button>
                             </div>
-                            <div class="feedback-bar">
-                                <p class="status-chip ${statusTone}" role="status">
-                                    ${statusTone === 'error'
-                                        ? html`<jot-icon name="AlertTriangle"></jot-icon>`
-                                        : html`<span class="status-dot" aria-hidden="true"></span>`}
-                                    <span>${statusLabel}</span>
-                                </p>
-                                ${this.showUndo
-                                    ? html`<button
-                                          class="secondary"
-                                          @click=${() => void this.undoLastAction()}
-                                      >
-                                          <jot-icon name="RotateCcw"></jot-icon>
-                                          Undo
-                                      </button>`
-                                    : nothing}
-                            </div>
-
-                            <div class="summary-grid session-summary">
-                                ${this.renderSummaryStat(
-                                    'Ranked',
-                                    this.visibleRankedMovies.length,
-                                    true
-                                )}
-                                ${this.renderSummaryStat('Votes', movieFaceoff.allEvents.length)}
-                                ${this.renderSummaryStat(
-                                    'Available',
-                                    this.availableMovieCount ?? '...'
-                                )}
-                            </div>
-
-
-
-                            <p class="session-hint">
-                                Keyboard shortcuts:
-                                <kbd>Shift</kbd> + <kbd>Arrow</kbd> marks one movie unseen,
-                                <kbd>Down</kbd> marks both.
-                            </p>
+                            <movie-faceoff-status-bar
+                                .statusTone=${statusTone}
+                                .statusLabel=${statusLabel}
+                                .showUndo=${this.showUndo}
+                                .rankedCount=${this.visibleRankedMovies.length}
+                                .votesCount=${movieFaceoff.allEvents.length}
+                                .availableCount=${this.availableMovieCount}
+                                @undo-action=${() => void this.undoLastAction()}
+                            ></movie-faceoff-status-bar>
                         </footer>
                     </article>
                 </section>
@@ -830,8 +793,7 @@ export class MovieFaceoffRoute
             .rankings-column,
             .surface-panel,
             .matchup,
-            .matchup > *,
-            .feedback-bar > * {
+            .matchup > * {
                 min-width: 0;
             }
             .surface-panel {
@@ -856,43 +818,6 @@ export class MovieFaceoffRoute
                 gap: 0.75rem;
                 flex-wrap: wrap;
             }
-            .feedback-bar {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) auto;
-                gap: 0.75rem;
-                align-items: center;
-            }
-            .summary-grid {
-                display: grid;
-                gap: 0.75rem;
-                grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-            }
-            .summary-stat {
-                display: grid;
-                gap: 0.35rem;
-                margin: 0;
-                padding: 0.85rem 1rem;
-            }
-            .summary-stat.accent {
-                border-color: color-mix(
-                    in srgb,
-                    var(--pico-primary-border) 70%,
-                    var(--pico-card-border-color)
-                );
-                background: color-mix(
-                    in srgb,
-                    var(--pico-primary-background) 16%,
-                    var(--pico-card-background-color)
-                );
-            }
-            .summary-stat p,
-            .session-hint {
-                margin: 0;
-                color: var(--pico-muted-color);
-            }
-            .summary-stat strong {
-                font-size: 1.1rem;
-            }
             .session-panel {
                 display: grid;
                 gap: 1rem;
@@ -907,31 +832,6 @@ export class MovieFaceoffRoute
             }
             .status-banner.error {
                 color: var(--pico-del-color);
-            }
-            .status-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.65rem;
-                margin: 0;
-                padding: 0.6rem 0.9rem;
-                border-radius: var(--pico-border-radius);
-                background: var(--pico-card-sectioning-background-color);
-            }
-            .status-chip.error {
-                color: var(--pico-del-color);
-            }
-            .status-dot {
-                width: 0.6rem;
-                height: 0.6rem;
-                border-radius: 999px;
-                background: var(--pico-ins-color);
-                flex: none;
-            }
-            .status-chip.loading .status-dot {
-                background: var(--pico-primary);
-            }
-            .status-chip.active .status-dot {
-                background: var(--pico-secondary);
             }
             .matchup {
                 position: relative;
@@ -959,16 +859,6 @@ export class MovieFaceoffRoute
                 font-size: 0.75rem;
                 font-weight: 700;
                 letter-spacing: 0.08em;
-            }
-            kbd {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 1.5rem;
-                padding: 0.12rem 0.35rem;
-                border-radius: 0.4rem;
-                font: inherit;
-                font-size: 0.8em;
             }
             @media (min-width: 1320px) {
                 .layout {
@@ -998,13 +888,6 @@ export class MovieFaceoffRoute
                     height: 1.85rem;
                     font-size: 0.56rem;
                     letter-spacing: 0.08em;
-                }
-                .feedback-bar,
-                .feedback-bar button {
-                    width: 100%;
-                }
-                .summary-grid {
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
                 }
             }
         `,

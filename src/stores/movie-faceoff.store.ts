@@ -194,11 +194,6 @@ class MovieFaceoffStore {
     }
 
     @action.bound
-    async restoreMovieSeen(id: number) {
-        await this.setMovieUnseenAt(id, undefined);
-    }
-
-    @action.bound
     async reset() {
         await movieFaceoffDao.reset();
         runInAction(() => {

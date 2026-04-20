@@ -1,5 +1,6 @@
 import { css, html, nothing } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { customElement, property, query, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
@@ -25,6 +26,9 @@ export class MovieFaceoffRankings extends MobxLitElement {
     @property({ attribute: false })
     sortMode: MovieFaceoffSortMode = 'elo';
 
+    @state()
+    private isExcludedOpen = false;
+
     @query('dialog')
     private dialogRef!: HTMLDialogElement;
 
@@ -45,12 +49,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
     private get excludedMovies() {
         return [...movieFaceoff.allMovies]
             .filter((movie) => movie.excludedAt)
-            .sort((a, b) => a.title.localeCompare(b.title) || b.updatedAt.localeCompare(a.updatedAt));
-    }
-
-    private get unseenMovies() {
-        return [...movieFaceoff.allMovies]
-            .filter((movie) => movie.unseenAt)
             .sort((a, b) => a.title.localeCompare(b.title) || b.updatedAt.localeCompare(a.updatedAt));
     }
 
@@ -119,7 +117,9 @@ export class MovieFaceoffRankings extends MobxLitElement {
 
                 ${ranked.length
                     ? html`<ol class="movie-list">
-                          ${ranked.map(
+                          ${repeat(
+                              ranked,
+                              (movie) => movie.id,
                               (movie, index) => {
                                   const posterUrl = movie.posterPath
                                       ? getMoviePosterUrl({
@@ -174,74 +174,50 @@ export class MovieFaceoffRankings extends MobxLitElement {
 
                 ${this.excludedMovies.length
                     ? html`
-                          <details>
+                          <details
+                              ?open=${this.isExcludedOpen}
+                              @toggle=${(e: Event) => {
+                                  this.isExcludedOpen = (e.currentTarget as HTMLDetailsElement).open;
+                              }}
+                          >
                               <summary>Hidden (${this.excludedMovies.length})</summary>
-                              <ul class="movie-list">
-                                  ${this.excludedMovies.map((movie) => {
-                                      const posterUrl = movie.posterPath
-                                          ? getMoviePosterUrl({ poster_path: movie.posterPath })
-                                          : '';
-                                      return html`
-                                          <li>
-                                              <movie-list-item
-                                                  .posterUrl=${posterUrl}
-                                                  .title=${movie.title}
-                                                  .subtitle=${'Hidden from the active pool'}
-                                              >
-                                                  <button
-                                                      slot="trailing"
-                                                      class="secondary"
-                                                      @click=${() =>
-                                                          this.emit('restore-excluded', {
-                                                              movie,
-                                                          })}
+                              ${this.isExcludedOpen
+                                  ? html`<ul class="movie-list">
+                                  ${repeat(
+                                      this.excludedMovies,
+                                      (movie) => movie.id,
+                                      (movie) => {
+                                          const posterUrl = movie.posterPath
+                                              ? getMoviePosterUrl({ poster_path: movie.posterPath })
+                                              : '';
+                                          return html`
+                                              <li>
+                                                  <movie-list-item
+                                                      .posterUrl=${posterUrl}
+                                                      .title=${movie.title}
+                                                      .subtitle=${'Hidden from the active pool'}
                                                   >
-                                                      Restore
-                                                  </button>
-                                              </movie-list-item>
-                                          </li>
-                                      `;
-                                  })}
-                              </ul>
+                                                      <button
+                                                          slot="trailing"
+                                                          class="secondary"
+                                                          @click=${() =>
+                                                              this.emit('restore-excluded', {
+                                                                  movie,
+                                                              })}
+                                                      >
+                                                          Restore
+                                                      </button>
+                                                  </movie-list-item>
+                                              </li>
+                                          `;
+                                      }
+                                  )}
+                              </ul>`
+                                  : nothing}
                           </details>
                       `
                     : nothing}
 
-                ${this.unseenMovies.length
-                    ? html`
-                          <details>
-                              <summary>Not seen (${this.unseenMovies.length})</summary>
-                              <ul class="movie-list">
-                                  ${this.unseenMovies.map((movie) => {
-                                      const posterUrl = movie.posterPath
-                                          ? getMoviePosterUrl({ poster_path: movie.posterPath })
-                                          : '';
-                                      return html`
-                                          <li>
-                                              <movie-list-item
-                                                  .posterUrl=${posterUrl}
-                                                  .title=${movie.title}
-                                                  .subtitle=${movie.releaseDate?.split('-')[0] ||
-                                                  'Unknown year'}
-                                              >
-                                                  <button
-                                                      slot="trailing"
-                                                      class="outline"
-                                                      @click=${() =>
-                                                          this.emit('navigate-movie', {
-                                                              movieId: movie.id,
-                                                          })}
-                                                  >
-                                                      Details
-                                                  </button>
-                                              </movie-list-item>
-                                          </li>
-                                      `;
-                                  })}
-                              </ul>
-                          </details>
-                      `
-                    : nothing}
             </article>
             <dialog @click=${(e: Event) => {
                 if ((e.target as Element).nodeName === 'DIALOG') (e.target as HTMLDialogElement).close();

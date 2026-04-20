@@ -11,8 +11,7 @@ export type UndoAction =
     | 'not-seen-right'
     | 'not-seen-both'
     | 'exclude'
-    | 'restore-excluded'
-    | 'restore-seen';
+    | 'restore-excluded';
 
 export type MovieStateChange = {
     movieId: number;
@@ -70,7 +69,6 @@ export function isUndoEntry(entry: unknown): entry is UndoEntry {
             'not-seen-both',
             'exclude',
             'restore-excluded',
-            'restore-seen',
         ].includes(candidate.action || '') &&
             Array.isArray(candidate.pair) &&
             candidate.pair.length === 2 &&

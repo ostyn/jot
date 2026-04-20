@@ -149,6 +149,7 @@ export class MovieFaceoffRoute
         this.ensureMovieIdPool().catch(() => {});
         await movieFaceoff.ensureLoaded();
         this.routeInitialized = true;
+
         const startedFromUrl = await this.maybeStartTargetedInsertionFromUrl();
         if (startedFromUrl) return;
 
@@ -163,7 +164,7 @@ export class MovieFaceoffRoute
                 this.movies = [left, right];
                 return;
             } catch {
-                // Fall through to displayNewPair if restoration fails
+                // fall through to displayNewPair
             }
         }
 
@@ -504,11 +505,6 @@ export class MovieFaceoffRoute
             () => movieFaceoff.restoreMovie(movie.id), `Restored ${movie.title}`);
     }
 
-    private async restoreSeenMovie(movie: MovieFaceoffMovie) {
-        await this.performAction('restore-seen', [movie.id],
-            () => movieFaceoff.restoreMovieSeen(movie.id), `Marked ${movie.title} as seen again`);
-    }
-
     render() {
         const statusTone = this.sessionStatusTone;
         const statusLabel = this.statusMessage || this.sessionStatusLabel;
@@ -605,9 +601,6 @@ export class MovieFaceoffRoute
                         }}
                         @restore-excluded=${(e: CustomEvent) => {
                             void this.restoreExcludedMovie(e.detail.movie);
-                        }}
-                        @restore-seen=${(e: CustomEvent) => {
-                            void this.restoreSeenMovie(e.detail.movie);
                         }}
                         @navigate-movie=${(e: CustomEvent) => {
                             betterGo('movie-faceoff-movie', {

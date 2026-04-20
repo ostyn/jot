@@ -94,20 +94,12 @@ describe('MovieFaceoffStore exclude/restore', () => {
     });
 });
 
-describe('MovieFaceoffStore unseen/restoreSeen', () => {
+describe('MovieFaceoffStore unseen', () => {
     it('markMovieUnseen sets unseenAt and updates the computed set', async () => {
         await movieFaceoff.recordVote(makeMovie(1), makeMovie(2));
         await movieFaceoff.markMovieUnseen(1);
         expect(movieFaceoff.movieMap.get(1)?.unseenAt).toBeTruthy();
         expect(movieFaceoff.unseenMovieIds.has(1)).toBe(true);
-    });
-
-    it('restoreMovieSeen clears unseenAt', async () => {
-        await movieFaceoff.recordVote(makeMovie(1), makeMovie(2));
-        await movieFaceoff.markMovieUnseen(1);
-        await movieFaceoff.restoreMovieSeen(1);
-        expect(movieFaceoff.movieMap.get(1)?.unseenAt).toBeUndefined();
-        expect(movieFaceoff.unseenMovieIds.has(1)).toBe(false);
     });
 
     it('markMoviesUnseen dedupes repeated ids', async () => {

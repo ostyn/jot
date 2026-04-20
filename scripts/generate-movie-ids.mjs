@@ -466,10 +466,13 @@ async function collectWindowMovieIds(config, window) {
     return ids;
 }
 
-async function writeJsonAtomic(filePath, value) {
+async function writeJsonAtomic(filePath, value, { pretty = true } = {}) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     const tempPath = `${filePath}.tmp`;
-    await fs.writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    const serialized = pretty
+        ? JSON.stringify(value, null, 2)
+        : JSON.stringify(value);
+    await fs.writeFile(tempPath, `${serialized}\n`, 'utf8');
     await fs.rename(tempPath, filePath);
 }
 
@@ -549,7 +552,7 @@ export async function runMovieIdSync(
         },
     };
 
-    await writeJsonAtomic(config.filteredIdsOutputPath, filteredIds);
+    await writeJsonAtomic(config.filteredIdsOutputPath, filteredIds, { pretty: false });
     await writeJsonAtomic(config.manifestOutputPath, manifest);
 
     process.stdout.write(

@@ -8,7 +8,6 @@ import { markovRankingAlgorithm } from './algorithms/markov';
 import { rrfRankingAlgorithm } from './algorithms/rrf';
 import { transitiveRankingAlgorithm } from './algorithms/transitive';
 import { trimmedMeanRankingAlgorithm } from './algorithms/trimmed-mean';
-import { winsRankingAlgorithm } from './algorithms/wins';
 import { MovieFaceoffRankingAlgorithm, MovieFaceoffReplayState } from './types';
 
 export * from './types';
@@ -20,7 +19,6 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         trimmedMeanRankingAlgorithm,
         eloRankingAlgorithm,
         glickoRankingAlgorithm,
-        winsRankingAlgorithm,
         bradleyTerryRankingAlgorithm,
         manualRankingAlgorithm,
         copelandRankingAlgorithm,

@@ -3,7 +3,6 @@ export const MOVIE_FACEOFF_SORT_MODES = [
     'trimmed-mean',
     'elo',
     'glicko',
-    'wins',
     'bradley-terry',
     'manual',
     'copeland',

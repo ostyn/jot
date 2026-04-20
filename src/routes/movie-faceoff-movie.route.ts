@@ -79,6 +79,13 @@ export class MovieFaceoffMovieRoute
         });
     }
 
+    private get winRate(): string {
+        const rating = this.replayState.ratings.get(this.movieId || 0);
+        const total = (rating?.winCount || 0) + (rating?.lossCount || 0);
+        if (!total) return '—';
+        return `${Math.round(((rating?.winCount || 0) / total) * 100)}%`;
+    }
+
     private get storedMovie() {
         if (!this.movieId) return undefined;
         return movieFaceoff.movieMap.get(this.movieId);
@@ -279,6 +286,7 @@ export class MovieFaceoffMovieRoute
                                                   ?.lossCount || 0
                                           )
                                       )}
+                                      ${this.renderStat('Win rate', this.winRate)}
                                       ${this.renderStat(
                                           'Elo rating',
                                           `${Math.round(

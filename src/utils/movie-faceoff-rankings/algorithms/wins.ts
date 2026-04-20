@@ -4,14 +4,15 @@ export const winsRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'wins',
     label: 'Win Rate',
     description:
-        'Ranks movies by the share of votes they win.\n\nMetric: win percentage.\n\nPros: easiest to understand. Cons: ignores opponent strength and sample size.',
+        'Ranks movies by the share of votes they win, breaking ties by total votes.\n\nMetric: win percentage (ties broken by total votes).\n\nPros: easiest to understand. Cons: ignores opponent strength.',
     rank: (replay) =>
         Array.from(replay.ratings.values()).sort((a, b) => {
             const aTotal = a.winCount + a.lossCount;
             const bTotal = b.winCount + b.lossCount;
             const aRate = aTotal ? a.winCount / aTotal : 0;
             const bRate = bTotal ? b.winCount / bTotal : 0;
-            return bRate - aRate;
+            if (bRate !== aRate) return bRate - aRate;
+            return bTotal - aTotal;
         }),
     formatMetric: (movie) => {
         const totalGames = movie.winCount + movie.lossCount;

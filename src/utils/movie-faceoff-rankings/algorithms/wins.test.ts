@@ -28,6 +28,16 @@ describe('winsRankingAlgorithm', () => {
         expect(rankedIds(state, winsRankingAlgorithm)).toEqual([1, 2, 3]);
     });
 
+    it('breaks ties on win rate by total votes', () => {
+        // 1: 2W/0L = 100%, 3: 1W/0L = 100%, 2: 0W/2L = 0%, 4: 0W/1L = 0%
+        const state = buildReplayFromVotes([
+            [1, 2],
+            [1, 2],
+            [3, 4],
+        ]);
+        expect(rankedIds(state, winsRankingAlgorithm)).toEqual([1, 3, 2, 4]);
+    });
+
     it('formatMetric returns "100%" for an undefeated movie', () => {
         const state = buildReplayFromVotes([[1, 2]]);
         const winner = winsRankingAlgorithm.rank(state).find((m) => m.id === 1)!;

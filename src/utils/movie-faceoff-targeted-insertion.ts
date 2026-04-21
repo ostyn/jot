@@ -6,6 +6,13 @@ import {
 import { FaceoffMovie } from '../services/movie-faceoff.service';
 import { TargetedInsertionState } from './movie-faceoff-types';
 
+function pickPivotInMiddleBand(low: number, high: number): number {
+    const size = high - low;
+    const bandStart = low + Math.floor(size / 3);
+    const bandEnd = Math.max(bandStart + 1, low + Math.ceil((2 * size) / 3));
+    return bandStart + Math.floor(Math.random() * (bandEnd - bandStart));
+}
+
 function toFaceoffMovie(
     movie: Pick<MovieFaceoffMovie, 'id' | 'title' | 'posterPath' | 'releaseDate'>
 ): FaceoffMovie {
@@ -48,7 +55,7 @@ export function createTargetedInsertionState(
         };
     }
 
-    const pivotIndex = Math.floor((normalizedLow + normalizedHigh) / 2);
+    const pivotIndex = pickPivotInMiddleBand(normalizedLow, normalizedHigh);
     const pivotMovie = toFaceoffMovie(rankedSnapshot[pivotIndex]);
 
     return {

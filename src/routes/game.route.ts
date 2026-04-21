@@ -1,6 +1,7 @@
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
@@ -164,6 +165,11 @@ export class GameRoute extends MobxLitElement {
 
     private renderTile(tile: Tile) {
         const slideMs = slideDurationFor(tile.slideDistance ?? 0);
+        const styles = styleMap({
+            '--row': String(tile.row),
+            '--col': String(tile.col),
+            '--slide-ms': `${slideMs}ms`,
+        });
         return html`
             <div
                 class="tile game-tile"
@@ -171,7 +177,7 @@ export class GameRoute extends MobxLitElement {
                 ?data-new="${tile.isNew}"
                 ?data-merged="${tile.merged}"
                 ?data-exiting="${tile.exiting}"
-                style="--row:${tile.row};--col:${tile.col};--slide-ms:${slideMs}ms"
+                style=${styles}
             >
                 ${tile.value}
             </div>

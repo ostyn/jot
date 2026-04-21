@@ -259,6 +259,56 @@ describe('applyMove — merge & exit metadata', () => {
     });
 });
 
+describe('applyMove — slide distance', () => {
+    it('records 0 distance on a no-op move', () => {
+        const tiles = tilesFromGrid(row([2, 4, 8, 16]));
+        const { maxSlideDistance } = applyMove(tiles, 'left');
+        expect(maxSlideDistance).toBe(0);
+        expect(tiles.every((t) => (t.slideDistance ?? 0) === 0)).toBe(true);
+    });
+
+    it('records distance 1 for a one-cell slide', () => {
+        const tiles = tilesFromGrid(row([null, 2, null, null]));
+        const { maxSlideDistance } = applyMove(tiles, 'left');
+        expect(maxSlideDistance).toBe(1);
+        expect(tiles[0].slideDistance).toBe(1);
+    });
+
+    it('records distance 3 for a full-board slide', () => {
+        const tiles = tilesFromGrid(row([null, null, null, 2]));
+        const { maxSlideDistance } = applyMove(tiles, 'left');
+        expect(maxSlideDistance).toBe(3);
+        expect(tiles[0].slideDistance).toBe(3);
+    });
+
+    it('returns the maximum distance across all sliding tiles', () => {
+        // col 0 slides 3 (from col 3 to col 0); col 1 slides 1 (from col 2 to col 1)
+        const tiles = tilesFromGrid(row([null, null, 4, 2]));
+        const { maxSlideDistance } = applyMove(tiles, 'left');
+        expect(maxSlideDistance).toBe(2);
+    });
+
+    it('records distance for a merge loser sliding into the winner’s cell', () => {
+        // [2, null, null, 2] left → both tiles go to col 0; loser slides 3 cells.
+        const tiles = tilesFromGrid(row([2, null, null, 2]));
+        const { maxSlideDistance } = applyMove(tiles, 'left');
+        const winner = tiles.find((t) => !t.exiting)!;
+        const loser = tiles.find((t) => t.exiting)!;
+        expect(winner.slideDistance).toBe(0);
+        expect(loser.slideDistance).toBe(3);
+        expect(maxSlideDistance).toBe(3);
+    });
+
+    it('clears stale slideDistance from the previous move', () => {
+        const tiles = tilesFromGrid(row([null, null, null, 2]));
+        applyMove(tiles, 'left');
+        expect(tiles[0].slideDistance).toBe(3);
+        // No-op move should zero it out.
+        applyMove(tiles, 'left');
+        expect(tiles[0].slideDistance).toBe(0);
+    });
+});
+
 describe('hasLegalMove', () => {
     it('is legal when any cell is empty', () => {
         const tiles = tilesFromGrid(row([2, 4, 8, null]));

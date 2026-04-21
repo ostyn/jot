@@ -7,6 +7,7 @@ export interface Tile {
     merged?: boolean;
     mergedTo?: number;
     exiting?: boolean;
+    slideDistance?: number;
 }
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
@@ -14,6 +15,7 @@ export type Direction = 'left' | 'right' | 'up' | 'down';
 export interface MoveResult {
     moved: boolean;
     scoreDelta: number;
+    maxSlideDistance: number;
 }
 
 export function tileAt(
@@ -31,12 +33,20 @@ export function applyMove(tiles: Tile[], direction: Direction): MoveResult {
         t.isNew = false;
         t.merged = false;
         t.mergedTo = undefined;
+        t.slideDistance = 0;
     });
 
     const horizontal = direction === 'left' || direction === 'right';
     const reverse = direction === 'right' || direction === 'down';
     let moved = false;
     let scoreDelta = 0;
+    let maxSlideDistance = 0;
+
+    const recordSlide = (tile: Tile, newR: number, newC: number) => {
+        const distance = Math.abs(tile.row - newR) + Math.abs(tile.col - newC);
+        tile.slideDistance = distance;
+        if (distance > maxSlideDistance) maxSlideDistance = distance;
+    };
 
     for (let line = 0; line < 4; line++) {
         const lineTiles: Tile[] = [];
@@ -69,9 +79,11 @@ export function applyMove(tiles: Tile[], direction: Direction): MoveResult {
             const newC = horizontal ? pos : line;
             if (slot.winner.row !== newR || slot.winner.col !== newC)
                 moved = true;
+            recordSlide(slot.winner, newR, newC);
             slot.winner.row = newR;
             slot.winner.col = newC;
             if (slot.loser) {
+                recordSlide(slot.loser, newR, newC);
                 slot.loser.row = newR;
                 slot.loser.col = newC;
                 slot.loser.exiting = true;
@@ -80,7 +92,7 @@ export function applyMove(tiles: Tile[], direction: Direction): MoveResult {
         });
     }
 
-    return { moved, scoreDelta };
+    return { moved, scoreDelta, maxSlideDistance };
 }
 
 export function hasLegalMove(tiles: Tile[]): boolean {

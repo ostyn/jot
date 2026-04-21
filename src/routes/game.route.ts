@@ -12,9 +12,13 @@ import {
     hasLegalMove,
 } from '../utils/game-2048';
 
-const SLIDE_MS = 110;
+const SLIDE_PER_CELL_MS = 55;
+const SLIDE_BASE_MS = 30;
 const POP_MS = 160;
 const SPAWN_MS = 140;
+
+const slideDurationFor = (distance: number) =>
+    SLIDE_BASE_MS + Math.max(1, distance) * SLIDE_PER_CELL_MS;
 
 @customElement('game-route')
 export class GameRoute extends MobxLitElement {
@@ -118,11 +122,16 @@ export class GameRoute extends MobxLitElement {
 
     handleDirection(direction: Direction) {
         if (this.isAnimating || this.defeated) return;
-        const { moved, scoreDelta } = applyMove(this.tiles, direction);
+        const { moved, scoreDelta, maxSlideDistance } = applyMove(
+            this.tiles,
+            direction
+        );
         if (!moved) return;
         this.score += scoreDelta;
         this.isAnimating = true;
         this.requestUpdate();
+
+        const slideMs = slideDurationFor(maxSlideDistance);
 
         setTimeout(() => {
             this.tiles = this.tiles.filter((t) => !t.exiting);
@@ -139,7 +148,7 @@ export class GameRoute extends MobxLitElement {
             this.saveGameState();
             this.isAnimating = false;
             this.requestUpdate();
-        }, SLIDE_MS);
+        }, slideMs);
 
         setTimeout(
             () => {
@@ -149,11 +158,12 @@ export class GameRoute extends MobxLitElement {
                 });
                 this.requestUpdate();
             },
-            SLIDE_MS + Math.max(POP_MS, SPAWN_MS) + 20
+            slideMs + Math.max(POP_MS, SPAWN_MS) + 20
         );
     }
 
     private renderTile(tile: Tile) {
+        const slideMs = slideDurationFor(tile.slideDistance ?? 0);
         return html`
             <div
                 class="tile game-tile"
@@ -161,7 +171,7 @@ export class GameRoute extends MobxLitElement {
                 ?data-new="${tile.isNew}"
                 ?data-merged="${tile.merged}"
                 ?data-exiting="${tile.exiting}"
-                style="--row:${tile.row};--col:${tile.col}"
+                style="--row:${tile.row};--col:${tile.col};--slide-ms:${slideMs}ms"
             >
                 ${tile.value}
             </div>
@@ -328,8 +338,8 @@ export class GameRoute extends MobxLitElement {
                     calc(var(--row) * (100% + var(--gap)))
                 );
                 transition:
-                    transform ${SLIDE_MS}ms ease-out,
-                    opacity ${SLIDE_MS}ms ease-out,
+                    transform var(--slide-ms, 110ms) ease-out,
+                    opacity var(--slide-ms, 110ms) ease-out,
                     background-color 0.2s;
                 will-change: transform;
                 z-index: 1;

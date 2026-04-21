@@ -62,7 +62,9 @@ export class MovieFaceoffMovieRoute
         const movieId = this.movieId;
         if (!movieId) return [];
 
-        return MOVIE_FACEOFF_RANKING_ALGORITHMS.map((algorithm) => {
+        return MOVIE_FACEOFF_RANKING_ALGORITHMS.filter(
+            (algorithm) => !algorithm.isInformational || algorithm.id === 'controversy'
+        ).map((algorithm) => {
             const ranked = algorithm
                 .rank(this.replayState, MOVIE_FACEOFF_RANKING_ALGORITHMS)
                 .filter((movie) => !movie.excludedAt && !movie.unseenAt);

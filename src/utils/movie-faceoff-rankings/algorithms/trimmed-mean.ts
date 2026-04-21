@@ -8,7 +8,9 @@ export const trimmedMeanRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
         'Aggregate: Olympic-style judging across all non-aggregate methods. Looks up each movie\'s rank in every primary algorithm, drops the best and worst, averages the rest.\n\nMetric: mean rank after trimming. Lower is better.\n\nPros: robust to an outlier algorithm. Cons: discards information; ties happen more often.',
     isAggregate: true,
     rank: (replay, primaryAlgorithms) => {
-        const algorithms = (primaryAlgorithms || []).filter((a) => !a.isAggregate);
+        const algorithms = (primaryAlgorithms || []).filter(
+            (a) => !a.isAggregate && !a.isInformational
+        );
         if (!algorithms.length) return [];
 
         const ranksById = new Map<number, number[]>();

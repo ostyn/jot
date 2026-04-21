@@ -1,13 +1,18 @@
 import { MovieFaceoffSortMode } from '../../interfaces/movie-faceoff.interface';
+import { alphabeticalRankingAlgorithm } from './algorithms/alphabetical';
 import { bradleyTerryRankingAlgorithm } from './algorithms/bradley-terry';
+import { controversyRankingAlgorithm } from './algorithms/controversy';
 import { copelandRankingAlgorithm } from './algorithms/copeland';
 import { eloRankingAlgorithm } from './algorithms/elo';
 import { glickoRankingAlgorithm } from './algorithms/glicko';
 import { manualRankingAlgorithm } from './algorithms/manual';
 import { markovRankingAlgorithm } from './algorithms/markov';
+import { mostComparedRankingAlgorithm } from './algorithms/most-compared';
+import { releaseDateRankingAlgorithm } from './algorithms/release-date';
 import { rrfRankingAlgorithm } from './algorithms/rrf';
 import { transitiveRankingAlgorithm } from './algorithms/transitive';
 import { trimmedMeanRankingAlgorithm } from './algorithms/trimmed-mean';
+import { winsRankingAlgorithm } from './algorithms/wins';
 import { MovieFaceoffRankingAlgorithm, MovieFaceoffReplayState } from './types';
 
 export * from './types';
@@ -24,6 +29,11 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         copelandRankingAlgorithm,
         transitiveRankingAlgorithm,
         markovRankingAlgorithm,
+        controversyRankingAlgorithm,
+        winsRankingAlgorithm,
+        mostComparedRankingAlgorithm,
+        releaseDateRankingAlgorithm,
+        alphabeticalRankingAlgorithm,
     ];
 
 const rankingAlgorithmMap = new Map<MovieFaceoffSortMode, MovieFaceoffRankingAlgorithm>(

@@ -10,7 +10,9 @@ export const rrfRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
         'Aggregate: combines all non-aggregate methods via Reciprocal Rank Fusion, giving extra weight to top ranks.\n\nMetric: sum of 1 / (60 + rank_in_algorithm) across each primary algorithm. Higher is better.\n\nPros: heavily rewards agreement near the top; robust to outliers. Cons: raw score is opaque — use it as a "consensus" signal.',
     isAggregate: true,
     rank: (replay, primaryAlgorithms) => {
-        const algorithms = (primaryAlgorithms || []).filter((a) => !a.isAggregate);
+        const algorithms = (primaryAlgorithms || []).filter(
+            (a) => !a.isAggregate && !a.isInformational
+        );
         if (!algorithms.length) return [];
 
         const scoreById = new Map<number, number>();

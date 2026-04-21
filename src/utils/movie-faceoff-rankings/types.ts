@@ -22,6 +22,7 @@ export interface MovieFaceoffRankingAlgorithm {
     label: string;
     description: string;
     isAggregate?: boolean;
+    isInformational?: boolean;
     rank: (
         replay: MovieFaceoffReplayState,
         primaryAlgorithms?: readonly MovieFaceoffRankingAlgorithm[]

@@ -8,6 +8,11 @@ export const MOVIE_FACEOFF_SORT_MODES = [
     'copeland',
     'transitive',
     'markov',
+    'wins',
+    'controversy',
+    'alphabetical',
+    'release-date',
+    'most-compared',
 ] as const;
 
 export type MovieFaceoffSortMode = (typeof MOVIE_FACEOFF_SORT_MODES)[number];

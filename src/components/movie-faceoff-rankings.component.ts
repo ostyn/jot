@@ -95,7 +95,18 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                 )}
                             </optgroup>
                             <optgroup label="Individual">
-                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.filter((a) => !a.isAggregate).map(
+                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.filter(
+                                    (a) => !a.isAggregate && !a.isInformational
+                                ).map(
+                                    (algorithm) => html`
+                                        <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
+                                            ${algorithm.label}
+                                        </option>
+                                    `
+                                )}
+                            </optgroup>
+                            <optgroup label="Informational">
+                                ${MOVIE_FACEOFF_RANKING_ALGORITHMS.filter((a) => a.isInformational).map(
                                     (algorithm) => html`
                                         <option value=${algorithm.id} ?selected=${algorithm.id === this.sortMode}>
                                             ${algorithm.label}

@@ -1,34 +1,67 @@
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import '../components/utility-page-header.component';
 
+interface Tile {
+    id: number;
+    row: number;
+    col: number;
+    value: number;
+    isNew?: boolean;
+    merged?: boolean;
+    mergedTo?: number;
+    exiting?: boolean;
+}
+
+const SLIDE_MS = 110;
+const POP_MS = 160;
+const SPAWN_MS = 140;
+
 @customElement('game-route')
 export class GameRoute extends MobxLitElement {
-    board: any;
+    tiles: Tile[] = [];
     gesture!: TinyGesture;
     defeated = false;
     score = 0;
     highScore = 0;
+    private nextId = 1;
+    private isAnimating = false;
 
     constructor() {
         super();
         this.loadGameState();
     }
 
-    createEmptyBoard() {
-        return Array(4)
-            .fill(null)
-            .map(() => Array(4).fill(null));
+    private tileAt(row: number, col: number): Tile | undefined {
+        return this.tiles.find(
+            (t) => !t.exiting && t.row === row && t.col === col
+        );
+    }
+
+    private emptyCells(): [number, number][] {
+        const occupied = new Set(
+            this.tiles
+                .filter((t) => !t.exiting)
+                .map((t) => `${t.row},${t.col}`)
+        );
+        const result: [number, number][] = [];
+        for (let r = 0; r < 4; r++)
+            for (let c = 0; c < 4; c++)
+                if (!occupied.has(`${r},${c}`)) result.push([r, c]);
+        return result;
     }
 
     saveGameState() {
         localStorage.setItem(
             'gameState',
             JSON.stringify({
-                board: this.board,
+                tiles: this.tiles
+                    .filter((t) => !t.exiting)
+                    .map(({ row, col, value }) => ({ row, col, value })),
                 defeated: this.defeated,
                 score: this.score,
                 highScore: this.highScore,
@@ -37,132 +70,189 @@ export class GameRoute extends MobxLitElement {
     }
 
     loadGameState() {
-        const savedState = localStorage.getItem('gameState');
-        if (savedState) {
-            const { board, defeated, score, highScore } =
-                JSON.parse(savedState);
-            this.board = board;
-            this.defeated = defeated;
-            this.score = score;
-            this.highScore = highScore;
+        const saved = localStorage.getItem('gameState');
+        if (!saved) {
+            this.newGame();
+            return;
+        }
+        const parsed = JSON.parse(saved);
+        this.score = parsed.score ?? 0;
+        this.highScore = parsed.highScore ?? 0;
+        this.defeated = parsed.defeated ?? false;
+        if (Array.isArray(parsed.tiles)) {
+            this.tiles = parsed.tiles.map((t: any) => ({
+                id: this.nextId++,
+                row: t.row,
+                col: t.col,
+                value: t.value,
+            }));
+        } else if (Array.isArray(parsed.board)) {
+            this.tiles = [];
+            parsed.board.forEach((row: any[], r: number) =>
+                row.forEach((v, c) => {
+                    if (v)
+                        this.tiles.push({
+                            id: this.nextId++,
+                            row: r,
+                            col: c,
+                            value: v,
+                        });
+                })
+            );
         } else {
             this.newGame();
         }
     }
 
     newGame() {
-        this.board = this.createEmptyBoard();
-        this.addTile();
-        this.addTile();
+        this.tiles = [];
         this.defeated = false;
         this.score = 0;
+        this.spawnTile();
+        this.spawnTile();
         this.saveGameState();
         this.requestUpdate();
     }
 
-    addTile() {
-        if (this.defeated) return;
-        const emptyTiles = [];
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 4; col++) {
-                if (!this.board[row][col]) {
-                    emptyTiles.push([row, col]);
-                }
+    private spawnTile() {
+        const empties = this.emptyCells();
+        if (!empties.length) return;
+        const [row, col] = empties[Math.floor(Math.random() * empties.length)];
+        this.tiles.push({
+            id: this.nextId++,
+            row,
+            col,
+            value: Math.random() < 0.9 ? 2 : 4,
+            isNew: true,
+        });
+    }
+
+    private hasLegalMove(): boolean {
+        if (this.tiles.length < 16) return true;
+        for (let r = 0; r < 4; r++)
+            for (let c = 0; c < 4; c++) {
+                const t = this.tileAt(r, c);
+                if (!t) return true;
+                if (c < 3 && this.tileAt(r, c + 1)?.value === t.value)
+                    return true;
+                if (r < 3 && this.tileAt(r + 1, c)?.value === t.value)
+                    return true;
             }
-        }
-        if (emptyTiles.length > 0) {
-            const [row, col] =
-                emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
-            this.board[row][col] = Math.random() < 0.9 ? 2 : 4;
-        }
-        if (emptyTiles.length === 1 && this.gameOver()) {
-            this.defeated = true;
-        }
-        this.saveGameState();
+        return false;
+    }
+
+    handleDirection(direction: string) {
+        if (this.isAnimating || this.defeated) return;
+        const moved = this.applyMove(direction);
+        if (!moved) return;
+        this.isAnimating = true;
         this.requestUpdate();
-    }
 
-    gameOver() {
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 4; col++) {
-                if (!this.board?.[row]?.[col]) return false;
-                if (
-                    col < 3 &&
-                    this.board[row][col] === this.board[row][col + 1]
-                )
-                    return false;
-                if (
-                    row < 3 &&
-                    this.board[row][col] === this.board[row + 1][col]
-                )
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    handleDirection(direction: any) {
-        const previousState = JSON.stringify(this.board);
-        this.handleMove(direction);
-        if (JSON.stringify(this.board) !== previousState) this.addTile();
-    }
-
-    handleMove(direction: any) {
-        const combine = (line: any) => {
-            let newLine = line.filter((tile: any) => tile !== null);
-            for (let i = 0; i < newLine.length - 1; i++) {
-                if (newLine[i] === newLine[i + 1]) {
-                    newLine[i] *= 2;
-                    this.score += newLine[i];
-                    newLine[i + 1] = null;
+        setTimeout(() => {
+            this.tiles = this.tiles.filter((t) => !t.exiting);
+            this.tiles.forEach((t) => {
+                if (t.mergedTo !== undefined) {
+                    t.value = t.mergedTo;
+                    t.mergedTo = undefined;
+                    t.merged = true;
                 }
-            }
-            newLine = newLine.filter((tile: any) => tile !== null);
-            while (newLine.length < 4) {
-                newLine.push(null);
-            }
-            return newLine;
-        };
-
-        const move = (board: any, reverse: any) => {
-            return board.map((row: any) => {
-                if (reverse) {
-                    row = row.reverse();
-                }
-                row = combine(row);
-                if (reverse) {
-                    row = row.reverse();
-                }
-                return row;
             });
-        };
+            this.spawnTile();
+            this.highScore = Math.max(this.highScore, this.score);
+            if (!this.hasLegalMove()) this.defeated = true;
+            this.saveGameState();
+            this.isAnimating = false;
+            this.requestUpdate();
+        }, SLIDE_MS);
 
-        let transposed = false;
+        setTimeout(
+            () => {
+                this.tiles.forEach((t) => {
+                    t.isNew = false;
+                    t.merged = false;
+                });
+                this.requestUpdate();
+            },
+            SLIDE_MS + Math.max(POP_MS, SPAWN_MS) + 20
+        );
+    }
 
-        if (direction === 'up' || direction === 'down') {
-            this.board = this.board[0].map((_: any, colIndex: any) =>
-                this.board.map((row: any) => row[colIndex])
-            );
-            transposed = true;
+    private applyMove(direction: string): boolean {
+        this.tiles.forEach((t) => {
+            t.isNew = false;
+            t.merged = false;
+            t.mergedTo = undefined;
+        });
+
+        const horizontal = direction === 'left' || direction === 'right';
+        const reverse = direction === 'right' || direction === 'down';
+        let anyMoved = false;
+
+        for (let line = 0; line < 4; line++) {
+            const lineTiles: Tile[] = [];
+            for (let pos = 0; pos < 4; pos++) {
+                const r = horizontal ? line : pos;
+                const c = horizontal ? pos : line;
+                const t = this.tileAt(r, c);
+                if (t) lineTiles.push(t);
+            }
+            if (reverse) lineTiles.reverse();
+
+            const slots: { winner: Tile; loser?: Tile }[] = [];
+            for (let i = 0; i < lineTiles.length; ) {
+                const a = lineTiles[i];
+                const b = lineTiles[i + 1];
+                if (b && a.value === b.value) {
+                    a.mergedTo = a.value * 2;
+                    this.score += a.value * 2;
+                    slots.push({ winner: a, loser: b });
+                    i += 2;
+                } else {
+                    slots.push({ winner: a });
+                    i += 1;
+                }
+            }
+
+            slots.forEach((slot, idx) => {
+                const pos = reverse ? 3 - idx : idx;
+                const newR = horizontal ? line : pos;
+                const newC = horizontal ? pos : line;
+                if (slot.winner.row !== newR || slot.winner.col !== newC)
+                    anyMoved = true;
+                slot.winner.row = newR;
+                slot.winner.col = newC;
+                if (slot.loser) {
+                    slot.loser.row = newR;
+                    slot.loser.col = newC;
+                    slot.loser.exiting = true;
+                    anyMoved = true;
+                }
+            });
         }
 
-        if (direction === 'right' || direction === 'down') {
-            this.board = move(this.board, true);
-        } else {
-            this.board = move(this.board, false);
-        }
+        return anyMoved;
+    }
 
-        if (transposed) {
-            this.board = this.board[0].map((_: any, colIndex: any) =>
-                this.board.map((row: any) => row[colIndex])
-            );
-        }
-
-        this.highScore = Math.max(this.highScore, this.score);
-        this.saveGameState();
+    private renderTile(tile: Tile) {
+        return html`
+            <div
+                class="tile game-tile"
+                data-value="${tile.value}"
+                ?data-new="${tile.isNew}"
+                ?data-merged="${tile.merged}"
+                ?data-exiting="${tile.exiting}"
+                style="--row:${tile.row};--col:${tile.col}"
+            >
+                ${tile.value}
+            </div>
+        `;
     }
 
     render() {
+        const cells = [];
+        for (let i = 0; i < 16; i++)
+            cells.push(html`<div class="cell"></div>`);
+
         return html`
             <utility-page-header title="2048"></utility-page-header>
             <div class="scoreboard">
@@ -179,18 +269,17 @@ export class GameRoute extends MobxLitElement {
                         <h2>Score: ${this.score}</h2>
                         <h2>High Score: ${this.highScore}</h2>
                     </hgroup>
-                    <button
-                        @click="${() => {
-                            this.newGame();
-                            this.newGame();
-                        }}"
-                    >
-                        Restart
-                    </button>
+                    <button @click="${() => this.newGame()}">Restart</button>
                 </span>
             </div>
 
             <div class="game-container">
+                ${cells}
+                ${repeat(
+                    this.tiles,
+                    (t) => t.id,
+                    (t) => this.renderTile(t)
+                )}
                 ${this.defeated
                     ? html`
                           <div class="defeat-overlay">
@@ -198,20 +287,11 @@ export class GameRoute extends MobxLitElement {
                           </div>
                       `
                     : ''}
-                ${this.board.map((row: any) =>
-                    row.map(
-                        (tile: any) => html`
-                            <div class="tile" data-value="${tile || 0}">
-                                ${tile}
-                            </div>
-                        `
-                    )
-                )}
             </div>
         `;
     }
 
-    keyDownHandler = (event: any) => {
+    keyDownHandler = (event: KeyboardEvent) => {
         if (event.key.startsWith('Arrow')) {
             const direction = event.key.toLowerCase().split('arrow')[1];
             this.handleDirection(direction);
@@ -242,6 +322,7 @@ export class GameRoute extends MobxLitElement {
         window.removeEventListener('keydown', this.keyDownHandler);
         super.disconnectedCallback();
     }
+
     static styles = [
         base,
         css`
@@ -270,18 +351,25 @@ export class GameRoute extends MobxLitElement {
                 align-items: center;
             }
             .game-container {
+                --gap: 10px;
                 width: 100%;
                 max-width: 500px;
-                max-height: 500px;
+                aspect-ratio: 1 / 1;
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
                 grid-template-rows: repeat(4, 1fr);
-                gap: 10px;
+                gap: var(--gap);
                 background-color: #bbada0;
                 border-radius: 6px;
-                padding: 10px;
+                padding: var(--gap);
                 position: relative;
                 margin: auto;
+                user-select: none;
+                touch-action: none;
+            }
+            .cell {
+                background-color: rgba(238, 228, 218, 0.35);
+                border-radius: 6px;
             }
             .title {
                 display: inline-grid;
@@ -305,6 +393,83 @@ export class GameRoute extends MobxLitElement {
                 background-color: #cdc1b4;
                 transition: background-color 0.2s;
                 aspect-ratio: 1 / 1;
+            }
+            .game-tile {
+                position: absolute;
+                top: var(--gap);
+                left: var(--gap);
+                width: calc((100% - 5 * var(--gap)) / 4);
+                transform: translate(
+                    calc(var(--col) * (100% + var(--gap))),
+                    calc(var(--row) * (100% + var(--gap)))
+                );
+                transition:
+                    transform ${SLIDE_MS}ms ease-out,
+                    opacity ${SLIDE_MS}ms ease-out,
+                    background-color 0.2s;
+                will-change: transform;
+                z-index: 1;
+            }
+            .game-tile[data-exiting] {
+                opacity: 0;
+                z-index: 0;
+            }
+            .game-tile[data-merged] {
+                animation: merge-pop ${POP_MS}ms ease-out;
+                z-index: 3;
+            }
+            .game-tile[data-new] {
+                animation: spawn ${SPAWN_MS}ms ease-out;
+                z-index: 2;
+            }
+            @keyframes spawn {
+                0% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(0);
+                    opacity: 0;
+                }
+                60% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(1.08);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(1);
+                }
+            }
+            @keyframes merge-pop {
+                0% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(1);
+                }
+                45% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(1.22);
+                    box-shadow: 0 0 18px rgba(255, 255, 255, 0.45);
+                }
+                100% {
+                    transform: translate(
+                            calc(var(--col) * (100% + var(--gap))),
+                            calc(var(--row) * (100% + var(--gap)))
+                        )
+                        scale(1);
+                }
             }
 
             .tile[data-value='2'] {
@@ -350,13 +515,13 @@ export class GameRoute extends MobxLitElement {
             }
             .defeat-overlay {
                 position: absolute;
-                width: 100%;
-                height: 100%;
+                inset: 0;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 background: rgba(0, 0, 0, 0.5);
-                z-index: 2;
+                z-index: 10;
+                border-radius: 6px;
             }
             .defeat-screen {
                 font-size: 3rem;
@@ -369,5 +534,3 @@ export class GameRoute extends MobxLitElement {
         `,
     ];
 }
-
-//simplify logic where possible

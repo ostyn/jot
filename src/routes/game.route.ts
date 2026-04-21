@@ -5,17 +5,12 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import '../components/utility-page-header.component';
-
-interface Tile {
-    id: number;
-    row: number;
-    col: number;
-    value: number;
-    isNew?: boolean;
-    merged?: boolean;
-    mergedTo?: number;
-    exiting?: boolean;
-}
+import {
+    type Direction,
+    type Tile,
+    applyMove,
+    hasLegalMove,
+} from '../utils/game-2048';
 
 const SLIDE_MS = 110;
 const POP_MS = 160;
@@ -34,12 +29,6 @@ export class GameRoute extends MobxLitElement {
     constructor() {
         super();
         this.loadGameState();
-    }
-
-    private tileAt(row: number, col: number): Tile | undefined {
-        return this.tiles.find(
-            (t) => !t.exiting && t.row === row && t.col === col
-        );
     }
 
     private emptyCells(): [number, number][] {
@@ -127,24 +116,11 @@ export class GameRoute extends MobxLitElement {
         });
     }
 
-    private hasLegalMove(): boolean {
-        if (this.tiles.length < 16) return true;
-        for (let r = 0; r < 4; r++)
-            for (let c = 0; c < 4; c++) {
-                const t = this.tileAt(r, c);
-                if (!t) return true;
-                if (c < 3 && this.tileAt(r, c + 1)?.value === t.value)
-                    return true;
-                if (r < 3 && this.tileAt(r + 1, c)?.value === t.value)
-                    return true;
-            }
-        return false;
-    }
-
-    handleDirection(direction: string) {
+    handleDirection(direction: Direction) {
         if (this.isAnimating || this.defeated) return;
-        const moved = this.applyMove(direction);
+        const { moved, scoreDelta } = applyMove(this.tiles, direction);
         if (!moved) return;
+        this.score += scoreDelta;
         this.isAnimating = true;
         this.requestUpdate();
 
@@ -159,7 +135,7 @@ export class GameRoute extends MobxLitElement {
             });
             this.spawnTile();
             this.highScore = Math.max(this.highScore, this.score);
-            if (!this.hasLegalMove()) this.defeated = true;
+            if (!hasLegalMove(this.tiles)) this.defeated = true;
             this.saveGameState();
             this.isAnimating = false;
             this.requestUpdate();
@@ -175,62 +151,6 @@ export class GameRoute extends MobxLitElement {
             },
             SLIDE_MS + Math.max(POP_MS, SPAWN_MS) + 20
         );
-    }
-
-    private applyMove(direction: string): boolean {
-        this.tiles.forEach((t) => {
-            t.isNew = false;
-            t.merged = false;
-            t.mergedTo = undefined;
-        });
-
-        const horizontal = direction === 'left' || direction === 'right';
-        const reverse = direction === 'right' || direction === 'down';
-        let anyMoved = false;
-
-        for (let line = 0; line < 4; line++) {
-            const lineTiles: Tile[] = [];
-            for (let pos = 0; pos < 4; pos++) {
-                const r = horizontal ? line : pos;
-                const c = horizontal ? pos : line;
-                const t = this.tileAt(r, c);
-                if (t) lineTiles.push(t);
-            }
-            if (reverse) lineTiles.reverse();
-
-            const slots: { winner: Tile; loser?: Tile }[] = [];
-            for (let i = 0; i < lineTiles.length; ) {
-                const a = lineTiles[i];
-                const b = lineTiles[i + 1];
-                if (b && a.value === b.value) {
-                    a.mergedTo = a.value * 2;
-                    this.score += a.value * 2;
-                    slots.push({ winner: a, loser: b });
-                    i += 2;
-                } else {
-                    slots.push({ winner: a });
-                    i += 1;
-                }
-            }
-
-            slots.forEach((slot, idx) => {
-                const pos = reverse ? 3 - idx : idx;
-                const newR = horizontal ? line : pos;
-                const newC = horizontal ? pos : line;
-                if (slot.winner.row !== newR || slot.winner.col !== newC)
-                    anyMoved = true;
-                slot.winner.row = newR;
-                slot.winner.col = newC;
-                if (slot.loser) {
-                    slot.loser.row = newR;
-                    slot.loser.col = newC;
-                    slot.loser.exiting = true;
-                    anyMoved = true;
-                }
-            });
-        }
-
-        return anyMoved;
     }
 
     private renderTile(tile: Tile) {
@@ -292,10 +212,14 @@ export class GameRoute extends MobxLitElement {
     }
 
     keyDownHandler = (event: KeyboardEvent) => {
-        if (event.key.startsWith('Arrow')) {
-            const direction = event.key.toLowerCase().split('arrow')[1];
-            this.handleDirection(direction);
-        }
+        const map: Record<string, Direction> = {
+            ArrowUp: 'up',
+            ArrowDown: 'down',
+            ArrowLeft: 'left',
+            ArrowRight: 'right',
+        };
+        const direction = map[event.key];
+        if (direction) this.handleDirection(direction);
     };
 
     connectedCallback() {

@@ -8,6 +8,22 @@ export type FaceoffMovie = {
     release_date?: string;
 };
 
+export type FaceoffMovieCastMember = {
+    id: number;
+    name: string;
+    character?: string;
+    profile_path?: string | null;
+    order?: number;
+};
+
+export type FaceoffMovieCrewMember = {
+    id: number;
+    name: string;
+    job?: string;
+    department?: string;
+    profile_path?: string | null;
+};
+
 export type FaceoffMovieDetails = FaceoffMovie & {
     overview?: string;
     tagline?: string;
@@ -18,6 +34,10 @@ export type FaceoffMovieDetails = FaceoffMovie & {
     original_title?: string;
     original_language?: string;
     genres?: Array<{ id: number; name: string }>;
+    credits?: {
+        cast?: FaceoffMovieCastMember[];
+        crew?: FaceoffMovieCrewMember[];
+    };
 };
 
 export function getMovieFaceoffAssetUrl() {
@@ -56,7 +76,7 @@ export async function fetchTmdbMovieDetails(
     }
 
     const response = await fetch(
-        `https://api.themoviedb.org/3/movie/${id}?api_key=${tmdbApiKey}`
+        `https://api.themoviedb.org/3/movie/${id}?api_key=${tmdbApiKey}&append_to_response=credits`
     );
 
     if (!response.ok) {
@@ -64,6 +84,14 @@ export async function fetchTmdbMovieDetails(
     }
 
     return (await response.json()) as FaceoffMovieDetails;
+}
+
+export function getCastProfileUrl(
+    person: Pick<FaceoffMovieCastMember, 'profile_path'>
+) {
+    return person.profile_path
+        ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+        : '';
 }
 
 export async function searchTmdbMovies(query: string): Promise<FaceoffMovie[]> {

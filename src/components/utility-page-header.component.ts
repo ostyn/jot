@@ -27,7 +27,7 @@ export class UtilityPageHeader extends LitElement {
                     <jot-icon name="ChevronLeft"></jot-icon>
                     <span>${this.backLabel}</span>
                 </a>
-                <h1>${this.title}</h1>
+                ${this.title ? html`<h1>${this.title}</h1>` : html`<span class="spacer"></span>`}
                 <div class="actions">
                     <slot name="actions"></slot>
                 </div>
@@ -39,14 +39,14 @@ export class UtilityPageHeader extends LitElement {
         base,
         css`
             .utility-header {
-                position: relative;
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
+                gap: 0.5rem;
                 min-height: 2.5rem;
                 padding: 0.75rem 0 1rem;
             }
             .back-link {
+                flex: 0 0 auto;
                 display: inline-grid;
                 grid-auto-flow: column;
                 align-items: center;
@@ -55,8 +55,9 @@ export class UtilityPageHeader extends LitElement {
                 text-decoration: none;
                 font-size: 0.9rem;
                 white-space: nowrap;
-                position: relative;
-                z-index: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .back-link jot-icon {
                 display: inline-flex;
@@ -64,25 +65,25 @@ export class UtilityPageHeader extends LitElement {
                 justify-content: center;
                 align-self: center;
             }
+            h1,
+            .spacer {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
             h1 {
                 margin: 0;
                 font-size: 1.1rem;
                 text-align: center;
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-                max-width: calc(100% - 8rem);
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
             .actions {
+                flex: 0 0 auto;
                 display: flex;
                 justify-content: flex-end;
                 align-items: center;
                 gap: 0.5rem;
-                position: relative;
-                z-index: 1;
             }
         `,
     ];

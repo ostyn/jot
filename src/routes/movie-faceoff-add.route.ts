@@ -4,7 +4,7 @@ import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { movieFaceoffShared } from '../movieFaceoffStyles';
 import '../components/jot-icon';
-import '../components/movie-list-item.component';
+import '../components/movie-faceoff/movie-list-item.component';
 import '../components/utility-page-header.component';
 import {
     FaceoffMovie,

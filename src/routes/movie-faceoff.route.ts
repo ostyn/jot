@@ -38,11 +38,11 @@ import {
     updateMovieFaceoffQueryParams,
 } from '../utils/movie-faceoff-url-sync';
 import '../components/jot-icon';
-import '../components/movie-faceoff-matchup.component';
-import '../components/movie-faceoff-pool-toggle.component';
-import '../components/movie-faceoff-rankings.component';
-import '../components/movie-faceoff-status-bar.component';
-import '../components/movie-faceoff-targeted-banner.component';
+import '../components/movie-faceoff/movie-faceoff-matchup.component';
+import '../components/movie-faceoff/movie-faceoff-pool-toggle.component';
+import '../components/movie-faceoff/movie-faceoff-rankings.component';
+import '../components/movie-faceoff/movie-faceoff-status-bar.component';
+import '../components/movie-faceoff/movie-faceoff-targeted-banner.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
 

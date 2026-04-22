@@ -1,6 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import './jot-icon';
+import '../jot-icon';
 
 @customElement('movie-list-item')
 export class MovieListItem extends LitElement {

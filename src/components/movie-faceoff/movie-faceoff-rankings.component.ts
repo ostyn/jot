@@ -2,20 +2,20 @@ import { css, html, nothing } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
-import { base } from '../baseStyles';
-import { movieFaceoffShared } from '../movieFaceoffStyles';
+import { base } from '../../baseStyles';
+import { movieFaceoffShared } from '../../movieFaceoffStyles';
 import {
     MovieFaceoffRankedMovie,
     MovieFaceoffSortMode,
-} from '../interfaces/movie-faceoff.interface';
-import { getMoviePosterUrl } from '../services/movie-faceoff.service';
-import { movieFaceoff } from '../stores/movie-faceoff.store';
+} from '../../interfaces/movie-faceoff.interface';
+import { getMoviePosterUrl } from '../../services/movie-faceoff.service';
+import { movieFaceoff } from '../../stores/movie-faceoff.store';
 import {
     getMovieFaceoffRankingAlgorithm,
     getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
-} from '../utils/movie-faceoff-rankings';
-import './jot-icon';
+} from '../../utils/movie-faceoff-rankings';
+import '../jot-icon';
 import './movie-list-item.component';
 
 @customElement('movie-faceoff-rankings')

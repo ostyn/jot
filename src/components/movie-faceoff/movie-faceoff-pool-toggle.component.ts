@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { base } from '../baseStyles';
+import { base } from '../../baseStyles';
 
 @customElement('movie-faceoff-pool-toggle')
 export class MovieFaceoffPoolToggle extends LitElement {

@@ -1,7 +1,7 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { base } from '../baseStyles';
-import './jot-icon';
+import { base } from '../../baseStyles';
+import '../jot-icon';
 
 export type MovieFaceoffStatusTone = 'error' | 'loading' | 'active' | 'idle';
 

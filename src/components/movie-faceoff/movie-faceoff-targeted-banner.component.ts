@@ -1,11 +1,11 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { base } from '../baseStyles';
-import { movieFaceoffShared } from '../movieFaceoffStyles';
-import { MovieFaceoffSortMode } from '../interfaces/movie-faceoff.interface';
-import { TargetedInsertionState } from '../utils/movie-faceoff-types';
-import { getMovieFaceoffRankingAlgorithm } from '../utils/movie-faceoff-rankings';
-import './jot-icon';
+import { base } from '../../baseStyles';
+import { movieFaceoffShared } from '../../movieFaceoffStyles';
+import { MovieFaceoffSortMode } from '../../interfaces/movie-faceoff.interface';
+import { TargetedInsertionState } from '../../utils/movie-faceoff-types';
+import { getMovieFaceoffRankingAlgorithm } from '../../utils/movie-faceoff-rankings';
+import '../jot-icon';
 
 @customElement('movie-faceoff-targeted-banner')
 export class MovieFaceoffTargetedBanner extends LitElement {

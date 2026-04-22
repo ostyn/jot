@@ -1,8 +1,8 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { base } from '../baseStyles';
-import { FaceoffPair, TargetedInsertionState } from '../utils/movie-faceoff-types';
-import './jot-icon';
+import { base } from '../../baseStyles';
+import { FaceoffPair, TargetedInsertionState } from '../../utils/movie-faceoff-types';
+import '../jot-icon';
 import './movie-faceoff-card.component';
 
 @customElement('movie-faceoff-matchup')

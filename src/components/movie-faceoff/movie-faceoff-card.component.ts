@@ -1,9 +1,9 @@
 import { css, html, nothing, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { base } from '../baseStyles';
-import { FaceoffMovie, getMoviePosterUrl } from '../services/movie-faceoff.service';
-import { TargetedInsertionState } from '../utils/movie-faceoff-types';
-import './jot-icon';
+import { base } from '../../baseStyles';
+import { FaceoffMovie, getMoviePosterUrl } from '../../services/movie-faceoff.service';
+import { TargetedInsertionState } from '../../utils/movie-faceoff-types';
+import '../jot-icon';
 
 @customElement('movie-faceoff-card')
 export class MovieFaceoffCard extends LitElement {

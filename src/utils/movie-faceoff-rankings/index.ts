@@ -1,7 +1,7 @@
 import { MovieFaceoffSortMode } from '../../interfaces/movie-faceoff.interface';
 import { alphabeticalRankingAlgorithm } from './algorithms/alphabetical';
 import { bradleyTerryRankingAlgorithm } from './algorithms/bradley-terry';
-import { controversyRankingAlgorithm } from './algorithms/controversy';
+import { uncertaintyRankingAlgorithm } from './algorithms/uncertainty';
 import { copelandRankingAlgorithm } from './algorithms/copeland';
 import { eloRankingAlgorithm } from './algorithms/elo';
 import { glickoRankingAlgorithm } from './algorithms/glicko';
@@ -29,7 +29,7 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         copelandRankingAlgorithm,
         transitiveRankingAlgorithm,
         markovRankingAlgorithm,
-        controversyRankingAlgorithm,
+        uncertaintyRankingAlgorithm,
         winsRankingAlgorithm,
         mostComparedRankingAlgorithm,
         releaseDateRankingAlgorithm,

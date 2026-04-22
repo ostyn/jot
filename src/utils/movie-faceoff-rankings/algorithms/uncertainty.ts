@@ -7,11 +7,11 @@ function median(values: number[]): number {
     return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export const controversyRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
-    id: 'controversy',
-    label: 'Most Controversial',
+export const uncertaintyRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
+    id: 'uncertainty',
+    label: 'Uncertainty',
     description:
-        'Surfaces movies where the primary algorithms disagree most on placement. For each primary algorithm, each movie gets a percentile-normalized rank (0 = top, 1 = bottom); the score is the mean absolute deviation from that movie\'s median percentile.\n\nMetric: percentile spread (±X%). Higher means more disagreement.\n\nPros: robust to a single outlier algorithm; scale-invariant across the list. Cons: movies seen by only one algorithm register as 0. Informational only — does not contribute to aggregate rankings.',
+        'Surfaces movies whose rank is least settled — where the primary algorithms disagree most on placement. For each primary algorithm, each movie gets a percentile-normalized rank (0 = top, 1 = bottom); the score is the mean absolute deviation from that movie\'s median percentile.\n\nMetric: percentile spread (±X%). Higher means more uncertain.\n\nPros: robust to a single outlier algorithm; scale-invariant across the list. Cons: movies seen by only one algorithm register as 0. Informational only — does not contribute to aggregate rankings.',
     isInformational: true,
     rank: (replay, primaryAlgorithms) => {
         const algorithms = (primaryAlgorithms || []).filter(

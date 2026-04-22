@@ -9,7 +9,7 @@ export const MOVIE_FACEOFF_SORT_MODES = [
     'transitive',
     'markov',
     'wins',
-    'controversy',
+    'uncertainty',
     'alphabetical',
     'release-date',
     'most-compared',

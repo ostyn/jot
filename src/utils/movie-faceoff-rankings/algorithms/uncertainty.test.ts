@@ -4,17 +4,17 @@ import {
     stubAlgorithm,
 } from '../../../test/fixtures/movie-faceoff';
 import { MovieFaceoffRankingAlgorithm } from '../types';
-import { controversyRankingAlgorithm } from './controversy';
+import { uncertaintyRankingAlgorithm } from './uncertainty';
 
-describe('controversyRankingAlgorithm (Most Controversial)', () => {
+describe('uncertaintyRankingAlgorithm (Uncertainty)', () => {
     it('is marked informational', () => {
-        expect(controversyRankingAlgorithm.id).toBe('controversy');
-        expect(controversyRankingAlgorithm.isInformational).toBe(true);
+        expect(uncertaintyRankingAlgorithm.id).toBe('uncertainty');
+        expect(uncertaintyRankingAlgorithm.isInformational).toBe(true);
     });
 
     it('returns an empty list when no primary algorithms are supplied', () => {
         const state = buildReplayFromVotes([[1, 2]]);
-        expect(controversyRankingAlgorithm.rank(state, [])).toEqual([]);
+        expect(uncertaintyRankingAlgorithm.rank(state, [])).toEqual([]);
     });
 
     it('filters out aggregates and informational algorithms from its inputs', () => {
@@ -29,7 +29,7 @@ describe('controversyRankingAlgorithm (Most Controversial)', () => {
             description: '',
             isAggregate: true,
             rank: () => {
-                throw new Error('controversy should not call aggregates');
+                throw new Error('uncertainty should not call aggregates');
             },
             formatMetric: () => '',
         };
@@ -39,11 +39,11 @@ describe('controversyRankingAlgorithm (Most Controversial)', () => {
             description: '',
             isInformational: true,
             rank: () => {
-                throw new Error('controversy should not call informational algos');
+                throw new Error('uncertainty should not call informational algos');
             },
             formatMetric: () => '',
         };
-        const ranked = controversyRankingAlgorithm.rank(state, [
+        const ranked = uncertaintyRankingAlgorithm.rank(state, [
             primary,
             aggregate,
             informational,
@@ -63,7 +63,7 @@ describe('controversyRankingAlgorithm (Most Controversial)', () => {
             stubAlgorithm('a', [1, 2, 3], state),
             stubAlgorithm('b', [3, 2, 1], state),
         ];
-        const ranked = controversyRankingAlgorithm.rank(state, primaries);
+        const ranked = uncertaintyRankingAlgorithm.rank(state, primaries);
         const movie2 = ranked.find((m) => m.id === 2)!;
         const movie1 = ranked.find((m) => m.id === 1)!;
         expect(movie2.score).toBe(0);
@@ -80,8 +80,8 @@ describe('controversyRankingAlgorithm (Most Controversial)', () => {
             stubAlgorithm('a', [1, 2, 3], state),
             stubAlgorithm('b', [3, 2, 1], state),
         ];
-        const ranked = controversyRankingAlgorithm.rank(state, primaries);
+        const ranked = uncertaintyRankingAlgorithm.rank(state, primaries);
         // Movie 1: percentiles [0, 1] → median 0.5, MAD = 0.5 → "±50.0%"
-        expect(controversyRankingAlgorithm.formatMetric(ranked[0])).toBe('±50.0%');
+        expect(uncertaintyRankingAlgorithm.formatMetric(ranked[0])).toBe('±50.0%');
     });
 });

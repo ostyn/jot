@@ -13,6 +13,7 @@ import {
     FaceoffMovie,
     fetchMovieFaceoffIds,
     fetchTmdbMovie,
+    getMoviePosterUrl,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { getMovieFaceoffRankedMovies } from '../utils/movie-faceoff-rankings';
@@ -81,6 +82,8 @@ export class MovieFaceoffRoute
     private pendingTargetMovieId?: number;
     private pendingPairIds?: [number, number];
     private routeInitialized = false;
+    private preloadedPair: [FaceoffMovie, FaceoffMovie] | null = null;
+    private preloadInFlight = false;
     private readonly targetedInsertionController =
         new MovieFaceoffTargetedInsertionController({
             getSession: () => this.targetedInsertion,
@@ -162,6 +165,7 @@ export class MovieFaceoffRoute
                     this.loadMovie(rightId),
                 ]);
                 this.movies = [left, right];
+                void this.kickoffPreload();
                 return;
             } catch {
                 // fall through to displayNewPair
@@ -220,6 +224,7 @@ export class MovieFaceoffRoute
     private async setPoolMode(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
         this.useRankedOnly = useRankedOnly;
+        this.invalidatePreload();
         updateMovieFaceoffQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
         await this.displayNewPair();
     }
@@ -261,6 +266,8 @@ export class MovieFaceoffRoute
     private async undoLastAction() {
         const entry = this.undoManager.pop();
         if (!entry) return;
+
+        this.invalidatePreload();
 
         if (entry.eventId !== undefined) {
             await movieFaceoff.deleteEvent(entry.eventId);
@@ -338,6 +345,7 @@ export class MovieFaceoffRoute
     }
 
     private maybeStartTargetedInsertionFromUrl() {
+        this.invalidatePreload();
         return this.targetedInsertionController.maybeStartFromUrl(
             this.pendingTargetMovieId
         );
@@ -349,6 +357,17 @@ export class MovieFaceoffRoute
 
     private async displayNewPair() {
         if (this.targetedInsertion) return;
+
+        const cached = this.takePreloadedPair();
+        if (cached) {
+            this.movies = cached;
+            this.errorMessage = '';
+            this.isLoading = false;
+            this.syncPairToUrl();
+            void this.kickoffPreload();
+            return;
+        }
+
         this.isLoading = true;
         this.errorMessage = '';
         try {
@@ -389,6 +408,7 @@ export class MovieFaceoffRoute
             ]);
             this.movies = [left, right];
             this.syncPairToUrl();
+            void this.kickoffPreload();
         } catch (error) {
             this.movies = [null, null];
             this.errorMessage =
@@ -396,6 +416,95 @@ export class MovieFaceoffRoute
         } finally {
             this.isLoading = false;
         }
+    }
+
+    private isPreloadMovieValid(movie: FaceoffMovie): boolean {
+        const excluded = movieFaceoff.excludedMovieIds;
+        const unseen = movieFaceoff.unseenMovieIds;
+        if (excluded.has(movie.id) || unseen.has(movie.id)) return false;
+        if (
+            this.useRankedOnly &&
+            !this.replayState.decisiveMovieIds.has(movie.id)
+        ) {
+            return false;
+        }
+        return true;
+    }
+
+    private takePreloadedPair(): [FaceoffMovie, FaceoffMovie] | null {
+        const pair = this.preloadedPair;
+        if (!pair) return null;
+        this.preloadedPair = null;
+        if (!this.isPreloadMovieValid(pair[0]) || !this.isPreloadMovieValid(pair[1])) {
+            return null;
+        }
+        return pair;
+    }
+
+    private takePreloadedMovie(excludeIds: number[]): FaceoffMovie | null {
+        const pair = this.preloadedPair;
+        if (!pair) return null;
+        const excludeSet = new Set(excludeIds);
+        const match = pair.find(
+            (movie) => !excludeSet.has(movie.id) && this.isPreloadMovieValid(movie)
+        );
+        if (!match) return null;
+        this.preloadedPair = null;
+        return match;
+    }
+
+    private invalidatePreload() {
+        this.preloadedPair = null;
+    }
+
+    private async kickoffPreload() {
+        if (this.targetedInsertion) return;
+        if (this.preloadedPair || this.preloadInFlight) return;
+        this.preloadInFlight = true;
+        try {
+            const currentIds = this.movies
+                .filter((m): m is FaceoffMovie => Boolean(m))
+                .map((m) => m.id);
+            const pool = await this.buildCandidatePool(currentIds);
+            const ratings = this.replayState.ratings;
+            const useSmart = this.useRankedOnly;
+
+            const leftId = useSmart
+                ? pickSmartMovieId(pool, ratings)
+                : pickRandomMovieId(pool);
+            if (leftId === null) return;
+
+            const rightPool = pool.filter((id) => id !== leftId);
+            const rightId = useSmart
+                ? pickSmartMovieId(rightPool, ratings, leftId)
+                : pickRandomMovieId(rightPool);
+            if (rightId === null) return;
+
+            const [left, right] = await Promise.all([
+                this.loadMovie(leftId),
+                this.loadMovie(rightId),
+            ]);
+            await Promise.all([
+                this.preloadImage(getMoviePosterUrl(left)),
+                this.preloadImage(getMoviePosterUrl(right)),
+            ]);
+            if (this.targetedInsertion) return;
+            this.preloadedPair = [left, right];
+        } catch {
+            // Swallow — fall through to regular fetch on next displayNewPair.
+        } finally {
+            this.preloadInFlight = false;
+        }
+    }
+
+    private preloadImage(url: string): Promise<void> {
+        if (!url) return Promise.resolve();
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = url;
+        });
     }
 
     private syncPairToUrl() {
@@ -415,7 +524,12 @@ export class MovieFaceoffRoute
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
         const useSmart = this.useRankedOnly;
-        const replacement = await (useSmart ? this.pickSmartMovie(exclude, otherMovie) : this.pickRandomMovie(exclude));
+
+        // In random mode, reuse a preloaded movie for an instant swap.
+        // Smart mode picks opponent-aware, so a preloaded (independently picked) movie wouldn't be smart-matched.
+        const preloaded = useSmart ? null : this.takePreloadedMovie(exclude);
+        const replacement = preloaded
+            ?? (await (useSmart ? this.pickSmartMovie(exclude, otherMovie) : this.pickRandomMovie(exclude)));
         if (!replacement) {
             await this.displayNewPair();
             return;
@@ -426,6 +540,7 @@ export class MovieFaceoffRoute
                 ? [replacement, this.movies[1]]
                 : [this.movies[0], replacement];
         this.syncPairToUrl();
+        void this.kickoffPreload();
     }
 
     private async vote(winnerIndex: 0 | 1) {
@@ -495,6 +610,7 @@ export class MovieFaceoffRoute
         await this.performAction('exclude', [movie.id],
             () => movieFaceoff.excludeMovie(movie.id), `Excluded ${movie.title}`);
 
+        this.invalidatePreload();
         if (this.movies.some((m) => m?.id === movie.id)) {
             await this.displayNewPair();
         }

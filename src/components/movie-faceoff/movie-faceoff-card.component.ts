@@ -46,21 +46,28 @@ export class MovieFaceoffCard extends LitElement {
     private renderPlaceholder() {
         const label =
             this.index === 0 ? 'First movie placeholder' : 'Second movie placeholder';
-        const message = this.loading ? 'Loading a fresh movie...' : 'No movie loaded';
+
+        if (this.errorMessage) {
+            return html`
+                <div class="movie-card placeholder-card" aria-label=${label}>
+                    <div class="movie-poster poster-fallback">
+                        <jot-icon name="AlertTriangle" size="large"></jot-icon>
+                    </div>
+                    <div class="movie-copy placeholder-copy">
+                        <h3>Unable to load</h3>
+                        <p>Try again once the catalog is available.</p>
+                    </div>
+                </div>
+            `;
+        }
 
         return html`
-            <div class="movie-card placeholder-card" aria-label=${label}>
-                <div class="movie-poster placeholder-poster">
-                    <jot-icon name="Play" size="large"></jot-icon>
-                </div>
-                <div class="movie-copy placeholder-copy">
-                    <h3>${message}</h3>
-                    <p>
-                        ${this.errorMessage
-                            ? 'Try again once the catalog is available.'
-                            : 'The next matchup will appear here.'}
-                    </p>
-                </div>
+            <div
+                class="movie-card skeleton-card"
+                role="status"
+                aria-label=${label}
+            >
+                <div class="movie-poster skeleton-poster"></div>
             </div>
         `;
     }
@@ -220,10 +227,6 @@ export class MovieFaceoffCard extends LitElement {
                 margin: 0;
                 min-height: 100%;
             }
-            .placeholder-poster {
-                display: grid;
-                place-items: center;
-            }
             .placeholder-copy {
                 display: grid;
                 gap: 0.35rem;
@@ -235,6 +238,50 @@ export class MovieFaceoffCard extends LitElement {
             .placeholder-copy p {
                 margin: 0;
                 color: var(--pico-muted-color);
+            }
+
+            /* ---------- SKELETON ---------- */
+            .skeleton-poster {
+                position: relative;
+                overflow: hidden;
+                width: 100%;
+                max-width: calc(50vh * 2 / 3);
+                background: linear-gradient(
+                    90deg,
+                    color-mix(
+                        in srgb,
+                        var(--pico-muted-color) 10%,
+                        var(--pico-card-sectioning-background-color)
+                    )
+                        0%,
+                    color-mix(
+                        in srgb,
+                        var(--pico-muted-color) 24%,
+                        var(--pico-card-sectioning-background-color)
+                    )
+                        45%,
+                    color-mix(
+                        in srgb,
+                        var(--pico-muted-color) 10%,
+                        var(--pico-card-sectioning-background-color)
+                    )
+                        90%
+                );
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.35s ease-in-out infinite;
+            }
+            @keyframes skeleton-shimmer {
+                0% {
+                    background-position: 120% 0;
+                }
+                100% {
+                    background-position: -20% 0;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .skeleton-poster {
+                    animation: none;
+                }
             }
             @media (max-width: 640px) {
                 .movie-actions button {

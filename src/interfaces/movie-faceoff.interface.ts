@@ -1,6 +1,7 @@
 export const MOVIE_FACEOFF_SORT_MODES = [
     'rrf',
     'trimmed-mean',
+    'borda',
     'elo',
     'glicko',
     'bradley-terry',

@@ -1,4 +1,4 @@
-import { css, html, nothing } from 'lit';
+import { css, html, nothing, PropertyValues } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
@@ -18,6 +18,10 @@ import {
 import '../jot-icon';
 import './movie-list-item.component';
 
+const INITIAL_VISIBLE = 50;
+const LOAD_MORE_BATCH = 50;
+const SENTINEL_ROOT_MARGIN = '400px';
+
 @customElement('movie-faceoff-rankings')
 export class MovieFaceoffRankings extends MobxLitElement {
     @property({ type: Boolean })
@@ -29,8 +33,17 @@ export class MovieFaceoffRankings extends MobxLitElement {
     @state()
     private isExcludedOpen = false;
 
+    @state()
+    private visibleCount = INITIAL_VISIBLE;
+
     @query('dialog')
     private dialogRef!: HTMLDialogElement;
+
+    @query('.list-sentinel')
+    private sentinelRef?: HTMLElement;
+
+    private sentinelObserver?: IntersectionObserver;
+    private observedSentinel?: Element;
 
     private get replayState() {
         return movieFaceoff.replayState;
@@ -60,8 +73,52 @@ export class MovieFaceoffRankings extends MobxLitElement {
         return this.rankingAlgorithm.formatMetric(movie);
     }
 
+    connectedCallback() {
+        super.connectedCallback();
+        this.sentinelObserver = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((e) => e.isIntersecting)) {
+                    const total = this.rankedMovies.length;
+                    if (this.visibleCount < total) {
+                        this.visibleCount = Math.min(
+                            this.visibleCount + LOAD_MORE_BATCH,
+                            total
+                        );
+                    }
+                }
+            },
+            { rootMargin: SENTINEL_ROOT_MARGIN }
+        );
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.sentinelObserver?.disconnect();
+        this.sentinelObserver = undefined;
+        this.observedSentinel = undefined;
+    }
+
+    willUpdate(changed: PropertyValues) {
+        super.willUpdate(changed);
+        if (changed.has('sortMode')) {
+            this.visibleCount = INITIAL_VISIBLE;
+        }
+    }
+
+    updated(changed: PropertyValues) {
+        super.updated(changed);
+        if (!this.sentinelObserver) return;
+        const sentinel = this.sentinelRef;
+        if (sentinel === this.observedSentinel) return;
+        if (this.observedSentinel) this.sentinelObserver.unobserve(this.observedSentinel);
+        if (sentinel) this.sentinelObserver.observe(sentinel);
+        this.observedSentinel = sentinel;
+    }
+
     render() {
         const ranked = this.rankedMovies;
+        const visible = ranked.slice(0, this.visibleCount);
+        const hasMore = visible.length < ranked.length;
 
         return html`
             <article class="rankings-panel surface-panel">
@@ -129,7 +186,7 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 ${ranked.length
                     ? html`<ol class="movie-list">
                           ${repeat(
-                              ranked,
+                              visible,
                               (movie) => movie.id,
                               (movie, index) => {
                                   const posterUrl = movie.posterPath
@@ -177,6 +234,12 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                   `;
                               }
                           )}
+                          ${hasMore
+                              ? html`<li
+                                    class="list-sentinel"
+                                    aria-hidden="true"
+                                ></li>`
+                              : nothing}
                       </ol>`
                     : html`<article class="empty-state-panel">
                           <jot-icon name="TrendingUp" size="large"></jot-icon>
@@ -302,6 +365,12 @@ export class MovieFaceoffRankings extends MobxLitElement {
             }
             .rank-score {
                 font-variant-numeric: tabular-nums;
+            }
+            .list-sentinel {
+                list-style: none;
+                height: 1px;
+                margin: 0;
+                padding: 0;
             }
             .empty-state-panel {
                 display: grid;

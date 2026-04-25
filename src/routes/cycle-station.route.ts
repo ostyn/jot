@@ -20,7 +20,7 @@ export class CycleStationRoute extends AbstractSheetRoute {
         return html`${MapSheet.getActionSheet(
             {
                 lat: stations.getStation(this.stationId as string)?.lat,
-                lng: stations.getStation(this.stationId as string)?.long,
+                lon: stations.getStation(this.stationId as string)?.long,
             },
             () => {}
         )}`;

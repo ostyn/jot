@@ -7,9 +7,11 @@ import { eloRankingAlgorithm } from './algorithms/elo';
 import { glickoRankingAlgorithm } from './algorithms/glicko';
 import { manualRankingAlgorithm } from './algorithms/manual';
 import { markovRankingAlgorithm } from './algorithms/markov';
+import { minimaxRankingAlgorithm } from './algorithms/minimax';
 import { mostComparedRankingAlgorithm } from './algorithms/most-compared';
 import { releaseDateRankingAlgorithm } from './algorithms/release-date';
 import { rrfRankingAlgorithm } from './algorithms/rrf';
+import { schulzeRankingAlgorithm } from './algorithms/schulze';
 import { transitiveRankingAlgorithm } from './algorithms/transitive';
 import { trimmedMeanRankingAlgorithm } from './algorithms/trimmed-mean';
 import { winsRankingAlgorithm } from './algorithms/wins';
@@ -27,6 +29,8 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         bradleyTerryRankingAlgorithm,
         manualRankingAlgorithm,
         copelandRankingAlgorithm,
+        schulzeRankingAlgorithm,
+        minimaxRankingAlgorithm,
         transitiveRankingAlgorithm,
         markovRankingAlgorithm,
         uncertaintyRankingAlgorithm,

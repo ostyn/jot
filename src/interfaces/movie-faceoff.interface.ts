@@ -6,6 +6,8 @@ export const MOVIE_FACEOFF_SORT_MODES = [
     'bradley-terry',
     'manual',
     'copeland',
+    'schulze',
+    'minimax',
     'transitive',
     'markov',
     'wins',

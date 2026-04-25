@@ -1,10 +1,11 @@
+import { memoizeByReplay } from '../replay-cache';
 import { MovieFaceoffRankingAlgorithm } from '../types';
 
 function computeBradleyTerryScores(
     iterations = 100,
     learningRate = 0.01
 ): MovieFaceoffRankingAlgorithm['rank'] {
-    return (replay) => {
+    return memoizeByReplay((replay) => {
         const ids = Array.from(replay.ratings.keys());
         if (!ids.length) return [];
 
@@ -43,7 +44,7 @@ function computeBradleyTerryScores(
                 score: Math.exp(strengths.get(id) || 0),
             }))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
-    };
+    });
 }
 
 export const bradleyTerryRankingAlgorithm: MovieFaceoffRankingAlgorithm = {

@@ -1,7 +1,8 @@
+import { memoizeByReplay } from '../replay-cache';
 import { MovieFaceoffRankingAlgorithm } from '../types';
 
 function computeMarkovScores(iterations = 50, damping = 0.85): MovieFaceoffRankingAlgorithm['rank'] {
-    return (replay) => {
+    return memoizeByReplay((replay) => {
         const ids = Array.from(replay.ratings.keys());
         if (!ids.length) return [];
 
@@ -55,7 +56,7 @@ function computeMarkovScores(iterations = 50, damping = 0.85): MovieFaceoffRanki
                 score: rank[idx],
             }))
             .sort((a, b) => (b.score || 0) - (a.score || 0));
-    };
+    });
 }
 
 export const markovRankingAlgorithm: MovieFaceoffRankingAlgorithm = {

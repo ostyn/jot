@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { base } from '../../baseStyles';
 import { MovieFaceoffRankingAlgorithm } from '../../utils/movie-faceoff-rankings';
 import { RankingSnapshot } from '../../utils/movie-ranking-snapshots';
@@ -36,7 +37,7 @@ export class MovieRankChart extends LitElement {
                     ? nothing
                     : html`<span
                           class="dot ${isAgg ? '' : 'muted'}"
-                          style="left:${pct * 100}%"
+                          style=${styleMap({ left: `${pct * 100}%` })}
                       ></span>`}
             </div>
             <span class="rank">

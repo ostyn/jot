@@ -39,7 +39,7 @@ export class MovieFaceoffMovieRoute
     private details?: FaceoffMovieDetails;
 
     @state()
-    private isLoading = false;
+    private isLoading = true;
 
     @state()
     private errorMessage = '';
@@ -51,11 +51,13 @@ export class MovieFaceoffMovieRoute
     private methodDialog!: RankingMethodDialog;
 
     async onAfterEnter(location: RouterLocation) {
+        this.isLoading = true;
         const rawId = Number(location.params.id);
         if (!Number.isFinite(rawId) || rawId <= 0) {
             this.movieId = undefined;
             this.details = undefined;
             this.errorMessage = 'That movie page could not be found.';
+            this.isLoading = false;
             return;
         }
 
@@ -101,12 +103,63 @@ export class MovieFaceoffMovieRoute
         this.updateComplete.then(() => this.methodDialog.show());
     }
 
-    render() {
+    private renderBody() {
+        if (this.errorMessage) {
+            return html`<article class="surface-panel error-panel">
+                <jot-icon name="AlertTriangle"></jot-icon>
+                <p>${this.errorMessage}</p>
+            </article>`;
+        }
+
         const details = this.details;
         const storedMovie = this.storedMovie;
-        const snapshots = this.snapshots;
-        const chartSnapshots = getChartSnapshots(snapshots);
+        if (details || storedMovie) {
+            const snapshots = this.snapshots;
+            const chartSnapshots = getChartSnapshots(snapshots);
+            return html`
+                <movie-hero
+                    .details=${details}
+                    .storedMovie=${storedMovie}
+                ></movie-hero>
+                <movie-ranking-analysis
+                    .headline=${getHeadlineSnapshot(chartSnapshots)}
+                    .uncertainty=${getUncertaintySnapshot(snapshots)}
+                    .rankRange=${computeRankRange(chartSnapshots)}
+                ></movie-ranking-analysis>
+                <movie-rank-chart
+                    .snapshots=${chartSnapshots}
+                    @method-click=${this.onMethodClick}
+                ></movie-rank-chart>
+                <movie-vote-stats .rating=${this.rating}></movie-vote-stats>
+                <movie-cast-row .cast=${details?.credits?.cast || []}></movie-cast-row>
+            `;
+        }
 
+        if (this.isLoading) {
+            return html`<div
+                class="movie-skeleton"
+                aria-busy="true"
+                aria-label="Loading movie details"
+            >
+                <div class="skeleton-hero">
+                    <div class="skeleton-block skeleton-poster"></div>
+                    <div class="skeleton-text">
+                        <div class="skeleton-block skeleton-line skeleton-line-title"></div>
+                        <div class="skeleton-block skeleton-line skeleton-line-sub"></div>
+                        <div class="skeleton-block skeleton-line"></div>
+                        <div class="skeleton-block skeleton-line skeleton-line-short"></div>
+                    </div>
+                </div>
+                <div class="skeleton-block skeleton-chart"></div>
+            </div>`;
+        }
+
+        return html`<article class="surface-panel empty-panel">
+            <p>No movie is selected.</p>
+        </article>`;
+    }
+
+    render() {
         return html`
             <utility-page-header
                 backHref="/movie-faceoff"
@@ -130,45 +183,7 @@ export class MovieFaceoffMovieRoute
                       `
                     : nothing}
             </utility-page-header>
-            <main class="layout">
-                ${this.errorMessage
-                    ? html`<article class="surface-panel error-panel">
-                          <jot-icon name="AlertTriangle"></jot-icon>
-                          <p>${this.errorMessage}</p>
-                      </article>`
-                    : nothing}
-                ${this.isLoading && !details
-                    ? html`<article class="surface-panel loading-panel">
-                          <p>Loading movie details...</p>
-                      </article>`
-                    : nothing}
-                ${details || storedMovie
-                    ? html`
-                          <movie-hero
-                              .details=${details}
-                              .storedMovie=${storedMovie}
-                          ></movie-hero>
-                          <movie-ranking-analysis
-                              .headline=${getHeadlineSnapshot(chartSnapshots)}
-                              .uncertainty=${getUncertaintySnapshot(snapshots)}
-                              .rankRange=${computeRankRange(chartSnapshots)}
-                          ></movie-ranking-analysis>
-                          <movie-rank-chart
-                              .snapshots=${chartSnapshots}
-                              @method-click=${this.onMethodClick}
-                          ></movie-rank-chart>
-                          <movie-vote-stats .rating=${this.rating}></movie-vote-stats>
-                          <movie-cast-row
-                              .cast=${details?.credits?.cast || []}
-                          ></movie-cast-row>
-                      `
-                    : nothing}
-                ${!this.errorMessage && !this.isLoading && !details && !storedMovie
-                    ? html`<article class="surface-panel empty-panel">
-                          <p>No movie is selected.</p>
-                      </article>`
-                    : nothing}
-            </main>
+            <main class="layout">${this.renderBody()}</main>
             <ranking-method-dialog .method=${this.activeMethod}></ranking-method-dialog>
         `;
     }
@@ -198,7 +213,6 @@ export class MovieFaceoffMovieRoute
                 margin: 0;
             }
             .error-panel,
-            .loading-panel,
             .empty-panel {
                 display: flex;
                 align-items: center;
@@ -207,6 +221,69 @@ export class MovieFaceoffMovieRoute
             }
             .error-panel {
                 color: var(--pico-del-color);
+            }
+
+            .movie-skeleton {
+                display: grid;
+                gap: 1rem;
+            }
+            .skeleton-hero {
+                display: grid;
+                grid-template-columns: minmax(140px, 220px) 1fr;
+                gap: 1.25rem;
+                padding: 1rem;
+                background: var(--pico-card-background-color);
+                border-radius: var(--pico-border-radius);
+            }
+            .skeleton-text {
+                display: grid;
+                gap: 0.75rem;
+                align-content: start;
+                padding-block: 0.5rem;
+            }
+            .skeleton-block {
+                background: linear-gradient(
+                    90deg,
+                    color-mix(in srgb, var(--pico-muted-color) 12%, transparent),
+                    color-mix(in srgb, var(--pico-muted-color) 22%, transparent),
+                    color-mix(in srgb, var(--pico-muted-color) 12%, transparent)
+                );
+                background-size: 200% 100%;
+                border-radius: var(--pico-border-radius);
+                animation: skeleton-shimmer 1.4s ease-in-out infinite;
+            }
+            .skeleton-poster {
+                aspect-ratio: 2 / 3;
+                width: 100%;
+            }
+            .skeleton-line {
+                height: 0.95rem;
+            }
+            .skeleton-line-title {
+                height: 1.6rem;
+                width: 70%;
+            }
+            .skeleton-line-sub {
+                width: 45%;
+            }
+            .skeleton-line-short {
+                width: 60%;
+            }
+            .skeleton-chart {
+                height: 220px;
+            }
+            @keyframes skeleton-shimmer {
+                0% {
+                    background-position: 100% 0;
+                }
+                100% {
+                    background-position: -100% 0;
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .skeleton-block {
+                    animation: none;
+                }
             }
 
             @media (max-width: 720px) {

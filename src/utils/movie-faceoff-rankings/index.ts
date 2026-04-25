@@ -12,7 +12,6 @@ import { mostComparedRankingAlgorithm } from './algorithms/most-compared';
 import { releaseDateRankingAlgorithm } from './algorithms/release-date';
 import { rrfRankingAlgorithm } from './algorithms/rrf';
 import { schulzeRankingAlgorithm } from './algorithms/schulze';
-import { transitiveRankingAlgorithm } from './algorithms/transitive';
 import { trimmedMeanRankingAlgorithm } from './algorithms/trimmed-mean';
 import { winsRankingAlgorithm } from './algorithms/wins';
 import { MovieFaceoffRankingAlgorithm, MovieFaceoffReplayState } from './types';
@@ -31,7 +30,6 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         copelandRankingAlgorithm,
         schulzeRankingAlgorithm,
         minimaxRankingAlgorithm,
-        transitiveRankingAlgorithm,
         markovRankingAlgorithm,
         uncertaintyRankingAlgorithm,
         winsRankingAlgorithm,

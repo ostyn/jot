@@ -1,24 +1,26 @@
+import { MovieFaceoffRankedMovie } from '../../../interfaces/movie-faceoff.interface';
 import { memoizeByReplay } from '../replay-cache';
 import { MovieFaceoffRankingAlgorithm } from '../types';
 
-const rankSchulze = memoizeByReplay((replay) => {
-    const ids = Array.from(replay.ratings.keys());
+/**
+ * Run Schulze's widest-path / strongest-path computation on a pre-built
+ * pairwise preference matrix `d` (where d[i*n+j] is the strength of the
+ * preference of i over j) and return movies ranked by the number of
+ * opponents they beat via the strongest path.
+ *
+ * Used by both vote-based Schulze (where d counts winning votes per pair)
+ * and the Schulze Consensus aggregate (where d counts how many primary
+ * algorithms rank one movie over another).
+ */
+export function rankBySchulzePaths(
+    ids: number[],
+    d: Int32Array,
+    movieById: Map<number, MovieFaceoffRankedMovie>
+): MovieFaceoffRankedMovie[] {
     const n = ids.length;
     if (!n) return [];
 
-    const indexOf = new Map(ids.map((id, idx) => [id, idx] as const));
-
-    // Flat n×n matrices for cache-friendly access. Vote counts and path
-    // strengths are non-negative integers that comfortably fit in Int32.
-    const d = new Int32Array(n * n);
     const p = new Int32Array(n * n);
-
-    for (const event of replay.events) {
-        const i = indexOf.get(event.winnerId);
-        const j = indexOf.get(event.loserId);
-        if (i === undefined || j === undefined) continue;
-        d[i * n + j]++;
-    }
 
     // Initial path strengths: only the dominant direction of each pair.
     for (let i = 0; i < n; i++) {
@@ -56,9 +58,27 @@ const rankSchulze = memoizeByReplay((replay) => {
             for (let j = 0; j < n; j++) {
                 if (i !== j && p[rowI + j] > p[j * n + i]) beats++;
             }
-            return { ...replay.ratings.get(id)!, score: beats };
+            return { ...movieById.get(id)!, score: beats };
         })
         .sort((a, b) => (b.score || 0) - (a.score || 0));
+}
+
+const rankSchulze = memoizeByReplay((replay) => {
+    const ids = Array.from(replay.ratings.keys());
+    const n = ids.length;
+    if (!n) return [];
+
+    const indexOf = new Map(ids.map((id, idx) => [id, idx] as const));
+    const d = new Int32Array(n * n);
+
+    for (const event of replay.events) {
+        const i = indexOf.get(event.winnerId);
+        const j = indexOf.get(event.loserId);
+        if (i === undefined || j === undefined) continue;
+        d[i * n + j]++;
+    }
+
+    return rankBySchulzePaths(ids, d, replay.ratings);
 });
 
 export const schulzeRankingAlgorithm: MovieFaceoffRankingAlgorithm = {

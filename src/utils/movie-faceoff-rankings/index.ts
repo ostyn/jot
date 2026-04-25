@@ -2,6 +2,7 @@ import { MovieFaceoffSortMode } from '../../interfaces/movie-faceoff.interface';
 import { alphabeticalRankingAlgorithm } from './algorithms/alphabetical';
 import { bordaRankingAlgorithm } from './algorithms/borda';
 import { bradleyTerryRankingAlgorithm } from './algorithms/bradley-terry';
+import { consensusSchulzeRankingAlgorithm } from './algorithms/consensus-schulze';
 import { uncertaintyRankingAlgorithm } from './algorithms/uncertainty';
 import { copelandRankingAlgorithm } from './algorithms/copeland';
 import { eloRankingAlgorithm } from './algorithms/elo';
@@ -24,6 +25,7 @@ export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgor
         rrfRankingAlgorithm,
         trimmedMeanRankingAlgorithm,
         bordaRankingAlgorithm,
+        consensusSchulzeRankingAlgorithm,
         eloRankingAlgorithm,
         glickoRankingAlgorithm,
         bradleyTerryRankingAlgorithm,

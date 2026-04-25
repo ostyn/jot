@@ -21,6 +21,7 @@ import './movie-list-item.component';
 const INITIAL_VISIBLE = 50;
 const LOAD_MORE_BATCH = 50;
 const SENTINEL_ROOT_MARGIN = '400px';
+const MIN_LOADER_MS = 400;
 
 @customElement('movie-faceoff-rankings')
 export class MovieFaceoffRankings extends MobxLitElement {
@@ -36,6 +37,12 @@ export class MovieFaceoffRankings extends MobxLitElement {
     @state()
     private visibleCount = INITIAL_VISIBLE;
 
+    @state()
+    private activeSortMode?: MovieFaceoffSortMode;
+
+    @state()
+    private isComputing = false;
+
     @query('dialog')
     private dialogRef!: HTMLDialogElement;
 
@@ -50,11 +57,12 @@ export class MovieFaceoffRankings extends MobxLitElement {
     }
 
     private get rankingAlgorithm() {
-        return getMovieFaceoffRankingAlgorithm(this.sortMode);
+        return getMovieFaceoffRankingAlgorithm(this.activeSortMode || this.sortMode);
     }
 
     private get rankedMovies() {
-        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
+        const mode = this.activeSortMode || this.sortMode;
+        return getMovieFaceoffRankedMovies(this.replayState, mode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
     }
@@ -100,8 +108,48 @@ export class MovieFaceoffRankings extends MobxLitElement {
 
     willUpdate(changed: PropertyValues) {
         super.willUpdate(changed);
-        if (changed.has('sortMode')) {
-            this.visibleCount = INITIAL_VISIBLE;
+
+        if (this.activeSortMode === undefined) {
+            // First mount: commit immediately so the initial render computes
+            // with the requested sort mode and no loading flash.
+            this.activeSortMode = this.sortMode;
+            return;
+        }
+
+        if (
+            changed.has('sortMode') &&
+            this.sortMode !== this.activeSortMode
+        ) {
+            // Show the loader, paint it (double rAF), then run the heavy
+            // compute *while* the loader is on screen — and hold the loader
+            // for at least MIN_LOADER_MS so it never flashes for fast algos.
+            this.isComputing = true;
+            const targetMode = this.sortMode;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const showAt = performance.now();
+                    // Pre-warm the algorithm. For memoized algorithms (Schulze,
+                    // Markov, Bradley-Terry) this caches the heavy compute so
+                    // the subsequent activeSortMode swap renders instantly.
+                    // For fast/unmemoized ones it's a few ms — negligible.
+                    getMovieFaceoffRankedMovies(
+                        this.replayState,
+                        targetMode
+                    );
+                    const elapsed = performance.now() - showAt;
+                    const remaining = Math.max(0, MIN_LOADER_MS - elapsed);
+                    const commit = () => {
+                        this.activeSortMode = targetMode;
+                        this.visibleCount = INITIAL_VISIBLE;
+                        this.isComputing = false;
+                    };
+                    if (remaining > 0) {
+                        setTimeout(commit, remaining);
+                    } else {
+                        commit();
+                    }
+                });
+            });
         }
     }
 
@@ -181,6 +229,14 @@ export class MovieFaceoffRankings extends MobxLitElement {
                     >
                         <jot-icon name="Info"></jot-icon>
                     </button>
+                </div>
+                <div
+                    class="computing-row ${this.isComputing ? 'is-active' : ''}"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <span class="computing-spinner" aria-hidden="true"></span>
+                    Computing…
                 </div>
 
                 ${ranked.length
@@ -371,6 +427,39 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 height: 1px;
                 margin: 0;
                 padding: 0;
+            }
+            .computing-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.85rem;
+                color: var(--pico-muted-color);
+                min-height: 1.6rem;
+                margin-top: 0.5rem;
+                margin-bottom: 1.25rem;
+                visibility: hidden;
+            }
+            .computing-row.is-active {
+                visibility: visible;
+            }
+            .computing-spinner {
+                display: inline-block;
+                width: 0.8rem;
+                height: 0.8rem;
+                border: 2px solid currentColor;
+                border-top-color: transparent;
+                border-radius: 50%;
+                animation: computing-spin 0.8s linear infinite;
+            }
+            @keyframes computing-spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .computing-spinner {
+                    animation: none;
+                }
             }
             .empty-state-panel {
                 display: grid;

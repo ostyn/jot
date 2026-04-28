@@ -19,7 +19,6 @@ import {
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import { MovieFaceoffRankingAlgorithm } from '../utils/movie-faceoff-rankings';
 import {
-    buildRankingSnapshots,
     computeRankRange,
     getChartSnapshots,
     getHeadlineSnapshot,
@@ -76,7 +75,7 @@ export class MovieFaceoffMovieRoute
 
     private get snapshots() {
         if (!this.movieId) return [];
-        return buildRankingSnapshots(this.movieId, movieFaceoff.replayState);
+        return movieFaceoff.getRankingSnapshots(this.movieId);
     }
 
     private async loadMovie() {

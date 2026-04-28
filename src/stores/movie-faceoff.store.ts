@@ -3,10 +3,21 @@ import {
     MovieFaceoffEvent,
     MovieFaceoffExportData,
     MovieFaceoffMovie,
+    MovieFaceoffRankedMovie,
+    MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import { FaceoffMovie } from '../services/movie-faceoff.service';
 import { movieFaceoffDao } from '../dao/MovieFaceoffDao';
-import { buildMovieFaceoffReplayState, MovieFaceoffReplayState } from '../utils/movie-faceoff-rankings';
+import {
+    buildMovieFaceoffReplayState,
+    getMovieFaceoffRankingAlgorithm,
+    MOVIE_FACEOFF_RANKING_ALGORITHMS,
+    MovieFaceoffReplayState,
+} from '../utils/movie-faceoff-rankings';
+import {
+    buildRankingSnapshots,
+    RankingSnapshot,
+} from '../utils/movie-ranking-snapshots';
 
 function upsertById<T extends { id: number }>(items: T[], nextItem: T): T[] {
     const index = items.findIndex((item) => item.id === nextItem.id);
@@ -41,9 +52,50 @@ class MovieFaceoffStore {
     allMovies: MovieFaceoffMovie[] = [];
 
     private loadPromise?: Promise<void>;
+    private rankedCache = new WeakMap<
+        MovieFaceoffReplayState,
+        Map<MovieFaceoffSortMode, MovieFaceoffRankedMovie[]>
+    >();
+    private snapshotsCache = new WeakMap<
+        MovieFaceoffReplayState,
+        Map<number, RankingSnapshot[]>
+    >();
 
     constructor() {
         makeObservable(this);
+    }
+
+    getRankedMovies(sortMode: MovieFaceoffSortMode): MovieFaceoffRankedMovie[] {
+        const replay = this.replayState;
+        let perReplay = this.rankedCache.get(replay);
+        if (!perReplay) {
+            perReplay = new Map();
+            this.rankedCache.set(replay, perReplay);
+        }
+        let cached = perReplay.get(sortMode);
+        if (!cached) {
+            const algorithm = getMovieFaceoffRankingAlgorithm(sortMode);
+            cached = algorithm.rank(replay, MOVIE_FACEOFF_RANKING_ALGORITHMS);
+            perReplay.set(sortMode, cached);
+        }
+        return cached;
+    }
+
+    getRankingSnapshots(movieId: number): RankingSnapshot[] {
+        const replay = this.replayState;
+        let perReplay = this.snapshotsCache.get(replay);
+        if (!perReplay) {
+            perReplay = new Map();
+            this.snapshotsCache.set(replay, perReplay);
+        }
+        let cached = perReplay.get(movieId);
+        if (!cached) {
+            cached = buildRankingSnapshots(movieId, (sortMode) =>
+                this.getRankedMovies(sortMode)
+            );
+            perReplay.set(movieId, cached);
+        }
+        return cached;
     }
 
     @action.bound

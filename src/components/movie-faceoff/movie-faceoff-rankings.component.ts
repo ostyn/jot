@@ -12,7 +12,6 @@ import { getMoviePosterUrl } from '../../services/movie-faceoff.service';
 import { movieFaceoff } from '../../stores/movie-faceoff.store';
 import {
     getMovieFaceoffRankingAlgorithm,
-    getMovieFaceoffRankedMovies,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../../utils/movie-faceoff-rankings';
 import '../jot-icon';
@@ -52,17 +51,13 @@ export class MovieFaceoffRankings extends MobxLitElement {
     private sentinelObserver?: IntersectionObserver;
     private observedSentinel?: Element;
 
-    private get replayState() {
-        return movieFaceoff.replayState;
-    }
-
     private get rankingAlgorithm() {
         return getMovieFaceoffRankingAlgorithm(this.activeSortMode || this.sortMode);
     }
 
     private get rankedMovies() {
         const mode = this.activeSortMode || this.sortMode;
-        return getMovieFaceoffRankedMovies(this.replayState, mode).filter(
+        return movieFaceoff.getRankedMovies(mode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
     }
@@ -128,14 +123,9 @@ export class MovieFaceoffRankings extends MobxLitElement {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     const showAt = performance.now();
-                    // Pre-warm the algorithm. For memoized algorithms (Schulze,
-                    // Markov, Bradley-Terry) this caches the heavy compute so
-                    // the subsequent activeSortMode swap renders instantly.
-                    // For fast/unmemoized ones it's a few ms — negligible.
-                    getMovieFaceoffRankedMovies(
-                        this.replayState,
-                        targetMode
-                    );
+                    // Pre-warm the store cache so the subsequent
+                    // activeSortMode swap renders instantly.
+                    movieFaceoff.getRankedMovies(targetMode);
                     const elapsed = performance.now() - showAt;
                     const remaining = Math.max(0, MIN_LOADER_MS - elapsed);
                     const commit = () => {

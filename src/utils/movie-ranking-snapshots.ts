@@ -1,7 +1,7 @@
+import { MovieFaceoffSortMode, MovieFaceoffRankedMovie } from '../interfaces/movie-faceoff.interface';
 import {
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
     MovieFaceoffRankingAlgorithm,
-    MovieFaceoffReplayState,
 } from './movie-faceoff-rankings';
 
 export type RankingSnapshot = {
@@ -12,16 +12,18 @@ export type RankingSnapshot = {
     metric: string;
 };
 
+export type GetRankedMoviesFn = (sortMode: MovieFaceoffSortMode) => MovieFaceoffRankedMovie[];
+
 export function buildRankingSnapshots(
     movieId: number,
-    replay: MovieFaceoffReplayState
+    getRankedMovies: GetRankedMoviesFn
 ): RankingSnapshot[] {
     return MOVIE_FACEOFF_RANKING_ALGORITHMS.filter(
         (algorithm) => !algorithm.isInformational || algorithm.id === 'uncertainty'
     ).map((algorithm) => {
-        const ranked = algorithm
-            .rank(replay, MOVIE_FACEOFF_RANKING_ALGORITHMS)
-            .filter((movie) => !movie.excludedAt && !movie.unseenAt);
+        const ranked = getRankedMovies(algorithm.id).filter(
+            (movie) => !movie.excludedAt && !movie.unseenAt
+        );
         const index = ranked.findIndex((movie) => movie.id === movieId);
         const rankedMovie = index === -1 ? undefined : ranked[index];
         const total = ranked.length;

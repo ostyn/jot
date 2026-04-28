@@ -16,12 +16,9 @@ import {
     getMoviePosterUrl,
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
-import { getMovieFaceoffRankedMovies } from '../utils/movie-faceoff-rankings';
 import {
     getCandidatePool,
-    getRandomMovie,
     getSmartMovie,
-    pickRandomMovieId,
     pickSmartMovieId,
 } from '../utils/movie-faceoff-pairing';
 import {
@@ -180,7 +177,7 @@ export class MovieFaceoffRoute
     }
 
     private get visibleRankedMovies() {
-        return getMovieFaceoffRankedMovies(this.replayState, this.sortMode).filter(
+        return movieFaceoff.getRankedMovies(this.sortMode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
     }
@@ -332,11 +329,6 @@ export class MovieFaceoffRoute
         return getSmartMovie(pool, this.replayState.ratings, this.loadMovie, firstMovie);
     }
 
-    private async pickRandomMovie(exclude: number[] = []): Promise<FaceoffMovie | null> {
-        const pool = await this.buildCandidatePool(exclude);
-        return getRandomMovie(pool, this.loadMovie);
-    }
-
     private switchToManualSort() {
         if (this.sortMode !== 'manual') {
             this.sortMode = 'manual';
@@ -373,11 +365,8 @@ export class MovieFaceoffRoute
         try {
             const pool = await this.buildCandidatePool();
             const ratings = this.replayState.ratings;
-            const useSmart = this.useRankedOnly;
 
-            const leftId = useSmart
-                ? pickSmartMovieId(pool, ratings)
-                : pickRandomMovieId(pool);
+            const leftId = pickSmartMovieId(pool, ratings);
             if (leftId === null) {
                 this.movies = [null, null];
                 this.errorMessage = this.useRankedOnly
@@ -387,9 +376,7 @@ export class MovieFaceoffRoute
             }
 
             const rightPool = pool.filter((id) => id !== leftId);
-            const rightId = useSmart
-                ? pickSmartMovieId(rightPool, ratings, leftId)
-                : pickRandomMovieId(rightPool);
+            const rightId = pickSmartMovieId(rightPool, ratings, leftId);
             if (rightId === null) {
                 try {
                     this.movies = [await this.loadMovie(leftId), null];
@@ -441,18 +428,6 @@ export class MovieFaceoffRoute
         return pair;
     }
 
-    private takePreloadedMovie(excludeIds: number[]): FaceoffMovie | null {
-        const pair = this.preloadedPair;
-        if (!pair) return null;
-        const excludeSet = new Set(excludeIds);
-        const match = pair.find(
-            (movie) => !excludeSet.has(movie.id) && this.isPreloadMovieValid(movie)
-        );
-        if (!match) return null;
-        this.preloadedPair = null;
-        return match;
-    }
-
     private invalidatePreload() {
         this.preloadedPair = null;
     }
@@ -467,17 +442,12 @@ export class MovieFaceoffRoute
                 .map((m) => m.id);
             const pool = await this.buildCandidatePool(currentIds);
             const ratings = this.replayState.ratings;
-            const useSmart = this.useRankedOnly;
 
-            const leftId = useSmart
-                ? pickSmartMovieId(pool, ratings)
-                : pickRandomMovieId(pool);
+            const leftId = pickSmartMovieId(pool, ratings);
             if (leftId === null) return;
 
             const rightPool = pool.filter((id) => id !== leftId);
-            const rightId = useSmart
-                ? pickSmartMovieId(rightPool, ratings, leftId)
-                : pickRandomMovieId(rightPool);
+            const rightId = pickSmartMovieId(rightPool, ratings, leftId);
             if (rightId === null) return;
 
             const [left, right] = await Promise.all([
@@ -523,13 +493,8 @@ export class MovieFaceoffRoute
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
-        const useSmart = this.useRankedOnly;
 
-        // In random mode, reuse a preloaded movie for an instant swap.
-        // Smart mode picks opponent-aware, so a preloaded (independently picked) movie wouldn't be smart-matched.
-        const preloaded = useSmart ? null : this.takePreloadedMovie(exclude);
-        const replacement = preloaded
-            ?? (await (useSmart ? this.pickSmartMovie(exclude, otherMovie) : this.pickRandomMovie(exclude)));
+        const replacement = await this.pickSmartMovie(exclude, otherMovie);
         if (!replacement) {
             await this.displayNewPair();
             return;

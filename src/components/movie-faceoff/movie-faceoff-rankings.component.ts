@@ -24,9 +24,6 @@ const MIN_LOADER_MS = 400;
 
 @customElement('movie-faceoff-rankings')
 export class MovieFaceoffRankings extends MobxLitElement {
-    @property({ type: Boolean })
-    isTargetedMode = false;
-
     @property({ attribute: false })
     sortMode: MovieFaceoffSortMode = 'elo';
 
@@ -174,7 +171,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
 
                 <div class="rankings-controls" role="group">
                     <select
-                            ?disabled=${this.isTargetedMode}
                             @change=${(event: Event) => {
                                 const sortMode = (event.currentTarget as HTMLSelectElement).value as MovieFaceoffSortMode;
                                 this.emit('sort-change', { sortMode });

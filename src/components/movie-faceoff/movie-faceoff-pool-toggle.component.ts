@@ -7,9 +7,6 @@ export class MovieFaceoffPoolToggle extends LitElement {
     @property({ type: Boolean })
     useRankedOnly = false;
 
-    @property({ type: Boolean })
-    disabled = false;
-
     private emitChange(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
         this.dispatchEvent(
@@ -27,7 +24,6 @@ export class MovieFaceoffPoolToggle extends LitElement {
                 <button
                     class=${this.useRankedOnly ? 'outline' : ''}
                     aria-pressed=${!this.useRankedOnly}
-                    ?disabled=${this.disabled}
                     @click=${() => this.emitChange(false)}
                 >
                     All movies
@@ -35,7 +31,6 @@ export class MovieFaceoffPoolToggle extends LitElement {
                 <button
                     class=${this.useRankedOnly ? '' : 'outline'}
                     aria-pressed=${this.useRankedOnly}
-                    ?disabled=${this.disabled}
                     @click=${() => this.emitChange(true)}
                 >
                     My movies

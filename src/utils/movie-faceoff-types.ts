@@ -1,7 +1,4 @@
-import {
-    MovieFaceoffRankedMovie,
-    MovieFaceoffSortMode,
-} from '../interfaces/movie-faceoff.interface';
+import { MovieFaceoffRankedMovie } from '../interfaces/movie-faceoff.interface';
 import { FaceoffMovie } from '../services/movie-faceoff.service';
 
 export type FaceoffPair = [FaceoffMovie | null, FaceoffMovie | null];
@@ -27,9 +24,10 @@ export type UndoEntry = {
     targetedInsertion?: TargetedInsertionState | null;
 };
 
+export type TargetedInsertionPhase = 'pivot' | 'pinned';
+
 export type TargetedInsertionState = {
     targetMovie: FaceoffMovie;
-    rankingSortMode: MovieFaceoffSortMode;
     rankedSnapshot: MovieFaceoffRankedMovie[];
     low: number;
     high: number;
@@ -37,6 +35,11 @@ export type TargetedInsertionState = {
     pivotMovie: FaceoffMovie | null;
     comparisonsCompleted: number;
     complete: boolean;
+    phase: TargetedInsertionPhase;
+    initialSnapshotSize: number;
+    /** Rank position where the pivot phase converged. Set transiently when
+     * transitioning pivot→pinned; cleared on the next vote. */
+    lastPivotedRank?: number;
 };
 
 export const MAX_UNDO_ENTRIES = 25;

@@ -71,7 +71,7 @@ export class MovieFaceoffMatchup extends LitElement {
                 position: relative;
                 display: flex;
                 gap: 1rem;
-                align-items: start;
+                align-items: stretch;
             }
             .matchup,
             .matchup > * {

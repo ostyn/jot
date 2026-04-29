@@ -1,10 +1,12 @@
 import {
     MovieFaceoffMovie,
     MovieFaceoffRankedMovie,
-    MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import { FaceoffMovie } from '../services/movie-faceoff.service';
-import { TargetedInsertionState } from './movie-faceoff-types';
+import {
+    TargetedInsertionPhase,
+    TargetedInsertionState,
+} from './movie-faceoff-types';
 
 function pickPivotInMiddleBand(low: number, high: number): number {
     const size = high - low;
@@ -27,10 +29,11 @@ function toFaceoffMovie(
 export function createTargetedInsertionState(
     targetMovie: FaceoffMovie,
     visibleRankedMovies: MovieFaceoffRankedMovie[],
-    sortMode: MovieFaceoffSortMode,
     comparisonsCompleted = 0,
     low = 0,
-    high?: number
+    high?: number,
+    phase: TargetedInsertionPhase = 'pivot',
+    initialSnapshotSize?: number
 ): TargetedInsertionState {
     const rankedSnapshot = visibleRankedMovies.filter(
         (movie) => movie.id !== targetMovie.id
@@ -40,11 +43,15 @@ export function createTargetedInsertionState(
         Math.min(high ?? rankedSnapshot.length, rankedSnapshot.length)
     );
     const normalizedLow = Math.max(0, Math.min(low, normalizedHigh));
+    const snapshotSize = initialSnapshotSize ?? rankedSnapshot.length;
 
-    if (!rankedSnapshot.length || normalizedLow >= normalizedHigh) {
+    if (
+        phase === 'pinned' ||
+        !rankedSnapshot.length ||
+        normalizedLow >= normalizedHigh
+    ) {
         return {
             targetMovie,
-            rankingSortMode: sortMode,
             rankedSnapshot,
             low: normalizedLow,
             high: normalizedHigh,
@@ -52,6 +59,8 @@ export function createTargetedInsertionState(
             pivotMovie: null,
             comparisonsCompleted,
             complete: true,
+            phase,
+            initialSnapshotSize: snapshotSize,
         };
     }
 
@@ -60,7 +69,6 @@ export function createTargetedInsertionState(
 
     return {
         targetMovie,
-        rankingSortMode: sortMode,
         rankedSnapshot,
         low: normalizedLow,
         high: normalizedHigh,
@@ -68,6 +76,8 @@ export function createTargetedInsertionState(
         pivotMovie,
         comparisonsCompleted,
         complete: false,
+        phase: 'pivot',
+        initialSnapshotSize: snapshotSize,
     };
 }
 

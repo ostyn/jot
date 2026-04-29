@@ -110,3 +110,8 @@ a:active {
 .secondary:hover {
     background-color: #ff7f89;
 }
+.outline.danger,
+.outline.danger:hover {
+    color: var(--pico-del-color);
+    border-color: var(--pico-del-color);
+}

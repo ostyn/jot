@@ -1,4 +1,4 @@
-import { css, html, nothing, LitElement } from 'lit';
+import { css, html, LitElement, nothing } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
 import { FaceoffMovie, getMoviePosterUrl } from '../../services/movie-faceoff.service';
@@ -75,7 +75,25 @@ export class MovieFaceoffCard extends LitElement {
     private renderMovie(movie: FaceoffMovie) {
         const imageUrl = getMoviePosterUrl(movie);
         const year = this.getMovieYear(movie);
-        const isTargetedCard = this.targetedInsertion?.targetMovie.id === movie.id;
+        const session = this.targetedInsertion;
+        const isTargetedCard = session?.targetMovie.id === movie.id;
+        const showProgress =
+            isTargetedCard &&
+            session?.phase === 'pivot' &&
+            session.initialSnapshotSize > 0;
+        const remainingWindow = session
+            ? Math.max(session.high - session.low, 0)
+            : 0;
+        const progress =
+            session && session.initialSnapshotSize > 0
+                ? Math.min(
+                      1,
+                      Math.max(
+                          0,
+                          1 - remainingWindow / session.initialSnapshotSize
+                      )
+                  )
+                : 0;
 
         return html`
             <div class="movie-card ${isTargetedCard ? 'target-card' : ''}">
@@ -97,24 +115,46 @@ export class MovieFaceoffCard extends LitElement {
                       </button>`}
                 <div class="movie-copy">
                     <div class="movie-title-row">
-                        <div>
+                        <div class="title-block">
+                            ${isTargetedCard
+                                ? html`<button
+                                      class="pin-button"
+                                      aria-label="Unpin movie"
+                                      title="Unpin"
+                                      @click=${() => this.emit('faceoff-unpin')}
+                                  >
+                                      <jot-icon name="Pin"></jot-icon>
+                                  </button>`
+                                : nothing}
                             <h3 title=${movie.title}>${movie.title}</h3>
                             <p>${year}</p>
-                            ${this.targetedInsertion
-                                ? html`<small class="targeted-card-label">
-                                      ${isTargetedCard
-                                          ? 'Target movie'
-                                          : `Compare against #${
-                                                this.targetedInsertion.pivotIndex + 1
-                                            }`}
+                            ${isTargetedCard && session?.phase === 'pivot'
+                                ? html`<small class="pin-status">
+                                      Finding initial placement…
                                   </small>`
+                                : nothing}
+                            ${isTargetedCard &&
+                            session?.phase === 'pinned' &&
+                            session.lastPivotedRank !== undefined
+                                ? html`<small class="pin-status">
+                                      Initial placement complete at
+                                      #${session.lastPivotedRank}
+                                  </small>`
+                                : nothing}
+                            ${showProgress
+                                ? html`<progress
+                                      class="pin-progress"
+                                      max="1"
+                                      value=${progress}
+                                      aria-label="Initial placement progress"
+                                  ></progress>`
                                 : nothing}
                         </div>
                     </div>
                 </div>
                 <footer class="movie-actions" role="group">
                     <button
-                        class="secondary"
+                        class="outline danger"
                         @click=${() => this.emit('faceoff-unseen')}
                     >
                         <jot-icon name="EyeOff"></jot-icon>
@@ -149,8 +189,47 @@ export class MovieFaceoffCard extends LitElement {
             .movie-title-row {
                 min-width: 0;
             }
+            .title-block {
+                min-width: 0;
+            }
             .movie-copy {
                 min-width: 0;
+            }
+            .pin-button {
+                margin: 0 0 0.25rem;
+                padding: 0.15rem;
+                border: 0;
+                background: transparent;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: fit-content;
+                border-radius: 999px;
+                color: var(--pico-primary);
+                cursor: pointer;
+            }
+            .pin-button:focus-visible {
+                outline: 2px solid var(--pico-primary);
+                outline-offset: 2px;
+            }
+            .pin-button:hover {
+                background: color-mix(
+                    in srgb,
+                    var(--pico-primary) 18%,
+                    transparent
+                );
+            }
+            .pin-status {
+                display: block;
+                margin-top: 0.35rem;
+                color: var(--pico-muted-color);
+                font-size: 0.78rem;
+                line-height: 1.2;
+            }
+            .pin-progress {
+                width: 100%;
+                height: 0.35rem;
+                margin: 0.25rem 0 0;
             }
             .movie-copy h3 {
                 margin: 0;
@@ -199,17 +278,10 @@ export class MovieFaceoffCard extends LitElement {
                 gap: 0.6rem;
                 text-align: center;
             }
-            .targeted-card-label {
-                display: inline-flex;
-                margin-top: 0.5rem;
-                font-size: 0.82rem;
-                margin-bottom: 0;
-                color: var(--pico-muted-color);
-            }
             .movie-actions {
                 display: flex;
                 margin-top: auto;
-                margin-bottom: auto;
+                margin-bottom: 0;
             }
             .movie-actions .secondary {
                 flex: 1;

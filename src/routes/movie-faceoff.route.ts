@@ -40,7 +40,6 @@ import '../components/movie-faceoff/movie-faceoff-matchup.component';
 import '../components/movie-faceoff/movie-faceoff-pool-toggle.component';
 import '../components/movie-faceoff/movie-faceoff-rankings.component';
 import '../components/movie-faceoff/movie-faceoff-status-bar.component';
-import '../components/movie-faceoff/movie-faceoff-targeted-banner.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
 
@@ -90,9 +89,23 @@ export class MovieFaceoffRoute
             setPendingTargetMovieId: (id) => {
                 this.pendingTargetMovieId = id;
             },
-            getRankedSnapshot: () => this.visibleRankedMovies,
-            getSortMode: () => this.sortMode,
-            switchToManualSort: () => this.switchToManualSort(),
+            getRankedSnapshotForSort: (sortMode) =>
+                movieFaceoff
+                    .getRankedMovies(sortMode)
+                    .filter((movie) => !movie.excludedAt && !movie.unseenAt),
+            hasPriorVotes: (movieId) => {
+                const rating = movieFaceoff.replayState.ratings.get(movieId);
+                if (!rating) return false;
+                return (rating.winCount || 0) + (rating.lossCount || 0) > 0;
+            },
+            setUseRankedOnly: (useRankedOnly) => {
+                if (this.useRankedOnly === useRankedOnly) return;
+                this.useRankedOnly = useRankedOnly;
+                this.invalidatePreload();
+                updateMovieFaceoffQueryParams({
+                    pool: useRankedOnly ? 'mine' : undefined,
+                });
+            },
             setStatusMessage: (message) => {
                 this.statusMessage = message;
             },
@@ -209,17 +222,27 @@ export class MovieFaceoffRoute
 
     private get sessionStatusLabel() {
         if (this.errorMessage) return 'Needs attention';
-        if (this.targetedInsertion) return 'Placing your chosen movie';
+        if (this.targetedInsertion?.phase === 'pivot') {
+            return 'Placing your chosen movie';
+        }
+        if (this.targetedInsertion?.phase === 'pinned') {
+            return 'Pinned · pairing freely';
+        }
         if (this.isLoading) return 'Loading next matchup';
         return 'Ready for the next pick';
     }
 
-    private get isTargetedMode() {
-        return Boolean(this.targetedInsertion);
-    }
-
     private async setPoolMode(useRankedOnly: boolean) {
         if (this.useRankedOnly === useRankedOnly) return;
+        // Targeted mode lives in the My movies pool. Switching back to
+        // All movies is an implicit "unpin."
+        if (!useRankedOnly && this.targetedInsertion) {
+            this.useRankedOnly = useRankedOnly;
+            this.invalidatePreload();
+            updateMovieFaceoffQueryParams({ pool: undefined });
+            this.targetedInsertionController.cancel();
+            return;
+        }
         this.useRankedOnly = useRankedOnly;
         this.invalidatePreload();
         updateMovieFaceoffQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
@@ -329,13 +352,6 @@ export class MovieFaceoffRoute
         return getSmartMovie(pool, this.replayState.ratings, this.loadMovie, firstMovie);
     }
 
-    private switchToManualSort() {
-        if (this.sortMode !== 'manual') {
-            this.sortMode = 'manual';
-            updateMovieFaceoffQueryParams({ sort: 'manual' });
-        }
-    }
-
     private maybeStartTargetedInsertionFromUrl() {
         this.invalidatePreload();
         return this.targetedInsertionController.maybeStartFromUrl(
@@ -348,7 +364,13 @@ export class MovieFaceoffRoute
     }
 
     private async displayNewPair() {
-        if (this.targetedInsertion) return;
+        const session = this.targetedInsertion;
+        if (session && session.phase === 'pivot') return;
+
+        if (session && session.phase === 'pinned') {
+            await this.displayPinnedPair(session.targetMovie);
+            return;
+        }
 
         const cached = this.takePreloadedPair();
         if (cached) {
@@ -405,6 +427,52 @@ export class MovieFaceoffRoute
         }
     }
 
+    private async displayPinnedPair(target: FaceoffMovie) {
+        const cached = this.takePinnedPreload(target.id);
+        if (cached) {
+            this.movies = cached;
+            this.errorMessage = '';
+            this.isLoading = false;
+            this.syncPairToUrl();
+            void this.kickoffPreload();
+            return;
+        }
+
+        this.isLoading = true;
+        this.errorMessage = '';
+        try {
+            const pool = await this.buildCandidatePool([target.id]);
+            const ratings = this.replayState.ratings;
+            const opponentId = pickSmartMovieId(pool, ratings, target.id);
+            if (opponentId === null) {
+                this.movies = [target, null];
+                this.errorMessage = this.useRankedOnly
+                    ? 'Rank at least two movies before using ranked-only mode.'
+                    : 'No other movies are available to compare against.';
+                return;
+            }
+            const opponent = await this.loadMovie(opponentId);
+            this.movies = [target, opponent];
+            this.syncPairToUrl();
+            void this.kickoffPreload();
+        } catch (error) {
+            this.movies = [target, null];
+            this.errorMessage =
+                error instanceof Error ? error.message : 'Unable to load opponent.';
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    private takePinnedPreload(targetId: number): [FaceoffMovie, FaceoffMovie] | null {
+        const pair = this.preloadedPair;
+        if (!pair) return null;
+        if (pair[0].id !== targetId) return null;
+        if (!this.isPreloadMovieValid(pair[1])) return null;
+        this.preloadedPair = null;
+        return pair;
+    }
+
     private isPreloadMovieValid(movie: FaceoffMovie): boolean {
         const excluded = movieFaceoff.excludedMovieIds;
         const unseen = movieFaceoff.unseenMovieIds;
@@ -433,15 +501,38 @@ export class MovieFaceoffRoute
     }
 
     private async kickoffPreload() {
-        if (this.targetedInsertion) return;
+        const session = this.targetedInsertion;
+        if (session && session.phase === 'pivot') return;
         if (this.preloadedPair || this.preloadInFlight) return;
         this.preloadInFlight = true;
         try {
+            const ratings = this.replayState.ratings;
+
+            if (session && session.phase === 'pinned') {
+                const target = session.targetMovie;
+                const opponentPool = await this.buildCandidatePool([
+                    target.id,
+                    ...this.movies
+                        .filter((m): m is FaceoffMovie => Boolean(m))
+                        .map((m) => m.id),
+                ]);
+                const opponentId = pickSmartMovieId(opponentPool, ratings, target.id);
+                if (opponentId === null) return;
+                const opponent = await this.loadMovie(opponentId);
+                await Promise.all([
+                    this.preloadImage(getMoviePosterUrl(target)),
+                    this.preloadImage(getMoviePosterUrl(opponent)),
+                ]);
+                if (this.targetedInsertion?.phase !== 'pinned') return;
+                if (this.targetedInsertion.targetMovie.id !== target.id) return;
+                this.preloadedPair = [target, opponent];
+                return;
+            }
+
             const currentIds = this.movies
                 .filter((m): m is FaceoffMovie => Boolean(m))
                 .map((m) => m.id);
             const pool = await this.buildCandidatePool(currentIds);
-            const ratings = this.replayState.ratings;
 
             const leftId = pickSmartMovieId(pool, ratings);
             if (leftId === null) return;
@@ -486,10 +577,23 @@ export class MovieFaceoffRoute
     }
 
     private async replaceUnavailableMovie(index: 0 | 1) {
-        if (this.targetedInsertion) {
+        const session = this.targetedInsertion;
+        if (session && session.phase === 'pivot') {
             this.errorMessage = 'Targeted placement only supports choosing between the target and comparison movie.';
             return;
         }
+        if (session && session.phase === 'pinned') {
+            // The target lives in slot 0; replacing it ends the pin.
+            // Replacing slot 1 just picks a fresh opponent.
+            if (index === 0) {
+                this.targetedInsertionController.clearSilent();
+                await this.displayNewPair();
+                return;
+            }
+            await this.displayPinnedPair(session.targetMovie);
+            return;
+        }
+
         const existingMovies = this.movies.filter(Boolean) as FaceoffMovie[];
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
@@ -541,7 +645,7 @@ export class MovieFaceoffRoute
 
         if (this.targetedInsertion) {
             if (this.targetedInsertionController.clearForTargetRemoved(movie.id)) {
-                this.statusMessage = `Marked ${movie.title} as not seen and stopped targeted placement`;
+                this.statusMessage = `Marked ${movie.title} as not seen and unpinned`;
                 await this.displayNewPair();
                 return;
             }
@@ -576,7 +680,9 @@ export class MovieFaceoffRoute
             () => movieFaceoff.excludeMovie(movie.id), `Excluded ${movie.title}`);
 
         this.invalidatePreload();
-        if (this.movies.some((m) => m?.id === movie.id)) {
+        const wasPinnedTarget =
+            this.targetedInsertionController.clearForTargetRemoved(movie.id);
+        if (wasPinnedTarget || this.movies.some((m) => m?.id === movie.id)) {
             await this.displayNewPair();
         }
     }
@@ -613,20 +719,11 @@ export class MovieFaceoffRoute
                             </hgroup>
                             <movie-faceoff-pool-toggle
                                 .useRankedOnly=${this.useRankedOnly}
-                                ?disabled=${this.isTargetedMode}
                                 @pool-change=${(e: CustomEvent) => {
                                     void this.setPoolMode(e.detail.useRankedOnly);
                                 }}
                             ></movie-faceoff-pool-toggle>
                         </header>
-
-                        <movie-faceoff-targeted-banner
-                            .targetedInsertion=${this.targetedInsertion}
-                            .sortMode=${this.sortMode}
-                            @cancel-targeted-insertion=${() => {
-                                this.cancelTargetedInsertion();
-                            }}
-                        ></movie-faceoff-targeted-banner>
 
                         <movie-faceoff-matchup
                             .movies=${this.movies}
@@ -635,6 +732,7 @@ export class MovieFaceoffRoute
                             .targetedInsertion=${this.targetedInsertion}
                             @faceoff-vote=${(e: CustomEvent) => void this.vote(e.detail.index)}
                             @faceoff-unseen=${(e: CustomEvent) => void this.markMovieUnseen(e.detail.index)}
+                            @faceoff-unpin=${() => this.cancelTargetedInsertion()}
                             @faceoff-details=${(e: CustomEvent) => {
                                 const movie = this.movies[e.detail.index as 0 | 1];
                                 if (movie) betterGo('movie-faceoff-movie', { pathParams: { id: movie.id } });
@@ -644,8 +742,7 @@ export class MovieFaceoffRoute
                         <footer class="session-panel">
                             <div style="justify-self:start" role="group" aria-label="Current matchup actions">
                                 <button
-                                    class="secondary"
-                                    ?disabled=${this.isTargetedMode}
+                                    class="outline danger"
                                     @click=${() => {
                                         void this.markBothMoviesUnseen();
                                     }}
@@ -669,7 +766,6 @@ export class MovieFaceoffRoute
 
                 <aside class="rankings-column">
                     <movie-faceoff-rankings
-                        .isTargetedMode=${!!this.targetedInsertion}
                         .sortMode=${this.sortMode}
                         @sort-change=${(e: CustomEvent) => {
                             this.sortMode = e.detail.sortMode;

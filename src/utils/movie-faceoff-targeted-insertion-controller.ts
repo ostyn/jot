@@ -3,21 +3,28 @@ import {
     MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
 import { FaceoffMovie } from '../services/movie-faceoff.service';
-import { getMovieFaceoffRankingAlgorithm } from './movie-faceoff-rankings';
 import {
     advanceTargetedInsertion,
     createTargetedInsertionState,
 } from './movie-faceoff-targeted-insertion';
-import { FaceoffPair, TargetedInsertionState } from './movie-faceoff-types';
+import {
+    FaceoffPair,
+    TargetedInsertionPhase,
+    TargetedInsertionState,
+} from './movie-faceoff-types';
 import { updateMovieFaceoffQueryParams } from './movie-faceoff-url-sync';
+
+const PIVOT_SNAPSHOT_SORT: MovieFaceoffSortMode = 'manual';
 
 export interface MovieFaceoffTargetedInsertionAdapter {
     getSession: () => TargetedInsertionState | null;
     setSession: (next: TargetedInsertionState | null) => void;
     setPendingTargetMovieId: (id: number | undefined) => void;
-    getRankedSnapshot: () => MovieFaceoffRankedMovie[];
-    getSortMode: () => MovieFaceoffSortMode;
-    switchToManualSort: () => void;
+    getRankedSnapshotForSort: (
+        sortMode: MovieFaceoffSortMode
+    ) => MovieFaceoffRankedMovie[];
+    hasPriorVotes: (movieId: number) => boolean;
+    setUseRankedOnly: (useRankedOnly: boolean) => void;
     setStatusMessage: (message: string) => void;
     setErrorMessage: (message: string) => void;
     setMovies: (movies: FaceoffPair) => void;
@@ -41,15 +48,18 @@ export class MovieFaceoffTargetedInsertionController {
         targetMovie: FaceoffMovie,
         comparisonsCompleted = 0,
         low = 0,
-        high?: number
+        high?: number,
+        phase: TargetedInsertionPhase = 'pivot',
+        initialSnapshotSize?: number
     ): TargetedInsertionState {
         return createTargetedInsertionState(
             targetMovie,
-            this.adapter.getRankedSnapshot(),
-            this.adapter.getSortMode(),
+            this.adapter.getRankedSnapshotForSort(PIVOT_SNAPSHOT_SORT),
             comparisonsCompleted,
             low,
-            high
+            high,
+            phase,
+            initialSnapshotSize
         );
     }
 
@@ -61,32 +71,42 @@ export class MovieFaceoffTargetedInsertionController {
 
     async start(movie: FaceoffMovie): Promise<void> {
         await this.adapter.upsertMoviesMetadata([movie]);
+        // Targeted mode is anchored to the user's ranked pool — pivots and
+        // pinned-mode opponents both come from "My movies."
+        this.adapter.setUseRankedOnly(true);
+        this.adapter.setErrorMessage('');
 
-        this.adapter.switchToManualSort();
-        const nextState = this.buildState(movie);
+        const snapshot = this.adapter.getRankedSnapshotForSort(
+            PIVOT_SNAPSHOT_SORT
+        );
+        const candidateCount = snapshot.filter(
+            (other) => other.id !== movie.id
+        ).length;
+        const skipPivot = this.adapter.hasPriorVotes(movie.id);
+        // No candidates → straight to pinned (smart pairing reports the
+        // empty-pool error). Already-ranked target → skip pivot.
+        const phase: TargetedInsertionPhase =
+            skipPivot || candidateCount === 0 ? 'pinned' : 'pivot';
+
+        const nextState = this.buildState(movie, 0, 0, undefined, phase);
         this.adapter.setSession(nextState);
 
-        if (nextState.complete) {
-            const hasRankings = nextState.rankedSnapshot.length > 0;
-            this.clearSessionState();
-            this.adapter.setStatusMessage(
-                hasRankings
-                    ? `Placed ${movie.title} at #${nextState.low + 1} in ${getMovieFaceoffRankingAlgorithm(this.adapter.getSortMode()).label}.`
-                    : 'Saved that movie. Rank a few movies first, then use targeted placement.'
-            );
+        if (phase === 'pinned') {
+            if (candidateCount === 0) {
+                this.adapter.setStatusMessage(
+                    'Saved that movie. Rank a few movies first, then use targeted placement.'
+                );
+                this.adapter.setErrorMessage(
+                    'Targeted placement needs at least one ranked movie to compare against.'
+                );
+            } else {
+                this.adapter.setStatusMessage(`Pinned ${movie.title}.`);
+            }
             await this.adapter.displayNewPair();
-            this.adapter.setErrorMessage(
-                hasRankings
-                    ? ''
-                    : 'Targeted placement needs at least one ranked movie to compare against.'
-            );
             return;
         }
 
-        this.adapter.setStatusMessage(
-            `Placing ${movie.title} using ${getMovieFaceoffRankingAlgorithm(this.adapter.getSortMode()).label}.`
-        );
-        this.adapter.setErrorMessage('');
+        this.adapter.setStatusMessage(`Placing ${movie.title}.`);
         this.adapter.setMovies([movie, nextState.pivotMovie]);
         this.adapter.syncPairToUrl();
     }
@@ -95,30 +115,43 @@ export class MovieFaceoffTargetedInsertionController {
         const session = this.adapter.getSession();
         if (!session) return;
 
+        if (session.phase === 'pinned') {
+            // Pinned mode: route handles pair selection via displayNewPair.
+            if (!options.preserveCurrentPair) {
+                await this.adapter.displayNewPair();
+            }
+            return;
+        }
+
         const nextState = this.buildState(
             session.targetMovie,
             options.comparisonsCompleted ?? session.comparisonsCompleted,
             options.low ?? session.low,
-            options.high ?? session.high
+            options.high ?? session.high,
+            'pivot',
+            session.initialSnapshotSize
         );
 
-        this.adapter.setSession(nextState);
-
         if (nextState.complete) {
-            const estimatedPlacement = Math.min(
-                nextState.rankedSnapshot.length + 1,
-                nextState.low + 1
+            // Pivot converged — transition to pinned without clearing.
+            const pinnedState = this.buildState(
+                session.targetMovie,
+                nextState.comparisonsCompleted,
+                nextState.low,
+                nextState.high,
+                'pinned',
+                session.initialSnapshotSize
             );
-            this.clearSessionState();
+            pinnedState.lastPivotedRank = nextState.low + 1;
+            this.adapter.setSession(pinnedState);
             this.adapter.setStatusMessage(
-                nextState.rankedSnapshot.length
-                    ? `Placed ${nextState.targetMovie.title} at #${estimatedPlacement} in ${getMovieFaceoffRankingAlgorithm(this.adapter.getSortMode()).label}.`
-                    : 'Saved that movie. Rank a few movies first, then use targeted placement.'
+                `Pinned ${session.targetMovie.title}.`
             );
             await this.adapter.displayNewPair();
             return;
         }
 
+        this.adapter.setSession(nextState);
         if (!options.preserveCurrentPair) {
             this.adapter.setMovies([nextState.targetMovie, nextState.pivotMovie]);
             this.adapter.syncPairToUrl();
@@ -128,6 +161,19 @@ export class MovieFaceoffTargetedInsertionController {
     async advanceAfterVote(winnerIsLeft: boolean): Promise<boolean> {
         const session = this.adapter.getSession();
         if (!session) return false;
+        if (session.phase === 'pinned') {
+            // Drop the transient "just-placed" annotation before the next
+            // pair renders. Let the route's normal post-vote flow drive
+            // the next pair — displayNewPair sees the pinned phase and
+            // pairs target-vs-smart.
+            if (session.lastPivotedRank !== undefined) {
+                this.adapter.setSession({
+                    ...session,
+                    lastPivotedRank: undefined,
+                });
+            }
+            return false;
+        }
         const { low, high, comparisonsCompleted } = advanceTargetedInsertion(
             session,
             winnerIsLeft
@@ -141,7 +187,7 @@ export class MovieFaceoffTargetedInsertionController {
         if (!session) return;
         const targetTitle = session.targetMovie.title;
         this.clearSessionState();
-        this.adapter.setStatusMessage(`Stopped targeted placement for ${targetTitle}.`);
+        this.adapter.setStatusMessage(`Unpinned ${targetTitle}.`);
         void this.adapter.displayNewPair();
     }
 

@@ -50,7 +50,10 @@ export class MovieFaceoffStatusBar extends LitElement {
                     <span>${this.statusLabel}</span>
                 </p>
                 ${this.showUndo
-                    ? html`<button class="secondary" @click=${() => this.emitUndo()}>
+                    ? html`<button
+                          class="outline danger"
+                          @click=${() => this.emitUndo()}
+                      >
                           <jot-icon name="RotateCcw"></jot-icon>
                           Undo
                       </button>`

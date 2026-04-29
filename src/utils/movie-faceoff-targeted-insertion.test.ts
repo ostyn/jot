@@ -25,7 +25,7 @@ function makeRanked(ids: number[]): MovieFaceoffRankedMovie[] {
 
 describe('createTargetedInsertionState', () => {
     it('completes immediately when the ranked snapshot is empty', () => {
-        const state = createTargetedInsertionState(makeTarget(1), [], 'manual');
+        const state = createTargetedInsertionState(makeTarget(1), []);
         expect(state.complete).toBe(true);
         expect(state.rankedSnapshot).toEqual([]);
         expect(state.pivotMovie).toBeNull();
@@ -34,7 +34,7 @@ describe('createTargetedInsertionState', () => {
 
     it('filters the target out of the ranked snapshot', () => {
         const ranked = makeRanked([1, 2, 3]);
-        const state = createTargetedInsertionState(makeTarget(2), ranked, 'manual');
+        const state = createTargetedInsertionState(makeTarget(2), ranked);
         expect(state.rankedSnapshot.map((m) => m.id)).toEqual([1, 3]);
     });
 
@@ -42,7 +42,7 @@ describe('createTargetedInsertionState', () => {
         const ranked = makeRanked([10, 20, 30, 40, 50, 60, 70, 80, 90]);
         const seenPivots = new Set<number>();
         for (let i = 0; i < 50; i++) {
-            const state = createTargetedInsertionState(makeTarget(99), ranked, 'manual');
+            const state = createTargetedInsertionState(makeTarget(99), ranked);
             seenPivots.add(state.pivotIndex);
         }
         // size=9 → band is [3, 6) → indices 3, 4, 5
@@ -54,7 +54,6 @@ describe('createTargetedInsertionState', () => {
         const state = createTargetedInsertionState(
             makeTarget(99),
             ranked,
-            'manual',
             0,
             3, // low = high = snapshot length
             3
@@ -67,7 +66,6 @@ describe('createTargetedInsertionState', () => {
         const state = createTargetedInsertionState(
             makeTarget(99),
             ranked,
-            'manual',
             0,
             -5, // low gets clamped to 0
             99 // high gets clamped to snapshot length (3)
@@ -76,14 +74,51 @@ describe('createTargetedInsertionState', () => {
         expect(state.high).toBe(3);
         expect(state.complete).toBe(false);
     });
+
+    it('defaults to pivot phase and records the snapshot size for progress tracking', () => {
+        const ranked = makeRanked([10, 20, 30, 40, 50]);
+        const state = createTargetedInsertionState(makeTarget(99), ranked);
+        expect(state.phase).toBe('pivot');
+        expect(state.initialSnapshotSize).toBe(5);
+    });
+
+    it('builds a pinned-phase state with no pivot when phase=pinned', () => {
+        const ranked = makeRanked([10, 20, 30]);
+        const state = createTargetedInsertionState(
+            makeTarget(99),
+            ranked,
+            0,
+            0,
+            undefined,
+            'pinned'
+        );
+        expect(state.phase).toBe('pinned');
+        expect(state.complete).toBe(true);
+        expect(state.pivotMovie).toBeNull();
+        expect(state.pivotIndex).toBe(-1);
+        expect(state.initialSnapshotSize).toBe(3);
+    });
+
+    it('preserves the originally-captured snapshot size when one is supplied', () => {
+        const ranked = makeRanked([10, 20]);
+        const state = createTargetedInsertionState(
+            makeTarget(99),
+            ranked,
+            3,
+            0,
+            undefined,
+            'pinned',
+            42
+        );
+        expect(state.initialSnapshotSize).toBe(42);
+    });
 });
 
 describe('advanceTargetedInsertion', () => {
     it('narrows high to the pivot when the target wins', () => {
         const session = createTargetedInsertionState(
             makeTarget(99),
-            makeRanked([10, 20, 30, 40, 50]),
-            'manual'
+            makeRanked([10, 20, 30, 40, 50])
         );
         const { low, high, comparisonsCompleted } = advanceTargetedInsertion(session, true);
         expect(low).toBe(session.low);
@@ -94,8 +129,7 @@ describe('advanceTargetedInsertion', () => {
     it('narrows low past the pivot when the target loses', () => {
         const session = createTargetedInsertionState(
             makeTarget(99),
-            makeRanked([10, 20, 30, 40, 50]),
-            'manual'
+            makeRanked([10, 20, 30, 40, 50])
         );
         const { low, high, comparisonsCompleted } = advanceTargetedInsertion(session, false);
         expect(low).toBe(session.pivotIndex + 1);
@@ -106,8 +140,7 @@ describe('advanceTargetedInsertion', () => {
     it('increments comparisonsCompleted each time', () => {
         let session = createTargetedInsertionState(
             makeTarget(99),
-            makeRanked([10, 20, 30]),
-            'manual'
+            makeRanked([10, 20, 30])
         );
         expect(session.comparisonsCompleted).toBe(0);
         const next = advanceTargetedInsertion(session, true);
@@ -116,7 +149,7 @@ describe('advanceTargetedInsertion', () => {
 
     it('converges in O(log n) steps on a 10-movie snapshot', () => {
         const ranked = makeRanked([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-        let session = createTargetedInsertionState(makeTarget(99), ranked, 'manual');
+        let session = createTargetedInsertionState(makeTarget(99), ranked);
         let steps = 0;
         // Simulate the target "losing" every comparison — pushes it to the end
         while (!session.complete && steps < 20) {
@@ -124,7 +157,6 @@ describe('advanceTargetedInsertion', () => {
             session = createTargetedInsertionState(
                 makeTarget(99),
                 ranked,
-                'manual',
                 next.comparisonsCompleted,
                 next.low,
                 next.high

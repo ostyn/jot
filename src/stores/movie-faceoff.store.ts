@@ -104,7 +104,11 @@ class MovieFaceoffStore {
         return this.loadPromise;
     }
 
-    @computed
+    // keepAlive lets the cached value survive when no MobX observer is
+    // watching. Without it, async code paths (recordVote, displayNewPair,
+    // kickoffPreload) that read replayState outside a reactive context will
+    // each force a fresh ~150–280ms rebuild via buildMovieFaceoffReplayState.
+    @computed({ keepAlive: true })
     get replayState(): MovieFaceoffReplayState {
         return buildMovieFaceoffReplayState(this.allEvents, this.allMovies);
     }
@@ -150,9 +154,31 @@ class MovieFaceoffStore {
         movies.forEach((movie) => uniqueMovies.set(movie.id, movie));
         if (!uniqueMovies.size) return;
 
-        const nextMovies = Array.from(uniqueMovies.values()).map((movie) =>
-            toStoredMovie(movie, this.movieMap.get(movie.id))
-        );
+        // Skip movies whose stored record matches the incoming TMDB data on
+        // everything except `updatedAt`. `toStoredMovie` bumps `updatedAt` to
+        // `now()` every call, so a naive upsert rewrites the row on every
+        // `loadMovie()` — which invalidates `replayState` (it depends on
+        // `allMovies`) and forces a fresh ~150ms rebuild. Every preload pair
+        // calls `loadMovie` twice, so this was costing two replay rebuilds
+        // per vote on top of the one for the actual vote event.
+        const movieMap = this.movieMap;
+        const nextMovies: MovieFaceoffMovie[] = [];
+        for (const movie of uniqueMovies.values()) {
+            const existing = movieMap.get(movie.id);
+            const next = toStoredMovie(movie, existing);
+            if (
+                existing &&
+                existing.title === next.title &&
+                existing.posterPath === next.posterPath &&
+                existing.releaseDate === next.releaseDate &&
+                existing.excludedAt === next.excludedAt &&
+                existing.unseenAt === next.unseenAt
+            ) {
+                continue;
+            }
+            nextMovies.push(next);
+        }
+        if (!nextMovies.length) return;
 
         await movieFaceoffDao.bulkPutMovies(nextMovies);
         runInAction(() => {
@@ -170,7 +196,16 @@ class MovieFaceoffStore {
         loserMovie: FaceoffMovie,
         targetId?: number
     ) {
-        await this.upsertMoviesMetadata([winnerMovie, loserMovie]);
+        // Prepare the upserted movie records and the vote event up front so
+        // the two DB writes can run in parallel and both store mutations
+        // land in a single runInAction below — that's one replayState
+        // invalidation per vote instead of two.
+        const uniqueMovies = new Map<number, FaceoffMovie>();
+        [winnerMovie, loserMovie].forEach((m) => uniqueMovies.set(m.id, m));
+        const movieMap = this.movieMap;
+        const nextMovies = Array.from(uniqueMovies.values()).map((movie) =>
+            toStoredMovie(movie, movieMap.get(movie.id))
+        );
         const event: Omit<MovieFaceoffEvent, 'id'> = {
             createdAt: new Date().toISOString(),
             type: 'vote',
@@ -178,8 +213,18 @@ class MovieFaceoffStore {
             loserId: loserMovie.id,
             ...(targetId !== undefined ? { targetId } : {}),
         };
-        const id = await movieFaceoffDao.addEvent(event);
+
+        const [, id] = await Promise.all([
+            movieFaceoffDao.bulkPutMovies(nextMovies),
+            movieFaceoffDao.addEvent(event),
+        ]);
+
         runInAction(() => {
+            let updatedMovies = [...this.allMovies];
+            nextMovies.forEach((movie) => {
+                updatedMovies = upsertById(updatedMovies, movie);
+            });
+            this.allMovies = updatedMovies;
             this.allEvents = [...this.allEvents, { ...event, id }];
         });
         return id;

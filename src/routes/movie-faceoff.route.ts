@@ -102,6 +102,7 @@ export class MovieFaceoffRoute
     private routeInitialized = false;
     private preloadedPair: [FaceoffMovie, FaceoffMovie] | null = null;
     private preloadInFlight = false;
+    private preloadPromise: Promise<void> | null = null;
     private readonly targetedInsertionController =
         new MovieFaceoffTargetedInsertionController({
             getSession: () => this.targetedInsertion,
@@ -391,6 +392,18 @@ export class MovieFaceoffRoute
     }
 
     private readonly loadMovie = async (id: number): Promise<FaceoffMovie> => {
+        // Matchup-card render reads only id/title/poster_path/release_date,
+        // all of which are already in the stored MovieFaceoffMovie. Skip the
+        // TMDB roundtrip whenever we already have the row.
+        const stored = movieFaceoff.movieMap.get(id);
+        if (stored) {
+            return {
+                id: stored.id,
+                title: stored.title,
+                poster_path: stored.posterPath ?? null,
+                release_date: stored.releaseDate,
+            };
+        }
         const movie = await fetchTmdbMovie(id);
         await movieFaceoff.upsertMoviesMetadata([movie]);
         return movie;
@@ -424,6 +437,26 @@ export class MovieFaceoffRoute
             this.syncPairToUrl();
             void this.kickoffPreload();
             return;
+        }
+
+        // No cached preload, but one might already be in flight — awaiting
+        // it avoids duplicating the matrix build and TMDB fetches that
+        // `runPreload` is already doing. The pair was selected against the
+        // previous replay state, but `takePreloadedPair`'s pool-validity
+        // check still applies, so a stale-but-valid pair is fine.
+        if (this.preloadInFlight && this.preloadPromise) {
+            this.isLoading = true;
+            await this.preloadPromise;
+            const justFinished = this.takePreloadedPair();
+            if (justFinished) {
+                this.movies = justFinished;
+                this.errorMessage = '';
+                this.isLoading = false;
+                this.syncPairToUrl();
+                void this.kickoffPreload();
+                return;
+            }
+            // Fell through — preload returned null/invalid pair. Slow path.
         }
 
         this.isLoading = true;
@@ -575,7 +608,7 @@ export class MovieFaceoffRoute
         this.preloadedPair = null;
     }
 
-    private async kickoffPreload() {
+    private async kickoffPreload(): Promise<void> {
         const session = this.targetedInsertion;
         if (session && session.phase === 'pivot') return;
         if (this.preloadedPair || this.preloadInFlight) return;
@@ -583,7 +616,17 @@ export class MovieFaceoffRoute
         // unresponded pool, so a preloaded pair is stale by construction.
         // Skip the cache entirely; the next pair always rebuilds fresh.
         if (this.mode.pairing.kind === 'cross') return;
+
         this.preloadInFlight = true;
+        const promise = this.runPreload(session).finally(() => {
+            this.preloadInFlight = false;
+            if (this.preloadPromise === promise) this.preloadPromise = null;
+        });
+        this.preloadPromise = promise;
+        await promise;
+    }
+
+    private async runPreload(session: TargetedInsertionState | null): Promise<void> {
         try {
             if (session && session.phase === 'pinned') {
                 const target = session.targetMovie;
@@ -641,8 +684,6 @@ export class MovieFaceoffRoute
             this.preloadedPair = [left, right];
         } catch {
             // Swallow — fall through to regular fetch on next displayNewPair.
-        } finally {
-            this.preloadInFlight = false;
         }
     }
 

@@ -24,7 +24,7 @@ export interface MovieFaceoffTargetedInsertionAdapter {
         sortMode: MovieFaceoffSortMode
     ) => MovieFaceoffRankedMovie[];
     hasPriorVotes: (movieId: number) => boolean;
-    setUseRankedOnly: (useRankedOnly: boolean) => void;
+    setModeIdSilent: (modeId: string) => void;
     setStatusMessage: (message: string) => void;
     setErrorMessage: (message: string) => void;
     setMovies: (movies: FaceoffPair) => void;
@@ -73,7 +73,7 @@ export class MovieFaceoffTargetedInsertionController {
         await this.adapter.upsertMoviesMetadata([movie]);
         // Targeted mode is anchored to the user's ranked pool — pivots and
         // pinned-mode opponents both come from "My movies."
-        this.adapter.setUseRankedOnly(true);
+        this.adapter.setModeIdSilent('ranked');
         this.adapter.setErrorMessage('');
 
         const snapshot = this.adapter.getRankedSnapshotForSort(

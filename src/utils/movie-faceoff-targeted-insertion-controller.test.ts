@@ -46,7 +46,7 @@ function makeAdapter(overrides: Partial<MovieFaceoffTargetedInsertionAdapter> = 
         setPendingTargetMovieId: () => {},
         getRankedSnapshotForSort: (_: MovieFaceoffSortMode) => makeRanked([1, 2, 3]),
         hasPriorVotes: () => false,
-        setUseRankedOnly: () => {},
+        setModeIdSilent: () => {},
         setStatusMessage: (message) => {
             calls.statusMessages.push(message);
         },

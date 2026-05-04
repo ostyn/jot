@@ -46,6 +46,12 @@ export class MovieFaceoffUndoManager {
         return entry;
     }
 
+    clear(): void {
+        if (!this.stack.length) return;
+        this.stack = [];
+        this.persist();
+    }
+
     private persist(): void {
         try {
             window.sessionStorage.setItem(

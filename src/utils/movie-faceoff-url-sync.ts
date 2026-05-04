@@ -2,12 +2,13 @@ import {
     MOVIE_FACEOFF_SORT_MODES,
     MovieFaceoffSortMode,
 } from '../interfaces/movie-faceoff.interface';
+import { getMode } from './movie-faceoff-pools';
 
 export interface MovieFaceoffUrlState {
     targetMovieId?: number;
     sortMode?: MovieFaceoffSortMode;
     pairIds?: [number, number];
-    useRankedOnly: boolean;
+    modeId: string;
 }
 
 const isPositiveFiniteNumber = (value: number) =>
@@ -33,9 +34,9 @@ export function parseMovieFaceoffUrl(search: string): MovieFaceoffUrlState {
             ? [leftId, rightId]
             : undefined;
 
-    const useRankedOnly = params.get('pool') === 'mine';
+    const modeId = getMode(params.get('pool')).id;
 
-    return { targetMovieId, sortMode, pairIds, useRankedOnly };
+    return { targetMovieId, sortMode, pairIds, modeId };
 }
 
 export function updateMovieFaceoffQueryParams(

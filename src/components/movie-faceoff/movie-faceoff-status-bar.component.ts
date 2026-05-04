@@ -25,6 +25,9 @@ export class MovieFaceoffStatusBar extends LitElement {
     @property({ attribute: false })
     availableCount: number | null = null;
 
+    @property({ type: String })
+    availableLabel = 'Available';
+
     private emitUndo() {
         this.dispatchEvent(
             new CustomEvent('undo-action', { bubbles: true, composed: true })
@@ -63,7 +66,7 @@ export class MovieFaceoffStatusBar extends LitElement {
             <div class="summary-grid session-summary">
                 ${this.renderSummaryStat('Ranked', this.rankedCount, true)}
                 ${this.renderSummaryStat('Votes', this.votesCount)}
-                ${this.renderSummaryStat('Available', this.availableCount ?? '...')}
+                ${this.renderSummaryStat(this.availableLabel, this.availableCount ?? '...')}
             </div>
 
             <p class="session-hint">

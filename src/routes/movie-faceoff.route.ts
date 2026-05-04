@@ -22,6 +22,13 @@ import {
     pickSmartMovieId,
 } from '../utils/movie-faceoff-pairing';
 import {
+    DEFAULT_MODE_ID,
+    getMode,
+    ModeDef,
+    Pool,
+    PoolContext,
+} from '../utils/movie-faceoff-pools';
+import {
     clonePair,
     FaceoffPair,
     MovieStateChange,
@@ -52,7 +59,7 @@ export class MovieFaceoffRoute
     private movies: FaceoffPair = [null, null];
 
     @state()
-    private useRankedOnly = false;
+    private modeId: string = DEFAULT_MODE_ID;
 
     @state()
     private isLoading = false;
@@ -98,14 +105,7 @@ export class MovieFaceoffRoute
                 if (!rating) return false;
                 return (rating.winCount || 0) + (rating.lossCount || 0) > 0;
             },
-            setUseRankedOnly: (useRankedOnly) => {
-                if (this.useRankedOnly === useRankedOnly) return;
-                this.useRankedOnly = useRankedOnly;
-                this.invalidatePreload();
-                updateMovieFaceoffQueryParams({
-                    pool: useRankedOnly ? 'mine' : undefined,
-                });
-            },
+            setModeIdSilent: (modeId) => this.setModeIdSilent(modeId),
             setStatusMessage: (message) => {
                 this.statusMessage = message;
             },
@@ -136,7 +136,7 @@ export class MovieFaceoffRoute
         this.pendingTargetMovieId = urlState.targetMovieId;
         if (urlState.sortMode) this.sortMode = urlState.sortMode;
         if (urlState.pairIds) this.pendingPairIds = urlState.pairIds;
-        this.useRankedOnly = urlState.useRankedOnly;
+        this.modeId = urlState.modeId;
 
         if (!this.routeInitialized) return;
 
@@ -189,26 +189,50 @@ export class MovieFaceoffRoute
         return movieFaceoff.replayState;
     }
 
+    private get mode(): ModeDef {
+        return getMode(this.modeId);
+    }
+
     private get visibleRankedMovies() {
         return movieFaceoff.getRankedMovies(this.sortMode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
         );
     }
 
-    private get availableMovieCount() {
+    private buildPoolContext(): PoolContext | null {
+        if (!this.movieIdPool) return null;
+        const decisiveIds = this.replayState.decisiveMovieIds;
         const excludedIds = movieFaceoff.excludedMovieIds;
         const unseenIds = movieFaceoff.unseenMovieIds;
+        const respondedIds = new Set<number>(decisiveIds);
+        excludedIds.forEach((id) => respondedIds.add(id));
+        unseenIds.forEach((id) => respondedIds.add(id));
+        return {
+            fullTmdbIds: this.movieIdPool,
+            decisiveIds,
+            respondedIds,
+        };
+    }
 
-        if (this.useRankedOnly) {
-            return Array.from(this.replayState.decisiveMovieIds).filter(
-                (id) => !excludedIds.has(id) && !unseenIds.has(id)
-            ).length;
-        }
+    private poolForSide(side: 0 | 1): Pool {
+        const { pairing } = this.mode;
+        if (pairing.kind === 'cross') return side === 0 ? pairing.left : pairing.right;
+        return pairing.pool;
+    }
 
-        if (!this.movieIdPool) return null;
-
-        return this.movieIdPool.filter(
-            (id) => !excludedIds.has(id) && !unseenIds.has(id)
+    private get availableMovieCount(): number | null {
+        const ctx = this.buildPoolContext();
+        if (!ctx) return null;
+        // For cross modes, the left pool is the placement bottleneck
+        // (e.g. "X new movies to place"); single modes report their own pool.
+        const pool =
+            this.mode.pairing.kind === 'cross'
+                ? this.mode.pairing.left
+                : this.mode.pairing.pool;
+        return getCandidatePool(
+            pool(ctx),
+            movieFaceoff.excludedMovieIds,
+            movieFaceoff.unseenMovieIds
         ).length;
     }
 
@@ -232,20 +256,30 @@ export class MovieFaceoffRoute
         return 'Ready for the next pick';
     }
 
-    private async setPoolMode(useRankedOnly: boolean) {
-        if (this.useRankedOnly === useRankedOnly) return;
-        // Targeted mode lives in the My movies pool. Switching back to
-        // All movies is an implicit "unpin."
-        if (!useRankedOnly && this.targetedInsertion) {
-            this.useRankedOnly = useRankedOnly;
-            this.invalidatePreload();
-            updateMovieFaceoffQueryParams({ pool: undefined });
+    private setModeIdSilent(modeId: string) {
+        if (this.modeId === modeId) return;
+        this.modeId = modeId;
+        this.invalidatePreload();
+        // Mode change voids undo — the prior pair was drawn from a different
+        // pool, so restoring it would land the user in an inconsistent state.
+        this.undoManager.clear();
+        this.showUndo = false;
+        updateMovieFaceoffQueryParams({
+            pool: modeId === DEFAULT_MODE_ID ? undefined : modeId,
+        });
+    }
+
+    private async setMode(modeId: string) {
+        if (this.modeId === modeId) return;
+        // Targeted mode is anchored to ranked. Leaving ranked is an implicit
+        // "unpin"; cancel before switching so the controller's own teardown
+        // (status message, URL clear) runs.
+        if (modeId !== 'ranked' && this.targetedInsertion) {
+            this.setModeIdSilent(modeId);
             this.targetedInsertionController.cancel();
             return;
         }
-        this.useRankedOnly = useRankedOnly;
-        this.invalidatePreload();
-        updateMovieFaceoffQueryParams({ pool: useRankedOnly ? 'mine' : undefined });
+        this.setModeIdSilent(modeId);
         await this.displayNewPair();
     }
 
@@ -329,12 +363,12 @@ export class MovieFaceoffRoute
         return this.movieIdPoolPromise;
     }
 
-    private async buildCandidatePool(exclude: number[] = []) {
-        const allIds = this.useRankedOnly
-            ? Array.from(this.replayState.decisiveMovieIds)
-            : await this.ensureMovieIdPool();
+    private async resolvePoolIds(pool: Pool, exclude: number[] = []): Promise<number[]> {
+        await this.ensureMovieIdPool();
+        const ctx = this.buildPoolContext();
+        if (!ctx) return [];
         return getCandidatePool(
-            allIds,
+            pool(ctx),
             movieFaceoff.excludedMovieIds,
             movieFaceoff.unseenMovieIds,
             exclude
@@ -347,8 +381,12 @@ export class MovieFaceoffRoute
         return movie;
     };
 
-    private async pickSmartMovie(exclude: number[] = [], firstMovie?: FaceoffMovie): Promise<FaceoffMovie | null> {
-        const pool = await this.buildCandidatePool(exclude);
+    private async pickSmartMovie(
+        side: 0 | 1,
+        exclude: number[] = [],
+        firstMovie?: FaceoffMovie
+    ): Promise<FaceoffMovie | null> {
+        const pool = await this.resolvePoolIds(this.poolForSide(side), exclude);
         return getSmartMovie(pool, this.replayState.ratings, this.loadMovie, firstMovie);
     }
 
@@ -385,19 +423,32 @@ export class MovieFaceoffRoute
         this.isLoading = true;
         this.errorMessage = '';
         try {
-            const pool = await this.buildCandidatePool();
+            const mode = this.mode;
             const ratings = this.replayState.ratings;
 
-            const leftId = pickSmartMovieId(pool, ratings);
+            // Build both pools up front. For cross modes this avoids a wasted
+            // TMDB load when the right pool is empty.
+            const leftPool =
+                mode.pairing.kind === 'cross'
+                    ? await this.resolvePoolIds(mode.pairing.left)
+                    : await this.resolvePoolIds(mode.pairing.pool);
+
+            const leftId = pickSmartMovieId(leftPool, ratings);
             if (leftId === null) {
                 this.movies = [null, null];
-                this.errorMessage = this.useRankedOnly
-                    ? 'Rank at least two movies before using ranked-only mode.'
-                    : 'No movies are available right now.';
+                this.errorMessage = mode.emptyMessage(
+                    mode.pairing.kind === 'cross' ? 'left' : 'single'
+                );
                 return;
             }
 
-            const rightPool = pool.filter((id) => id !== leftId);
+            const rightPool =
+                mode.pairing.kind === 'cross'
+                    ? (await this.resolvePoolIds(mode.pairing.right)).filter(
+                          (id) => id !== leftId
+                      )
+                    : leftPool.filter((id) => id !== leftId);
+
             const rightId = pickSmartMovieId(rightPool, ratings, leftId);
             if (rightId === null) {
                 try {
@@ -405,9 +456,9 @@ export class MovieFaceoffRoute
                 } catch {
                     this.movies = [null, null];
                 }
-                this.errorMessage = this.useRankedOnly
-                    ? 'Rank at least two movies before using ranked-only mode.'
-                    : 'Unable to find a second movie right now.';
+                this.errorMessage = mode.emptyMessage(
+                    mode.pairing.kind === 'cross' ? 'right' : 'single'
+                );
                 return;
             }
 
@@ -441,14 +492,20 @@ export class MovieFaceoffRoute
         this.isLoading = true;
         this.errorMessage = '';
         try {
-            const pool = await this.buildCandidatePool([target.id]);
+            // Pinned mode draws opponents from the right side of the active
+            // mode (or the single pool). Targeted insertion forces 'ranked',
+            // so this is normally the ranked pool.
+            const opponentPool = await this.resolvePoolIds(
+                this.poolForSide(1),
+                [target.id]
+            );
             const ratings = this.replayState.ratings;
-            const opponentId = pickSmartMovieId(pool, ratings, target.id);
+            const opponentId = pickSmartMovieId(opponentPool, ratings, target.id);
             if (opponentId === null) {
                 this.movies = [target, null];
-                this.errorMessage = this.useRankedOnly
-                    ? 'Rank at least two movies before using ranked-only mode.'
-                    : 'No other movies are available to compare against.';
+                this.errorMessage = this.mode.emptyMessage(
+                    this.mode.pairing.kind === 'cross' ? 'right' : 'single'
+                );
                 return;
             }
             const opponent = await this.loadMovie(opponentId);
@@ -468,29 +525,29 @@ export class MovieFaceoffRoute
         const pair = this.preloadedPair;
         if (!pair) return null;
         if (pair[0].id !== targetId) return null;
-        if (!this.isPreloadMovieValid(pair[1])) return null;
+        if (!this.isPreloadMovieValid(pair[1], 1)) return null;
         this.preloadedPair = null;
         return pair;
     }
 
-    private isPreloadMovieValid(movie: FaceoffMovie): boolean {
+    private isPreloadMovieValid(movie: FaceoffMovie, side: 0 | 1): boolean {
         const excluded = movieFaceoff.excludedMovieIds;
         const unseen = movieFaceoff.unseenMovieIds;
         if (excluded.has(movie.id) || unseen.has(movie.id)) return false;
-        if (
-            this.useRankedOnly &&
-            !this.replayState.decisiveMovieIds.has(movie.id)
-        ) {
-            return false;
-        }
-        return true;
+        const ctx = this.buildPoolContext();
+        if (!ctx) return true; // pool not yet loaded; defer to consumer
+        const ids = this.poolForSide(side)(ctx);
+        return ids.includes(movie.id);
     }
 
     private takePreloadedPair(): [FaceoffMovie, FaceoffMovie] | null {
         const pair = this.preloadedPair;
         if (!pair) return null;
         this.preloadedPair = null;
-        if (!this.isPreloadMovieValid(pair[0]) || !this.isPreloadMovieValid(pair[1])) {
+        if (
+            !this.isPreloadMovieValid(pair[0], 0) ||
+            !this.isPreloadMovieValid(pair[1], 1)
+        ) {
             return null;
         }
         return pair;
@@ -504,13 +561,17 @@ export class MovieFaceoffRoute
         const session = this.targetedInsertion;
         if (session && session.phase === 'pivot') return;
         if (this.preloadedPair || this.preloadInFlight) return;
+        // In cross modes, every vote moves the left movie out of the
+        // unresponded pool, so a preloaded pair is stale by construction.
+        // Skip the cache entirely; the next pair always rebuilds fresh.
+        if (this.mode.pairing.kind === 'cross') return;
         this.preloadInFlight = true;
         try {
             const ratings = this.replayState.ratings;
 
             if (session && session.phase === 'pinned') {
                 const target = session.targetMovie;
-                const opponentPool = await this.buildCandidatePool([
+                const opponentPool = await this.resolvePoolIds(this.poolForSide(1), [
                     target.id,
                     ...this.movies
                         .filter((m): m is FaceoffMovie => Boolean(m))
@@ -532,7 +593,9 @@ export class MovieFaceoffRoute
             const currentIds = this.movies
                 .filter((m): m is FaceoffMovie => Boolean(m))
                 .map((m) => m.id);
-            const pool = await this.buildCandidatePool(currentIds);
+            // Single-mode preload — left and right come from the same pool.
+            if (this.mode.pairing.kind !== 'single') return;
+            const pool = await this.resolvePoolIds(this.mode.pairing.pool, currentIds);
 
             const leftId = pickSmartMovieId(pool, ratings);
             if (leftId === null) return;
@@ -598,7 +661,7 @@ export class MovieFaceoffRoute
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
 
-        const replacement = await this.pickSmartMovie(exclude, otherMovie);
+        const replacement = await this.pickSmartMovie(index, exclude, otherMovie);
         if (!replacement) {
             await this.displayNewPair();
             return;
@@ -718,9 +781,9 @@ export class MovieFaceoffRoute
                                 <h2>Current faceoff</h2>
                             </hgroup>
                             <movie-faceoff-pool-toggle
-                                .useRankedOnly=${this.useRankedOnly}
+                                .modeId=${this.modeId}
                                 @pool-change=${(e: CustomEvent) => {
-                                    void this.setPoolMode(e.detail.useRankedOnly);
+                                    void this.setMode(e.detail.modeId);
                                 }}
                             ></movie-faceoff-pool-toggle>
                         </header>
@@ -758,6 +821,7 @@ export class MovieFaceoffRoute
                                 .rankedCount=${this.visibleRankedMovies.length}
                                 .votesCount=${movieFaceoff.allEvents.length}
                                 .availableCount=${this.availableMovieCount}
+                                .availableLabel=${this.mode.availableLabel ?? 'Available'}
                                 @undo-action=${() => void this.undoLastAction()}
                             ></movie-faceoff-status-bar>
                         </footer>

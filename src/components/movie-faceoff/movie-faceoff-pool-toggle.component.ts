@@ -1,17 +1,20 @@
 import { css, html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { base } from '../../baseStyles';
+import { MODES } from '../../utils/movie-faceoff-pools';
 
 @customElement('movie-faceoff-pool-toggle')
 export class MovieFaceoffPoolToggle extends LitElement {
-    @property({ type: Boolean })
-    useRankedOnly = false;
+    @property({ type: String })
+    modeId = MODES[0].id;
 
-    private emitChange(useRankedOnly: boolean) {
-        if (this.useRankedOnly === useRankedOnly) return;
+    private onChange(event: Event) {
+        const target = event.target as HTMLSelectElement;
+        const next = target.value;
+        if (this.modeId === next) return;
         this.dispatchEvent(
             new CustomEvent('pool-change', {
-                detail: { useRankedOnly },
+                detail: { modeId: next },
                 bubbles: true,
                 composed: true,
             })
@@ -20,22 +23,24 @@ export class MovieFaceoffPoolToggle extends LitElement {
 
     render() {
         return html`
-            <div role="group" class="pool-toggle" aria-label="Movie pool">
-                <button
-                    class=${this.useRankedOnly ? 'outline' : ''}
-                    aria-pressed=${!this.useRankedOnly}
-                    @click=${() => this.emitChange(false)}
+            <label class="pool-picker">
+                <span class="visually-hidden">Movie pool</span>
+                <select
+                    .value=${this.modeId}
+                    @change=${(e: Event) => this.onChange(e)}
                 >
-                    All movies
-                </button>
-                <button
-                    class=${this.useRankedOnly ? '' : 'outline'}
-                    aria-pressed=${this.useRankedOnly}
-                    @click=${() => this.emitChange(true)}
-                >
-                    My movies
-                </button>
-            </div>
+                    ${MODES.map(
+                        (mode) => html`
+                            <option
+                                value=${mode.id}
+                                ?selected=${mode.id === this.modeId}
+                            >
+                                ${mode.label}
+                            </option>
+                        `
+                    )}
+                </select>
+            </label>
         `;
     }
 
@@ -46,6 +51,24 @@ export class MovieFaceoffPoolToggle extends LitElement {
                 display: block;
                 width: fit-content;
             }
+            .pool-picker {
+                display: block;
+                margin: 0;
+            }
+            select {
+                margin: 0;
+            }
+            .visually-hidden {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                white-space: nowrap;
+                border: 0;
+            }
             @media (max-width: 900px) {
                 :host {
                     width: 100%;
@@ -55,7 +78,7 @@ export class MovieFaceoffPoolToggle extends LitElement {
                 :host {
                     width: 100%;
                 }
-                .pool-toggle button {
+                select {
                     width: 100%;
                 }
             }

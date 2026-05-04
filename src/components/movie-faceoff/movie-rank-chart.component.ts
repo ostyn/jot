@@ -121,7 +121,7 @@ export class MovieRankChart extends LitElement {
                 margin: 0.1rem 0;
             }
             .name {
-                color: var(--pico-color);
+                color: inherit;
                 font-weight: 500;
                 white-space: nowrap;
                 overflow: hidden;

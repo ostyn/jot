@@ -18,9 +18,10 @@ import {
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
     getCandidatePool,
-    getSmartMovie,
-    pickSmartMovieId,
+    pickInformativeOpponent,
+    pickInformativePair,
 } from '../utils/movie-faceoff-pairing';
+import { MOVIE_FACEOFF_RANKING_ALGORITHMS } from '../utils/movie-faceoff-rankings';
 import {
     DEFAULT_MODE_ID,
     getMode,
@@ -381,15 +382,6 @@ export class MovieFaceoffRoute
         return movie;
     };
 
-    private async pickSmartMovie(
-        side: 0 | 1,
-        exclude: number[] = [],
-        firstMovie?: FaceoffMovie
-    ): Promise<FaceoffMovie | null> {
-        const pool = await this.resolvePoolIds(this.poolForSide(side), exclude);
-        return getSmartMovie(pool, this.replayState.ratings, this.loadMovie, firstMovie);
-    }
-
     private maybeStartTargetedInsertionFromUrl() {
         this.invalidatePreload();
         return this.targetedInsertionController.maybeStartFromUrl(
@@ -424,7 +416,6 @@ export class MovieFaceoffRoute
         this.errorMessage = '';
         try {
             const mode = this.mode;
-            const ratings = this.replayState.ratings;
 
             // Build both pools up front. For cross modes this avoids a wasted
             // TMDB load when the right pool is empty.
@@ -433,8 +424,7 @@ export class MovieFaceoffRoute
                     ? await this.resolvePoolIds(mode.pairing.left)
                     : await this.resolvePoolIds(mode.pairing.pool);
 
-            const leftId = pickSmartMovieId(leftPool, ratings);
-            if (leftId === null) {
+            if (!leftPool.length) {
                 this.movies = [null, null];
                 this.errorMessage = mode.emptyMessage(
                     mode.pairing.kind === 'cross' ? 'left' : 'single'
@@ -444,24 +434,32 @@ export class MovieFaceoffRoute
 
             const rightPool =
                 mode.pairing.kind === 'cross'
-                    ? (await this.resolvePoolIds(mode.pairing.right)).filter(
-                          (id) => id !== leftId
-                      )
-                    : leftPool.filter((id) => id !== leftId);
+                    ? await this.resolvePoolIds(mode.pairing.right)
+                    : leftPool;
 
-            const rightId = pickSmartMovieId(rightPool, ratings, leftId);
-            if (rightId === null) {
-                try {
-                    this.movies = [await this.loadMovie(leftId), null];
-                } catch {
-                    this.movies = [null, null];
-                }
+            if (!rightPool.length) {
+                this.movies = [null, null];
                 this.errorMessage = mode.emptyMessage(
                     mode.pairing.kind === 'cross' ? 'right' : 'single'
                 );
                 return;
             }
 
+            const pair = pickInformativePair(
+                leftPool,
+                rightPool,
+                this.replayState,
+                MOVIE_FACEOFF_RANKING_ALGORITHMS
+            );
+            if (pair === null) {
+                this.movies = [null, null];
+                this.errorMessage = mode.emptyMessage(
+                    mode.pairing.kind === 'cross' ? 'right' : 'single'
+                );
+                return;
+            }
+
+            const [leftId, rightId] = pair;
             const [left, right] = await Promise.all([
                 this.loadMovie(leftId),
                 this.loadMovie(rightId),
@@ -499,8 +497,12 @@ export class MovieFaceoffRoute
                 this.poolForSide(1),
                 [target.id]
             );
-            const ratings = this.replayState.ratings;
-            const opponentId = pickSmartMovieId(opponentPool, ratings, target.id);
+            const opponentId = pickInformativeOpponent(
+                opponentPool,
+                this.replayState,
+                MOVIE_FACEOFF_RANKING_ALGORITHMS,
+                target.id
+            );
             if (opponentId === null) {
                 this.movies = [target, null];
                 this.errorMessage = this.mode.emptyMessage(
@@ -567,8 +569,6 @@ export class MovieFaceoffRoute
         if (this.mode.pairing.kind === 'cross') return;
         this.preloadInFlight = true;
         try {
-            const ratings = this.replayState.ratings;
-
             if (session && session.phase === 'pinned') {
                 const target = session.targetMovie;
                 const opponentPool = await this.resolvePoolIds(this.poolForSide(1), [
@@ -577,7 +577,12 @@ export class MovieFaceoffRoute
                         .filter((m): m is FaceoffMovie => Boolean(m))
                         .map((m) => m.id),
                 ]);
-                const opponentId = pickSmartMovieId(opponentPool, ratings, target.id);
+                const opponentId = pickInformativeOpponent(
+                    opponentPool,
+                    this.replayState,
+                    MOVIE_FACEOFF_RANKING_ALGORITHMS,
+                    target.id
+                );
                 if (opponentId === null) return;
                 const opponent = await this.loadMovie(opponentId);
                 await Promise.all([
@@ -597,12 +602,14 @@ export class MovieFaceoffRoute
             if (this.mode.pairing.kind !== 'single') return;
             const pool = await this.resolvePoolIds(this.mode.pairing.pool, currentIds);
 
-            const leftId = pickSmartMovieId(pool, ratings);
-            if (leftId === null) return;
-
-            const rightPool = pool.filter((id) => id !== leftId);
-            const rightId = pickSmartMovieId(rightPool, ratings, leftId);
-            if (rightId === null) return;
+            const pair = pickInformativePair(
+                pool,
+                pool,
+                this.replayState,
+                MOVIE_FACEOFF_RANKING_ALGORITHMS
+            );
+            if (pair === null) return;
+            const [leftId, rightId] = pair;
 
             const [left, right] = await Promise.all([
                 this.loadMovie(leftId),
@@ -661,8 +668,26 @@ export class MovieFaceoffRoute
         const exclude = existingMovies.map((movie) => movie.id);
         const otherMovie = existingMovies.find(movie => movie.id !== this.movies[index]?.id);
 
-        const replacement = await this.pickSmartMovie(index, exclude, otherMovie);
-        if (!replacement) {
+        if (!otherMovie) {
+            await this.displayNewPair();
+            return;
+        }
+
+        const pool = await this.resolvePoolIds(this.poolForSide(index), exclude);
+        const replacementId = pickInformativeOpponent(
+            pool,
+            this.replayState,
+            MOVIE_FACEOFF_RANKING_ALGORITHMS,
+            otherMovie.id
+        );
+        if (replacementId === null) {
+            await this.displayNewPair();
+            return;
+        }
+        let replacement: FaceoffMovie;
+        try {
+            replacement = await this.loadMovie(replacementId);
+        } catch {
             await this.displayNewPair();
             return;
         }

@@ -220,6 +220,35 @@ describe('buildMovieFaceoffReplayState', () => {
             // Target 3 moves to pivot 1's slot; pivot 1 stays at that position + 1.
             expect(state.manualList).toEqual([3, 1, 2]);
         });
+
+        it('preserves prior placement when a later targeted vote confirms order', () => {
+            // After binary-search-style placement of 99 between 2 and 3, a
+            // pinned-mode vote that 99 also beats 4 must NOT yank 99 from its
+            // current slot (between 2 and 3) just to re-seat it adjacent to 4.
+            const state = buildReplayFromVotes([
+                [1, 2],
+                [2, 3],
+                [3, 4],
+                [4, 5],
+                // manualList = [1, 2, 3, 4, 5]
+                [99, 3, 99], // 99 beats pivot 3 → [1, 2, 99, 3, 4, 5]
+                [99, 4, 99], // 99 beats pivot 4; 99 already above 4 → no-op
+            ]);
+            expect(state.manualList).toEqual([1, 2, 99, 3, 4, 5]);
+        });
+
+        it('still moves the target when a later targeted vote contradicts order', () => {
+            const state = buildReplayFromVotes([
+                [1, 2],
+                [2, 3],
+                [3, 4],
+                [4, 5],
+                // manualList = [1, 2, 3, 4, 5]
+                [99, 3, 99], // 99 beats 3 → [1, 2, 99, 3, 4, 5]
+                [4, 99, 99], // 4 beats 99; 99 currently above 4 → move below
+            ]);
+            expect(state.manualList).toEqual([1, 2, 3, 4, 99, 5]);
+        });
     });
 
     describe('movieMap sync', () => {

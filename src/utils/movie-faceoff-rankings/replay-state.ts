@@ -86,6 +86,18 @@ function insertManualRank(
         const targetIsWinner = targetId === winnerId;
         const pivotId = targetIsWinner ? loserId : winnerId;
 
+        // Non-destructive: if both are present and the current order already
+        // matches the vote (target above winner-pivot, below loser-pivot), keep
+        // the existing position so prior pinned-mode placements aren't erased.
+        const currentTargetIndex = list.indexOf(targetId);
+        const currentPivotIndex = list.indexOf(pivotId);
+        if (currentTargetIndex !== -1 && currentPivotIndex !== -1) {
+            const targetAbovePivot = currentTargetIndex < currentPivotIndex;
+            if (targetAbovePivot === targetIsWinner) {
+                return [...list];
+            }
+        }
+
         const nextList = list.filter((id) => id !== targetId);
         let pivotIndex = nextList.indexOf(pivotId);
         if (pivotIndex === -1) {

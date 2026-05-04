@@ -37,7 +37,10 @@ export class MovieFaceoffCard extends LitElement {
     }
 
     render() {
-        if (!this.movie) {
+        const isPinnedTarget =
+            this.movie != null &&
+            this.targetedInsertion?.targetMovie.id === this.movie.id;
+        if (!this.movie || (this.loading && !isPinnedTarget)) {
             return this.renderPlaceholder();
         }
         return this.renderMovie(this.movie);

@@ -4,6 +4,7 @@ import {
     buildPairwiseDisagreement,
     getPairwiseDisagreement,
     pairDisagreement,
+    summarizeAgreement,
 } from './pairwise-disagreement';
 
 describe('buildPairwiseDisagreement', () => {
@@ -168,6 +169,63 @@ describe('pairDisagreement', () => {
         // Touch unused vars to satisfy lint when the variants weren't used directly.
         void sparse;
         void dense;
+    });
+});
+
+describe('summarizeAgreement', () => {
+    it('returns zeros for an empty matrix', () => {
+        const state = buildReplayFromVotes([]);
+        const matrix = buildPairwiseDisagreement(state, []);
+        expect(summarizeAgreement(matrix)).toEqual({
+            agreement: 0,
+            coveredPairs: 0,
+        });
+    });
+
+    it('returns zeros when the matrix has ids but no covered pairs', () => {
+        // Disjoint algorithms cover distinct movies, so no pair has both.
+        const state = buildReplayFromVotes([
+            [1, 2],
+            [3, 4],
+        ]);
+        const primaries = [
+            stubAlgorithm('a', [1, 2], state),
+            stubAlgorithm('b', [3, 4], state),
+        ];
+        const matrix = buildPairwiseDisagreement(state, primaries);
+        const summary = summarizeAgreement(matrix);
+        // Each pool's internal pair is still covered by its own algorithm.
+        expect(summary.coveredPairs).toBe(2);
+        expect(summary.agreement).toBe(1);
+    });
+
+    it('reports agreement=1 when all primaries agree on every covered pair', () => {
+        const state = buildReplayFromVotes([
+            [1, 2],
+            [2, 3],
+        ]);
+        const primaries = [
+            stubAlgorithm('a', [1, 2, 3], state),
+            stubAlgorithm('b', [1, 2, 3], state),
+        ];
+        const matrix = buildPairwiseDisagreement(state, primaries);
+        const summary = summarizeAgreement(matrix);
+        expect(summary.coveredPairs).toBe(3);
+        expect(summary.agreement).toBe(1);
+    });
+
+    it('reports agreement=0 when every covered pair is split 50/50', () => {
+        const state = buildReplayFromVotes([
+            [1, 2],
+            [2, 3],
+        ]);
+        const primaries = [
+            stubAlgorithm('a', [1, 2, 3], state),
+            stubAlgorithm('b', [3, 2, 1], state), // exact reverse
+        ];
+        const matrix = buildPairwiseDisagreement(state, primaries);
+        const summary = summarizeAgreement(matrix);
+        expect(summary.agreement).toBe(0);
     });
 });
 

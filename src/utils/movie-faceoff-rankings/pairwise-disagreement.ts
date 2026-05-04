@@ -117,3 +117,42 @@ export function pairDisagreement(
     const split = 1 - Math.abs(above - below) / k;
     return split * (k / (k + 2));
 }
+
+export type AgreementSummary = {
+    /** Mean cross-algorithm agreement over covered pairs, in [0, 1]. */
+    agreement: number;
+    /** Number of unordered pairs with ≥1 algorithm covering both. */
+    coveredPairs: number;
+};
+
+/**
+ * Summarize the matrix into a single agreement indicator. The K primary
+ * algorithms each extrapolate from observed votes to a full ranking; their
+ * pairwise agreement is the quality of that extrapolation.
+ *
+ * Uses the unsaturated split per pair: a unanimous pair reads 100%, a
+ * perfect 50/50 split reads 0%. The chip should hide itself until there
+ * are enough covered pairs for the number to mean something — this
+ * function intentionally does no dampening of its own.
+ */
+export function summarizeAgreement(matrix: PairwiseDisagreement): AgreementSummary {
+    const { n, d } = matrix;
+    if (n < 2) return { agreement: 0, coveredPairs: 0 };
+
+    let coveredPairs = 0;
+    let agreementSum = 0;
+    for (let i = 0; i < n; i++) {
+        const rowI = i * n;
+        for (let j = i + 1; j < n; j++) {
+            const above = d[rowI + j];
+            const below = d[j * n + i];
+            const k = above + below;
+            if (k === 0) continue;
+            coveredPairs++;
+            agreementSum += Math.abs(above - below) / k;
+        }
+    }
+
+    if (coveredPairs === 0) return { agreement: 0, coveredPairs: 0 };
+    return { agreement: agreementSum / coveredPairs, coveredPairs };
+}

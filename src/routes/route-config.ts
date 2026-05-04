@@ -162,6 +162,13 @@ export const routes = [
         options: { hideNavBar: true, wideOutlet: true },
     },
     {
+        path: '/movie-faceoff/browse',
+        component: 'movie-faceoff-browse-route',
+        name: 'movie-faceoff-browse',
+        action: lazy(() => import('./movie-faceoff-browse.route')),
+        options: { hideNavBar: true, wideOutlet: true },
+    },
+    {
         path: '/movie-faceoff',
         component: 'movie-faceoff-route',
         name: 'movie-faceoff',

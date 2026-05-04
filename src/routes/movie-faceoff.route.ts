@@ -765,6 +765,16 @@ export class MovieFaceoffRoute
                     slot="actions"
                     class="outline header-action-button"
                     @click=${() => {
+                        betterGo('movie-faceoff-browse');
+                    }}
+                >
+                    <jot-icon name="List"></jot-icon>
+                    <span>Browse</span>
+                </button>
+                <button
+                    slot="actions"
+                    class="outline header-action-button"
+                    @click=${() => {
                         betterGo('movie-faceoff-add');
                     }}
                 >

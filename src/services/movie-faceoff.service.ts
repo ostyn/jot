@@ -40,16 +40,46 @@ export type FaceoffMovieDetails = FaceoffMovie & {
     };
 };
 
+export type MovieFaceoffPoolEntry = {
+    id: number;
+    voteAverage: number;
+    voteCount: number;
+};
+
 export function getMovieFaceoffAssetUrl() {
-    return '/generated/filtered_movie_ids.json';
+    return '/generated/filtered_movies.json';
+}
+
+let poolPromise: Promise<MovieFaceoffPoolEntry[]> | undefined;
+
+export async function fetchMovieFaceoffPool(): Promise<MovieFaceoffPoolEntry[]> {
+    if (!poolPromise) {
+        poolPromise = (async () => {
+            const response = await fetch(getMovieFaceoffAssetUrl());
+            if (!response.ok) {
+                throw new Error(
+                    `Unable to load movie pool (${response.status})`
+                );
+            }
+            const tuples = (await response.json()) as Array<
+                [number, number, number]
+            >;
+            return tuples.map(([id, voteAverage, voteCount]) => ({
+                id,
+                voteAverage,
+                voteCount,
+            }));
+        })().catch((error) => {
+            poolPromise = undefined;
+            throw error;
+        });
+    }
+    return poolPromise;
 }
 
 export async function fetchMovieFaceoffIds(): Promise<number[]> {
-    const response = await fetch(getMovieFaceoffAssetUrl());
-    if (!response.ok) {
-        throw new Error(`Unable to load movie ids (${response.status})`);
-    }
-    return (await response.json()) as number[];
+    const pool = await fetchMovieFaceoffPool();
+    return pool.map((entry) => entry.id);
 }
 
 export async function fetchTmdbMovie(id: number): Promise<FaceoffMovie> {

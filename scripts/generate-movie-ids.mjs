@@ -11,9 +11,9 @@ const defaultConfig = {
     apiBaseUrl: 'https://api.themoviedb.org/3',
     discoverPath: '/discover/movie',
     outputDir: defaultOutputDir,
-    filteredIdsOutputPath: path.join(
+    filteredMoviesOutputPath: path.join(
         defaultOutputDir,
-        'filtered_movie_ids.json'
+        'filtered_movies.json'
     ),
     manifestOutputPath: path.join(
         defaultOutputDir,
@@ -260,7 +260,7 @@ function createConfig(argv = process.argv.slice(2), env = process.env) {
     return {
         ...defaultConfig,
         outputDir,
-        filteredIdsOutputPath: path.join(outputDir, 'filtered_movie_ids.json'),
+        filteredMoviesOutputPath: path.join(outputDir, 'filtered_movies.json'),
         manifestOutputPath: path.join(
             outputDir,
             'movie_pipeline_manifest.json'
@@ -429,8 +429,8 @@ async function resolveRequestableWindows(config) {
     };
 }
 
-async function collectWindowMovieIds(config, window) {
-    const ids = [];
+async function collectWindowMovies(config, window) {
+    const movies = [];
     const seenIds = new Set();
 
     const collectPage = (pagePayload) => {
@@ -438,7 +438,13 @@ async function collectWindowMovieIds(config, window) {
             const movieId = Number(movie?.id);
             if (!Number.isFinite(movieId) || seenIds.has(movieId)) continue;
             seenIds.add(movieId);
-            ids.push(movieId);
+            const voteAverage = Number(movie?.vote_average);
+            const voteCount = Number(movie?.vote_count);
+            movies.push({
+                id: movieId,
+                voteAverage: Number.isFinite(voteAverage) ? voteAverage : 0,
+                voteCount: Number.isFinite(voteCount) ? voteCount : 0,
+            });
         }
     };
 
@@ -463,7 +469,7 @@ async function collectWindowMovieIds(config, window) {
         })
     );
 
-    return ids;
+    return movies;
 }
 
 async function writeJsonAtomic(filePath, value, { pretty = true } = {}) {
@@ -500,7 +506,7 @@ export async function runMovieIdSync(
 
     const { requestableWindows, splitWindows } =
         await resolveRequestableWindows(config);
-    const uniqueIds = new Set();
+    const moviesById = new Map();
     let totalPageCount = 0;
     let totalResultCount = 0;
     let fetchedWindowCount = 0;
@@ -511,16 +517,27 @@ export async function runMovieIdSync(
         process.stdout.write(
             `Discover sync: ${window.startDate}..${window.endDate} (${window.totalPages} pages, ${window.totalResults} results)\n`
         );
-        const windowIds = await collectWindowMovieIds(config, window);
-        windowIds.forEach((id) => uniqueIds.add(id));
+        const windowMovies = await collectWindowMovies(config, window);
+        windowMovies.forEach((movie) => {
+            // Discover windows can overlap on bisected splits; last write wins
+            // (no semantic difference — vote stats are window-independent).
+            moviesById.set(movie.id, movie);
+        });
         fetchedWindowCount += 1;
     }
 
-    const filteredIds = Array.from(uniqueIds).sort(
-        (left, right) => left - right
+    const filteredMovies = Array.from(moviesById.values()).sort(
+        (left, right) => left.id - right.id
     );
+    // Tuple format keeps the file ~3x smaller than `{id, voteAverage, voteCount}` objects
+    // and gzips well — important since this ships to every PWA client.
+    const filteredMovieTuples = filteredMovies.map((movie) => [
+        movie.id,
+        movie.voteAverage,
+        movie.voteCount,
+    ]);
     const manifest = {
-        pipelineVersion: 'discover-single-pass-1.0.0',
+        pipelineVersion: 'discover-single-pass-2.0.0',
         generatedAt: new Date().toISOString(),
         runDate: new Date().toISOString().slice(0, 10),
         source: {
@@ -531,7 +548,10 @@ export async function runMovieIdSync(
             sortBy: config.sortBy,
         },
         files: {
-            filteredIds: config.filteredIdsOutputPath,
+            filteredMovies: config.filteredMoviesOutputPath,
+        },
+        format: {
+            filteredMovies: 'tuples-v1: [[id, voteAverage, voteCount], ...]',
         },
         discover: {
             windowCount: requestableWindows.length,
@@ -539,7 +559,7 @@ export async function runMovieIdSync(
             splitWindowCount: splitWindows.length,
             totalPages: totalPageCount,
             totalResults: totalResultCount,
-            dedupedMovieCount: filteredIds.length,
+            dedupedMovieCount: filteredMovies.length,
             splitWindows,
         },
         filters: {
@@ -552,11 +572,13 @@ export async function runMovieIdSync(
         },
     };
 
-    await writeJsonAtomic(config.filteredIdsOutputPath, filteredIds, { pretty: false });
+    await writeJsonAtomic(config.filteredMoviesOutputPath, filteredMovieTuples, {
+        pretty: false,
+    });
     await writeJsonAtomic(config.manifestOutputPath, manifest);
 
     process.stdout.write(
-        `Discover sync: saved ${filteredIds.length} ids to ${path.relative(process.cwd(), config.filteredIdsOutputPath)}\n`
+        `Discover sync: saved ${filteredMovies.length} movies to ${path.relative(process.cwd(), config.filteredMoviesOutputPath)}\n`
     );
 
     return manifest;

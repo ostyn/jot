@@ -20,6 +20,10 @@ import {
     getMovieFaceoffRankingAlgorithm,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../utils/movie-faceoff-rankings';
+import {
+    getPairwiseDisagreement,
+    summarizeAgreement,
+} from '../utils/movie-faceoff-rankings/pairwise-disagreement';
 import '../components/jot-icon';
 import '../components/movie-faceoff/movie-list-item.component';
 import '../components/utility-page-header.component';
@@ -196,6 +200,15 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
 
     private get poolEntryMap(): Map<number, MovieFaceoffPoolEntry> {
         return new Map(this.pool.map((entry) => [entry.id, entry] as const));
+    }
+
+    private get agreementSummary() {
+        return summarizeAgreement(
+            getPairwiseDisagreement(
+                movieFaceoff.replayState,
+                MOVIE_FACEOFF_RANKING_ALGORITHMS
+            )
+        );
     }
 
     private weightedRating(entry: MovieFaceoffPoolEntry): number {
@@ -637,6 +650,11 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
         const list = this.rows;
         const visible = list.slice(0, this.visibleCount);
         const hasMore = visible.length < list.length;
+        const agreement = this.agreementSummary;
+        // Hide the chip until there's enough data for the number to mean
+        // something — vacuous unanimity on the first couple of votes is
+        // misleading at any granularity.
+        const showAgreement = agreement.coveredPairs >= 20;
 
         return html`
             <utility-page-header
@@ -656,6 +674,16 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
                                     ? 'Loading…'
                                     : `${list.length.toLocaleString()} movies`}
                             </p>
+                            ${showAgreement
+                                ? html`<p class="settlement-chip">
+                                      Algorithm agreement
+                                      <strong
+                                          >${(
+                                              agreement.agreement * 100
+                                          ).toFixed(0)}%</strong
+                                      >
+                                  </p>`
+                                : nothing}
                         </hgroup>
                     </header>
 
@@ -742,6 +770,22 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
             }
             .panel-header {
                 margin-bottom: 1rem;
+            }
+            .settlement-chip {
+                display: inline-flex;
+                align-items: baseline;
+                gap: 0.4rem;
+                margin: 0.25rem 0 0;
+                padding: 0.15rem 0.6rem;
+                border-radius: 999px;
+                background: var(--pico-card-sectioning-background-color);
+                color: var(--pico-muted-color);
+                font-size: 0.8rem;
+                width: fit-content;
+            }
+            .settlement-chip strong {
+                color: var(--pico-color);
+                font-variant-numeric: tabular-nums;
             }
             .filter-row {
                 display: flex;

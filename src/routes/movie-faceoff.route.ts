@@ -51,6 +51,20 @@ import '../components/movie-faceoff/movie-faceoff-status-bar.component';
 import '../components/utility-page-header.component';
 import { betterGo } from './route-config';
 
+// Yield to the browser before kicking off heavy synchronous work
+// (`pickInformativePair` builds an N×N matrix across all primary ranking
+// algorithms). Without a real task break, Lit's pending render and the
+// browser's next paint can both end up queued behind the matrix build.
+function yieldToBrowser(): Promise<void> {
+    return new Promise((resolve) => {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(() => resolve(), { timeout: 100 });
+        } else {
+            setTimeout(resolve, 0);
+        }
+    });
+}
+
 @customElement('movie-faceoff-route')
 export class MovieFaceoffRoute
     extends MobxLitElement
@@ -445,6 +459,7 @@ export class MovieFaceoffRoute
                 return;
             }
 
+            await yieldToBrowser();
             const pair = pickInformativePair(
                 leftPool,
                 rightPool,
@@ -497,6 +512,7 @@ export class MovieFaceoffRoute
                 this.poolForSide(1),
                 [target.id]
             );
+            await yieldToBrowser();
             const opponentId = pickInformativeOpponent(
                 opponentPool,
                 this.replayState,
@@ -577,6 +593,7 @@ export class MovieFaceoffRoute
                         .filter((m): m is FaceoffMovie => Boolean(m))
                         .map((m) => m.id),
                 ]);
+                await yieldToBrowser();
                 const opponentId = pickInformativeOpponent(
                     opponentPool,
                     this.replayState,
@@ -602,6 +619,7 @@ export class MovieFaceoffRoute
             if (this.mode.pairing.kind !== 'single') return;
             const pool = await this.resolvePoolIds(this.mode.pairing.pool, currentIds);
 
+            await yieldToBrowser();
             const pair = pickInformativePair(
                 pool,
                 pool,
@@ -674,6 +692,7 @@ export class MovieFaceoffRoute
         }
 
         const pool = await this.resolvePoolIds(this.poolForSide(index), exclude);
+        await yieldToBrowser();
         const replacementId = pickInformativeOpponent(
             pool,
             this.replayState,

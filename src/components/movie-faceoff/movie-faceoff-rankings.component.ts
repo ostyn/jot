@@ -14,10 +14,6 @@ import {
     getMovieFaceoffRankingAlgorithm,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../../utils/movie-faceoff-rankings';
-import {
-    getPairwiseDisagreement,
-    summarizeAgreement,
-} from '../../utils/movie-faceoff-rankings/pairwise-disagreement';
 import '../jot-icon';
 import './movie-list-item.component';
 
@@ -60,15 +56,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
         const mode = this.activeSortMode || this.sortMode;
         return movieFaceoff.getRankedMovies(mode).filter(
             (movie) => !movie.excludedAt && !movie.unseenAt
-        );
-    }
-
-    private get agreementSummary() {
-        return summarizeAgreement(
-            getPairwiseDisagreement(
-                movieFaceoff.replayState,
-                MOVIE_FACEOFF_RANKING_ALGORITHMS
-            )
         );
     }
 
@@ -167,11 +154,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
         const ranked = this.rankedMovies;
         const visible = ranked.slice(0, this.visibleCount);
         const hasMore = visible.length < ranked.length;
-        const summary = this.agreementSummary;
-        // Hide the chip until there's enough data for the number to mean
-        // something — vacuous unanimity on the first couple of votes is
-        // misleading at any granularity.
-        const showAgreement = summary.coveredPairs >= 20;
 
         return html`
             <article class="rankings-panel surface-panel">
@@ -184,12 +166,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                                 ? `${ranked.length} movies ranked so far`
                                 : 'Vote a few times to start building your list.'}
                         </p>
-                        ${showAgreement
-                            ? html`<p class="settlement-chip">
-                                  Agreement
-                                  <strong>${(summary.agreement * 100).toFixed(0)}%</strong>
-                              </p>`
-                            : nothing}
                     </hgroup>
                 </header>
 
@@ -408,22 +384,6 @@ export class MovieFaceoffRankings extends MobxLitElement {
                 flex: 0 0 3rem;
                 width: 3rem;
                 padding: 0;
-            }
-            .settlement-chip {
-                display: inline-flex;
-                align-items: baseline;
-                gap: 0.4rem;
-                margin: 0.25rem 0 0;
-                padding: 0.15rem 0.6rem;
-                border-radius: 999px;
-                background: var(--pico-card-sectioning-background-color);
-                color: var(--pico-muted-color);
-                font-size: 0.8rem;
-                width: fit-content;
-            }
-            .settlement-chip strong {
-                color: var(--pico-color);
-                font-variant-numeric: tabular-nums;
             }
             .rank-index {
                 width: 2rem;

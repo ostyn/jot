@@ -223,8 +223,18 @@ export class MovieFaceoffRoute
         const respondedIds = new Set<number>(decisiveIds);
         excludedIds.forEach((id) => respondedIds.add(id));
         unseenIds.forEach((id) => respondedIds.add(id));
+        // Movies we've voted on count as "seen" and stay eligible even if
+        // they drop out of today's TMDB pool. Mistake votes get cleaned up
+        // via the existing excluded/unseen filtering in getCandidatePool.
+        const baseIds = this.movieIdPool;
+        const baseSet = new Set(baseIds);
+        const extras: number[] = [];
+        decisiveIds.forEach((id) => {
+            if (!baseSet.has(id)) extras.push(id);
+        });
+        const fullTmdbIds = extras.length ? [...baseIds, ...extras] : baseIds;
         return {
-            fullTmdbIds: this.movieIdPool,
+            fullTmdbIds,
             decisiveIds,
             respondedIds,
         };

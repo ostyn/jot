@@ -1,5 +1,9 @@
 export interface PoolContext {
-    /** Resolved by the route's ensureMovieIdPool() — all TMDB ids in scope. */
+    /**
+     * Union of today's TMDB pool (from ensureMovieIdPool) and decisiveIds —
+     * movies the user has voted on stay in scope even if they fall out of
+     * the daily JSON.
+     */
     fullTmdbIds: number[];
     /** Movies with at least one vote event. From replayState. */
     decisiveIds: ReadonlySet<number>;

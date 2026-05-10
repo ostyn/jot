@@ -65,7 +65,9 @@ export class ActivityEditSheet extends MobxLitElement {
                 intervalDaysOverride: fallbackOverride,
             });
         } else {
-            this.updateReminder({ enabled: false });
+            // Drop any snooze; the cadence the snooze was anchored to may not
+            // be the cadence we resume with.
+            this.updateReminder({ enabled: false, lastDismissed: undefined });
         }
     }
     private setReminderMode(mode: 'auto' | 'custom') {

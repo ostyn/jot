@@ -6,7 +6,10 @@ import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { go } from '../../routes/route-config';
 import { activities } from '../../stores/activities.store';
-import { getActivityFrequencyMetrics } from '../../utils/activity-frequency';
+import {
+    getActivityFrequencyMetrics,
+    getReminderStatus,
+} from '../../utils/activity-frequency';
 import { DateHelpers } from '../../utils/DateHelpers';
 import '../activity-detail-stats.component';
 import '../activity-detail.component';
@@ -116,9 +119,8 @@ export class ActivityInfoSheet extends LitElement {
         const activity = activities.getActivity(this.activityId);
         if (!activity?.reminder?.enabled) return nothing;
         const metrics = getActivityFrequencyMetrics(this.activityStats);
-        const interval =
-            activity.reminder.intervalDaysOverride ?? metrics.avgDaysBetween;
-        if (interval == null) {
+        const status = getReminderStatus(activity.reminder, metrics);
+        if (!status) {
             return html`<div class="reminderStatus">
                 Reminder on — set a custom cadence to start
             </div>`;
@@ -128,20 +130,21 @@ export class ActivityInfoSheet extends LitElement {
                 Reminder due (never logged)
             </div>`;
         }
-        const overdue = metrics.daysSinceLast - interval;
-        if (overdue < 0) {
-            const inDays = -overdue;
+        if (status.daysOverdue < 0) {
+            const inDays = -status.daysOverdue;
             return html`<div class="reminderStatus">
                 Next reminder in ${inDays} day${inDays === 1 ? '' : 's'}
             </div>`;
         }
-        if (overdue === 0) {
+        if (status.daysOverdue === 0) {
             return html`<div class="reminderStatus reminderOverdue">
                 Reminder due today
             </div>`;
         }
         return html`<div class="reminderStatus reminderOverdue">
-            Overdue by ${overdue} day${overdue === 1 ? '' : 's'}
+            Overdue by ${status.daysOverdue} day${status.daysOverdue === 1
+                ? ''
+                : 's'}
         </div>`;
     }
     render() {

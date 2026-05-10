@@ -39,15 +39,67 @@ export function getActivityFrequencyMetrics(
     };
 }
 
-export function isReminderDue(
-    reminder: ActivityReminderConfig | undefined,
+export interface ReminderEvaluation {
+    interval: number;
+    // positive = overdue by N days, 0 = due today, negative = N days until due
+    daysOverdue: number;
+    isOverdue: boolean;
+    dismissedToday: boolean;
+}
+
+// Returns null when the reminder can't be evaluated (no interval available
+// because there's neither a manual override nor enough history for an average).
+export function getReminderStatus(
+    reminder: ActivityReminderConfig,
     metrics: ActivityFrequencyMetrics,
     now: Date = new Date()
-): boolean {
-    if (!reminder?.enabled) return false;
+): ReminderEvaluation | null {
     const interval = reminder.intervalDaysOverride ?? metrics.avgDaysBetween;
-    if (interval == null) return false;
-    if (reminder.lastDismissed === format(now, 'yyyy-MM-dd')) return false;
-    if (metrics.daysSinceLast == null) return true;
-    return metrics.daysSinceLast >= interval;
+    if (interval == null) return null;
+    const daysOverdue =
+        metrics.daysSinceLast == null
+            ? 0
+            : metrics.daysSinceLast - interval;
+    return {
+        interval,
+        daysOverdue,
+        isOverdue: metrics.daysSinceLast == null || daysOverdue >= 0,
+        dismissedToday: reminder.lastDismissed === format(now, 'yyyy-MM-dd'),
+    };
+}
+
+export interface CadenceRegularity {
+    avgDaysBetween: number;
+    cvDaysBetween: number;
+    isStrong: boolean;
+}
+
+const MIN_LOGS_FOR_SUGGESTION = 4;
+const MAX_CV_FOR_SUGGESTION = 0.8;
+
+// Coefficient-of-variation analysis over inter-log gaps. We surface a habit as
+// "strong" only when there are enough samples, the gaps cluster tightly around
+// the mean, and the cadence is >= 1 day (sub-daily activities don't map to the
+// every-N-days reminder model).
+export function getCadenceRegularity(
+    stat: StatsActivityEntry | undefined
+): CadenceRegularity | null {
+    const totalLogs = stat?.dates.length ?? 0;
+    if (!stat || totalLogs < MIN_LOGS_FOR_SUGGESTION) return null;
+    const gaps: number[] = [];
+    for (let i = 0; i < totalLogs - 1; i++) {
+        const newer = parseISO(stat.dates[i].date);
+        const older = parseISO(stat.dates[i + 1].date);
+        gaps.push(Math.max(0, differenceInCalendarDays(newer, older)));
+    }
+    const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    if (mean < 1) return null;
+    const variance =
+        gaps.reduce((acc, g) => acc + (g - mean) ** 2, 0) / gaps.length;
+    const cv = Math.sqrt(variance) / mean;
+    return {
+        avgDaysBetween: Math.max(1, Math.round(mean)),
+        cvDaysBetween: cv,
+        isStrong: cv <= MAX_CV_FOR_SUGGESTION,
+    };
 }

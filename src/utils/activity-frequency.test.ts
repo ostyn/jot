@@ -3,7 +3,8 @@ import { Entry } from '../interfaces/entry.interface';
 import { StatsActivityEntry } from '../interfaces/stats.interface';
 import {
     getActivityFrequencyMetrics,
-    isReminderDue,
+    getCadenceRegularity,
+    getReminderStatus,
 } from './activity-frequency';
 
 const NOW = new Date('2026-05-10T12:00:00Z');
@@ -69,7 +70,7 @@ describe('getActivityFrequencyMetrics', () => {
     });
 });
 
-describe('isReminderDue', () => {
+describe('getReminderStatus', () => {
     const metrics = {
         totalLogs: 5,
         daysSinceLast: 6,
@@ -77,101 +78,171 @@ describe('isReminderDue', () => {
         canAutoCadence: true,
     };
 
-    it('false when reminder is undefined', () => {
-        expect(isReminderDue(undefined, metrics, NOW)).toBe(false);
-    });
-
-    it('false when reminder is disabled', () => {
+    it('returns null when no interval can be derived', () => {
         expect(
-            isReminderDue(
-                { enabled: false, intervalDaysOverride: null },
-                metrics,
-                NOW
-            )
-        ).toBe(false);
-    });
-
-    it('false when no effective interval (no avg, no override)', () => {
-        expect(
-            isReminderDue(
+            getReminderStatus(
                 { enabled: true, intervalDaysOverride: null },
                 { ...metrics, avgDaysBetween: null },
                 NOW
             )
-        ).toBe(false);
+        ).toBeNull();
     });
 
-    it('true when daysSinceLast >= interval', () => {
-        expect(
-            isReminderDue(
-                { enabled: true, intervalDaysOverride: null },
-                metrics,
-                NOW
-            )
-        ).toBe(true);
+    it('reports overdue when daysSinceLast > interval', () => {
+        const status = getReminderStatus(
+            { enabled: true, intervalDaysOverride: null },
+            metrics,
+            NOW
+        );
+        expect(status).toEqual({
+            interval: 4,
+            daysOverdue: 2,
+            isOverdue: true,
+            dismissedToday: false,
+        });
     });
 
-    it('false when daysSinceLast < interval', () => {
-        expect(
-            isReminderDue(
-                { enabled: true, intervalDaysOverride: null },
-                { ...metrics, daysSinceLast: 3 },
-                NOW
-            )
-        ).toBe(false);
+    it('reports due-today when daysSinceLast === interval', () => {
+        const status = getReminderStatus(
+            { enabled: true, intervalDaysOverride: null },
+            { ...metrics, daysSinceLast: 4 },
+            NOW
+        );
+        expect(status?.daysOverdue).toBe(0);
+        expect(status?.isOverdue).toBe(true);
     });
 
-    it('true when never logged but override set (cold-start)', () => {
-        expect(
-            isReminderDue(
-                { enabled: true, intervalDaysOverride: 3 },
-                {
-                    totalLogs: 0,
-                    daysSinceLast: null,
-                    avgDaysBetween: null,
-                    canAutoCadence: false,
-                },
-                NOW
-            )
-        ).toBe(true);
+    it('reports upcoming with negative daysOverdue when not yet due', () => {
+        const status = getReminderStatus(
+            { enabled: true, intervalDaysOverride: null },
+            { ...metrics, daysSinceLast: 1 },
+            NOW
+        );
+        expect(status?.daysOverdue).toBe(-3);
+        expect(status?.isOverdue).toBe(false);
     });
 
-    it('false when dismissed today', () => {
-        expect(
-            isReminderDue(
-                {
-                    enabled: true,
-                    intervalDaysOverride: null,
-                    lastDismissed: '2026-05-10',
-                },
-                metrics,
-                NOW
-            )
-        ).toBe(false);
+    it('treats never-logged as overdue when override is set', () => {
+        const status = getReminderStatus(
+            { enabled: true, intervalDaysOverride: 3 },
+            {
+                totalLogs: 0,
+                daysSinceLast: null,
+                avgDaysBetween: null,
+                canAutoCadence: false,
+            },
+            NOW
+        );
+        expect(status).toEqual({
+            interval: 3,
+            daysOverdue: 0,
+            isOverdue: true,
+            dismissedToday: false,
+        });
     });
 
-    it('true when dismissed yesterday (snooze expired)', () => {
-        expect(
-            isReminderDue(
-                {
-                    enabled: true,
-                    intervalDaysOverride: null,
-                    lastDismissed: '2026-05-09',
-                },
-                metrics,
-                NOW
-            )
-        ).toBe(true);
+    it('flags dismissedToday when lastDismissed matches today', () => {
+        const status = getReminderStatus(
+            {
+                enabled: true,
+                intervalDaysOverride: null,
+                lastDismissed: '2026-05-10',
+            },
+            metrics,
+            NOW
+        );
+        expect(status?.dismissedToday).toBe(true);
     });
 
-    it('respects user override even when avg disagrees', () => {
-        // avg says due (6 >= 4), but override says every 10 days
-        expect(
-            isReminderDue(
-                { enabled: true, intervalDaysOverride: 10 },
-                metrics,
-                NOW
-            )
-        ).toBe(false);
+    it('does not flag dismissedToday when lastDismissed is yesterday', () => {
+        const status = getReminderStatus(
+            {
+                enabled: true,
+                intervalDaysOverride: null,
+                lastDismissed: '2026-05-09',
+            },
+            metrics,
+            NOW
+        );
+        expect(status?.dismissedToday).toBe(false);
+    });
+
+    it('honors override over computed avg', () => {
+        const status = getReminderStatus(
+            { enabled: true, intervalDaysOverride: 10 },
+            metrics,
+            NOW
+        );
+        expect(status?.interval).toBe(10);
+        expect(status?.isOverdue).toBe(false);
+    });
+});
+
+describe('getCadenceRegularity', () => {
+    it('returns null when no stat is provided', () => {
+        expect(getCadenceRegularity(undefined)).toBeNull();
+    });
+
+    it('returns null when fewer than MIN_LOGS_FOR_SUGGESTION logs', () => {
+        // 3 logs is below the threshold
+        const stat = makeStat(['2026-01-01', '2026-01-15', '2026-02-01']);
+        expect(getCadenceRegularity(stat)).toBeNull();
+    });
+
+    it('flags a perfectly regular biweekly cadence as strong', () => {
+        // 5 logs exactly 14 days apart → CV = 0 → strong
+        const stat = makeStat([
+            '2026-01-01',
+            '2026-01-15',
+            '2026-01-29',
+            '2026-02-12',
+            '2026-02-26',
+        ]);
+        const r = getCadenceRegularity(stat);
+        expect(r).not.toBeNull();
+        expect(r!.avgDaysBetween).toBe(14);
+        expect(r!.cvDaysBetween).toBeCloseTo(0, 5);
+        expect(r!.isStrong).toBe(true);
+    });
+
+    it('flags a noisy cadence as not strong', () => {
+        // gaps: 1, 1, 100, 1 → mean 25.75, stdDev ≈ 42.9, CV ≈ 1.66 (> 1.0)
+        const stat = makeStat([
+            '2026-01-01',
+            '2026-01-02',
+            '2026-04-12',
+            '2026-04-13',
+            '2026-04-14',
+        ]);
+        const r = getCadenceRegularity(stat);
+        expect(r).not.toBeNull();
+        expect(r!.cvDaysBetween).toBeGreaterThan(1);
+        expect(r!.isStrong).toBe(false);
+    });
+
+    it('returns null when mean gap is < 1 day (sub-daily)', () => {
+        // 5 logs on the same day → mean gap 0 → excluded
+        const stat = makeStat([
+            '2026-05-10',
+            '2026-05-10',
+            '2026-05-10',
+            '2026-05-10',
+            '2026-05-10',
+        ]);
+        expect(getCadenceRegularity(stat)).toBeNull();
+    });
+
+    it('flags a regular daily cadence as strong', () => {
+        const stat = makeStat([
+            '2026-05-01',
+            '2026-05-02',
+            '2026-05-03',
+            '2026-05-04',
+            '2026-05-05',
+        ]);
+        const r = getCadenceRegularity(stat);
+        expect(r).not.toBeNull();
+        expect(r!.avgDaysBetween).toBe(1);
+        expect(r!.isStrong).toBe(true);
     });
 });

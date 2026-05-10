@@ -3,7 +3,7 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { betterGo } from '../routes/route-config';
-import { reminders } from '../stores/reminders.store';
+import { ReminderStatus, reminders } from '../stores/reminders.store';
 import './activity.component';
 import './jot-icon';
 
@@ -15,36 +15,103 @@ export class RemindersSection extends MobxLitElement {
     private dismiss(activityId: string) {
         reminders.dismissReminder(activityId);
     }
-    private overdueLabel(daysOverdue: number, neverLogged: boolean) {
-        if (neverLogged) return 'Never logged';
-        if (daysOverdue === 0) return 'Due today';
-        return `Overdue ${daysOverdue} day${daysOverdue === 1 ? '' : 's'}`;
+    private enable(activityId: string) {
+        reminders.enableReminder(activityId);
     }
-    render() {
-        const due = reminders.dueReminders;
-        if (due.length === 0) return nothing;
-        return html`<article id="reminders" class="remindersSection">
+    private dismissSuggestion(activityId: string) {
+        reminders.dismissSuggestion(activityId);
+    }
+    private statusLabel(r: ReminderStatus) {
+        if (r.metrics.totalLogs === 0) return 'Never logged';
+        if (r.daysOverdue > 0)
+            return `Overdue ${r.daysOverdue} day${
+                r.daysOverdue === 1 ? '' : 's'
+            }`;
+        if (r.daysOverdue === 0) return 'Due today';
+        const inDays = -r.daysOverdue;
+        return `Next in ${inDays} day${inDays === 1 ? '' : 's'}`;
+    }
+    private renderReminders() {
+        const list = reminders.enabledReminders;
+        if (list.length === 0) return nothing;
+        return html`<section class="remindersSubsection">
             <header class="remindersHeader">
                 <jot-icon name="Bell"></jot-icon>
                 <span>Reminders</span>
             </header>
             <ul class="remindersList">
-                ${due.map(
-                    ({ activity, daysOverdue, metrics, effectiveInterval }) =>
+                ${list.map(
+                    (r) =>
+                        html`<li
+                            class=${'reminderRow ' +
+                            (r.isOverdue ? 'reminderRowDue' : '')}
+                        >
+                            <activity-component
+                                .activity=${r.activity}
+                                .showName=${true}
+                            ></activity-component>
+                            <span class="reminderMeta">
+                                <span class="reminderStatusText">
+                                    ${this.statusLabel(r)}
+                                </span>
+                                <small class="reminderCadenceText">
+                                    every ${r.effectiveInterval} day${r.effectiveInterval ===
+                                    1
+                                        ? ''
+                                        : 's'}
+                                </small>
+                            </span>
+                            <span class="reminderActions">
+                                ${r.isOverdue
+                                    ? html`<button
+                                              class="inline"
+                                              type="button"
+                                              aria-label="log now"
+                                              @click=${() =>
+                                                  this.logNow(r.activity.id)}
+                                          >
+                                              <jot-icon
+                                                  name="PenLine"
+                                              ></jot-icon>
+                                          </button>
+                                          <button
+                                              class="inline secondary"
+                                              type="button"
+                                              aria-label="dismiss"
+                                              @click=${() =>
+                                                  this.dismiss(r.activity.id)}
+                                          >
+                                              <jot-icon name="X"></jot-icon>
+                                          </button>`
+                                    : nothing}
+                            </span>
+                        </li>`
+                )}
+            </ul>
+        </section>`;
+    }
+    private renderSuggestions() {
+        const suggestions = reminders.suggestedReminders;
+        if (suggestions.length === 0) return nothing;
+        return html`<section class="remindersSubsection">
+            <header class="remindersHeader">
+                <jot-icon name="TrendingUp"></jot-icon>
+                <span>Suggested reminders</span>
+            </header>
+            <ul class="remindersList">
+                ${suggestions.map(
+                    ({ activity, avgDaysBetween }) =>
                         html`<li class="reminderRow">
                             <activity-component
                                 .activity=${activity}
                                 .showName=${true}
                             ></activity-component>
                             <span class="reminderMeta">
-                                <span class="reminderOverdueText">
-                                    ${this.overdueLabel(
-                                        daysOverdue,
-                                        metrics.totalLogs === 0
-                                    )}
+                                <span class="reminderStatusText">
+                                    Regular cadence detected
                                 </span>
                                 <small class="reminderCadenceText">
-                                    every ${effectiveInterval} day${effectiveInterval ===
+                                    about every ${avgDaysBetween} day${avgDaysBetween ===
                                     1
                                         ? ''
                                         : 's'}
@@ -54,16 +121,17 @@ export class RemindersSection extends MobxLitElement {
                                 <button
                                     class="inline"
                                     type="button"
-                                    aria-label="log now"
-                                    @click=${() => this.logNow(activity.id)}
+                                    aria-label="enable reminder"
+                                    @click=${() => this.enable(activity.id)}
                                 >
-                                    <jot-icon name="PenLine"></jot-icon>
+                                    <jot-icon name="Bell"></jot-icon>
                                 </button>
                                 <button
                                     class="inline secondary"
                                     type="button"
-                                    aria-label="dismiss"
-                                    @click=${() => this.dismiss(activity.id)}
+                                    aria-label="dismiss suggestion"
+                                    @click=${() =>
+                                        this.dismissSuggestion(activity.id)}
                                 >
                                     <jot-icon name="X"></jot-icon>
                                 </button>
@@ -71,6 +139,14 @@ export class RemindersSection extends MobxLitElement {
                         </li>`
                 )}
             </ul>
+        </section>`;
+    }
+    render() {
+        const reminderList = this.renderReminders();
+        const suggestions = this.renderSuggestions();
+        if (reminderList === nothing && suggestions === nothing) return nothing;
+        return html`<article class="remindersSection">
+            ${reminderList}${suggestions}
         </article>`;
     }
     static styles = [
@@ -79,6 +155,11 @@ export class RemindersSection extends MobxLitElement {
             .remindersSection {
                 margin-bottom: 1rem;
                 padding: 0.75rem 1rem;
+            }
+            .remindersSubsection + .remindersSubsection {
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid var(--pico-muted-border-color);
             }
             .remindersHeader {
                 display: flex;
@@ -99,6 +180,10 @@ export class RemindersSection extends MobxLitElement {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
+                opacity: 0.65;
+            }
+            .reminderRowDue {
+                opacity: 1;
             }
             activity-component {
                 flex-shrink: 0;
@@ -109,7 +194,7 @@ export class RemindersSection extends MobxLitElement {
                 flex: 1;
                 min-width: 0;
             }
-            .reminderOverdueText {
+            .reminderStatusText {
                 font-size: 0.875rem;
             }
             .reminderCadenceText {
@@ -128,4 +213,3 @@ export class RemindersSection extends MobxLitElement {
         `,
     ];
 }
-

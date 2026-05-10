@@ -3,7 +3,11 @@ import { customElement } from 'lit/decorators.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../baseStyles';
 import { betterGo } from '../routes/route-config';
+import { activities } from '../stores/activities.store';
 import { ReminderStatus, reminders } from '../stores/reminders.store';
+import { Sheet } from './action-sheets/action-sheet';
+import { ActivityEditSheet } from './action-sheets/activity-edit.sheet';
+import { ActivityInfoSheet } from './action-sheets/activity-info.sheet';
 import './activity.component';
 import './jot-icon';
 
@@ -20,6 +24,18 @@ export class RemindersSection extends MobxLitElement {
     }
     private dismissSuggestion(activityId: string) {
         reminders.dismissSuggestion(activityId);
+    }
+    private openEdit(activityId: string) {
+        Sheet.open({
+            type: ActivityEditSheet,
+            data: activities.getActivity(activityId),
+        });
+    }
+    private openInfo(activityId: string) {
+        Sheet.open({
+            type: ActivityInfoSheet,
+            data: { id: activityId, date: new Date() },
+        });
     }
     private statusLabel(r: ReminderStatus) {
         if (r.metrics.totalLogs === 0) return 'Never logged';
@@ -49,6 +65,10 @@ export class RemindersSection extends MobxLitElement {
                             <activity-component
                                 .activity=${r.activity}
                                 .showName=${true}
+                                @activityClick=${() =>
+                                    this.openEdit(r.activity.id)}
+                                @activityLongClick=${() =>
+                                    this.openInfo(r.activity.id)}
                             ></activity-component>
                             <span class="reminderMeta">
                                 <span class="reminderStatusText">
@@ -77,11 +97,11 @@ export class RemindersSection extends MobxLitElement {
                                           <button
                                               class="inline secondary"
                                               type="button"
-                                              aria-label="dismiss"
+                                              aria-label="snooze for today"
                                               @click=${() =>
                                                   this.dismiss(r.activity.id)}
                                           >
-                                              <jot-icon name="X"></jot-icon>
+                                              <jot-icon name="Clock"></jot-icon>
                                           </button>`
                                     : nothing}
                             </span>
@@ -105,6 +125,10 @@ export class RemindersSection extends MobxLitElement {
                             <activity-component
                                 .activity=${activity}
                                 .showName=${true}
+                                @activityClick=${() =>
+                                    this.openEdit(activity.id)}
+                                @activityLongClick=${() =>
+                                    this.openInfo(activity.id)}
                             ></activity-component>
                             <span class="reminderMeta">
                                 <span class="reminderStatusText">

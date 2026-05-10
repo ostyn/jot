@@ -7,6 +7,7 @@ import {
     ArrowRight,
     Bell,
     BookOpen,
+    Clock,
     CalendarCheck,
     CalendarPlus,
     ChartBar,
@@ -101,6 +102,7 @@ const mapping = {
     Heart,
     StickyNote,
     Bell,
+    Clock,
     X,
 };
 export type JotIconName = keyof typeof mapping;

@@ -180,13 +180,13 @@ describe('getReminderStatus', () => {
 
 describe('getCadenceRegularity', () => {
     it('returns null when no stat is provided', () => {
-        expect(getCadenceRegularity(undefined)).toBeNull();
+        expect(getCadenceRegularity(undefined, NOW)).toBeNull();
     });
 
     it('returns null when fewer than MIN_LOGS_FOR_SUGGESTION logs', () => {
         // 3 logs is below the threshold
         const stat = makeStat(['2026-01-01', '2026-01-15', '2026-02-01']);
-        expect(getCadenceRegularity(stat)).toBeNull();
+        expect(getCadenceRegularity(stat, NOW)).toBeNull();
     });
 
     it('flags a perfectly regular biweekly cadence as strong', () => {
@@ -198,7 +198,7 @@ describe('getCadenceRegularity', () => {
             '2026-02-12',
             '2026-02-26',
         ]);
-        const r = getCadenceRegularity(stat);
+        const r = getCadenceRegularity(stat, NOW);
         expect(r).not.toBeNull();
         expect(r!.avgDaysBetween).toBe(14);
         expect(r!.cvDaysBetween).toBeCloseTo(0, 5);
@@ -206,7 +206,7 @@ describe('getCadenceRegularity', () => {
     });
 
     it('flags a noisy cadence as not strong', () => {
-        // gaps: 1, 1, 100, 1 → mean 25.75, stdDev ≈ 42.9, CV ≈ 1.66 (> 1.0)
+        // gaps: 1, 1, 100, 1 → mean 25.75, stdDev ≈ 42.9, CV ≈ 1.66
         const stat = makeStat([
             '2026-01-01',
             '2026-01-02',
@@ -214,7 +214,7 @@ describe('getCadenceRegularity', () => {
             '2026-04-13',
             '2026-04-14',
         ]);
-        const r = getCadenceRegularity(stat);
+        const r = getCadenceRegularity(stat, NOW);
         expect(r).not.toBeNull();
         expect(r!.cvDaysBetween).toBeGreaterThan(1);
         expect(r!.isStrong).toBe(false);
@@ -229,10 +229,10 @@ describe('getCadenceRegularity', () => {
             '2026-05-10',
             '2026-05-10',
         ]);
-        expect(getCadenceRegularity(stat)).toBeNull();
+        expect(getCadenceRegularity(stat, NOW)).toBeNull();
     });
 
-    it('flags a regular daily cadence as strong', () => {
+    it('returns null for daily cadences (no reminder needed)', () => {
         const stat = makeStat([
             '2026-05-01',
             '2026-05-02',
@@ -240,9 +240,37 @@ describe('getCadenceRegularity', () => {
             '2026-05-04',
             '2026-05-05',
         ]);
-        const r = getCadenceRegularity(stat);
+        expect(getCadenceRegularity(stat, NOW)).toBeNull();
+    });
+
+    it('ignores logs older than the lookback window', () => {
+        // NOW is 2026-05-10. Lookback is 365 days → cutoff 2025-05-10.
+        // Four logs from 2024 are out of window; only one recent log → not
+        // enough to compute a cadence.
+        const stat = makeStat([
+            '2024-01-01',
+            '2024-04-01',
+            '2024-07-01',
+            '2024-10-01',
+            '2026-05-01',
+        ]);
+        expect(getCadenceRegularity(stat, NOW)).toBeNull();
+    });
+
+    it('uses only in-window logs when computing cadence', () => {
+        // Two old (out of window) + four recent biweekly logs → cadence comes
+        // from the recent four only.
+        const stat = makeStat([
+            '2024-01-01',
+            '2024-06-01',
+            '2026-04-04',
+            '2026-04-18',
+            '2026-05-02',
+            '2026-05-10',
+        ]);
+        const r = getCadenceRegularity(stat, NOW);
         expect(r).not.toBeNull();
-        expect(r!.avgDaysBetween).toBe(1);
+        expect(r!.avgDaysBetween).toBeLessThan(20);
         expect(r!.isStrong).toBe(true);
     });
 });

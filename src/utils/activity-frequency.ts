@@ -75,30 +75,39 @@ export interface CadenceRegularity {
 }
 
 const MIN_LOGS_FOR_SUGGESTION = 4;
-const MAX_CV_FOR_SUGGESTION = 0.8;
+const MAX_CV_FOR_SUGGESTION = 0.6;
+// Only consider logs from this many days back when detecting a cadence, so
+// habits the user has tapered off don't keep getting re-suggested.
+const LOOKBACK_DAYS_FOR_SUGGESTION = 365;
 
 // Coefficient-of-variation analysis over inter-log gaps. We surface a habit as
-// "strong" only when there are enough samples, the gaps cluster tightly around
-// the mean, and the cadence is >= 1 day (sub-daily activities don't map to the
-// every-N-days reminder model).
+// "strong" only when there are enough recent samples, the gaps cluster tightly
+// around the mean, and the cadence rounds to >= 2 days (daily/sub-daily
+// activities are habits the user does without prompting).
 export function getCadenceRegularity(
-    stat: StatsActivityEntry | undefined
+    stat: StatsActivityEntry | undefined,
+    now: Date = new Date()
 ): CadenceRegularity | null {
-    const totalLogs = stat?.dates.length ?? 0;
-    if (!stat || totalLogs < MIN_LOGS_FOR_SUGGESTION) return null;
+    if (!stat) return null;
+    const recentDates = stat.dates.filter(
+        (d) =>
+            differenceInCalendarDays(now, parseISO(d.date)) <=
+            LOOKBACK_DAYS_FOR_SUGGESTION
+    );
+    if (recentDates.length < MIN_LOGS_FOR_SUGGESTION) return null;
     const gaps: number[] = [];
-    for (let i = 0; i < totalLogs - 1; i++) {
-        const newer = parseISO(stat.dates[i].date);
-        const older = parseISO(stat.dates[i + 1].date);
+    for (let i = 0; i < recentDates.length - 1; i++) {
+        const newer = parseISO(recentDates[i].date);
+        const older = parseISO(recentDates[i + 1].date);
         gaps.push(Math.max(0, differenceInCalendarDays(newer, older)));
     }
     const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-    if (mean < 1) return null;
+    if (mean < 1.5) return null;
     const variance =
         gaps.reduce((acc, g) => acc + (g - mean) ** 2, 0) / gaps.length;
     const cv = Math.sqrt(variance) / mean;
     return {
-        avgDaysBetween: Math.max(1, Math.round(mean)),
+        avgDaysBetween: Math.round(mean),
         cvDaysBetween: cv,
         isStrong: cv <= MAX_CV_FOR_SUGGESTION,
     };

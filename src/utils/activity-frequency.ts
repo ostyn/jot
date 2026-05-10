@@ -25,17 +25,28 @@ export function getActivityFrequencyMetrics(
     const lastDate = parseISO(stat.dates[0].date);
     // guard against future-dated entries
     const daysSinceLast = Math.max(0, differenceInCalendarDays(now, lastDate));
+    // Cadence is computed from the windowed subset only, so a habit that
+    // tapered off doesn't produce a stale long-term average.
+    const recentDates = stat.dates.filter(
+        (d) =>
+            differenceInCalendarDays(now, parseISO(d.date)) <=
+            LOOKBACK_DAYS_FOR_CADENCE
+    );
     let avgDaysBetween: number | null = null;
-    if (totalLogs >= 2) {
-        const firstDate = parseISO(stat.dates[totalLogs - 1].date);
-        const span = differenceInCalendarDays(lastDate, firstDate);
-        avgDaysBetween = Math.max(1, Math.round(span / (totalLogs - 1)));
+    if (recentDates.length >= 2) {
+        const newest = parseISO(recentDates[0].date);
+        const oldest = parseISO(recentDates[recentDates.length - 1].date);
+        const span = differenceInCalendarDays(newest, oldest);
+        avgDaysBetween = Math.max(
+            1,
+            Math.round(span / (recentDates.length - 1))
+        );
     }
     return {
         totalLogs,
         daysSinceLast,
         avgDaysBetween,
-        canAutoCadence: totalLogs >= 3,
+        canAutoCadence: recentDates.length >= 3,
     };
 }
 
@@ -76,9 +87,10 @@ export interface CadenceRegularity {
 
 const MIN_LOGS_FOR_SUGGESTION = 4;
 const MAX_CV_FOR_SUGGESTION = 0.6;
-// Only consider logs from this many days back when detecting a cadence, so
-// habits the user has tapered off don't keep getting re-suggested.
-const LOOKBACK_DAYS_FOR_SUGGESTION = 365;
+// Only consider logs from this many days back for cadence math (both the
+// suggestion engine and the active-reminder interval), so a habit that's been
+// tapered off doesn't drag the average toward old data.
+const LOOKBACK_DAYS_FOR_CADENCE = 365;
 
 // Coefficient-of-variation analysis over inter-log gaps. We surface a habit as
 // "strong" only when there are enough recent samples, the gaps cluster tightly
@@ -92,7 +104,7 @@ export function getCadenceRegularity(
     const recentDates = stat.dates.filter(
         (d) =>
             differenceInCalendarDays(now, parseISO(d.date)) <=
-            LOOKBACK_DAYS_FOR_SUGGESTION
+            LOOKBACK_DAYS_FOR_CADENCE
     );
     if (recentDates.length < MIN_LOGS_FOR_SUGGESTION) return null;
     const gaps: number[] = [];

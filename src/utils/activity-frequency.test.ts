@@ -68,6 +68,39 @@ describe('getActivityFrequencyMetrics', () => {
         const m = getActivityFrequencyMetrics(stat, NOW);
         expect(m.daysSinceLast).toBe(0);
     });
+
+    it('computes avgDaysBetween only from in-window logs', () => {
+        // NOW = 2026-05-10. Lookback 365 → cutoff 2025-05-10.
+        // Two old logs (out of window) + three recent biweekly logs.
+        // avg comes from the recent three only.
+        const stat = makeStat([
+            '2024-01-01',
+            '2024-06-01',
+            '2026-04-12',
+            '2026-04-26',
+            '2026-05-10',
+        ]);
+        const m = getActivityFrequencyMetrics(stat, NOW);
+        expect(m.totalLogs).toBe(5);
+        expect(m.avgDaysBetween).toBe(14);
+        expect(m.canAutoCadence).toBe(true);
+    });
+
+    it('returns null avg when fewer than 2 logs are in-window, even if all-time has more', () => {
+        // 3 old + 1 recent → recentDates length 1 → avg null, canAutoCadence false
+        const stat = makeStat([
+            '2024-01-01',
+            '2024-06-01',
+            '2024-12-01',
+            '2026-05-01',
+        ]);
+        const m = getActivityFrequencyMetrics(stat, NOW);
+        expect(m.totalLogs).toBe(4);
+        expect(m.avgDaysBetween).toBeNull();
+        expect(m.canAutoCadence).toBe(false);
+        // daysSinceLast still reflects the actual most recent log
+        expect(m.daysSinceLast).toBe(9);
+    });
 });
 
 describe('getReminderStatus', () => {

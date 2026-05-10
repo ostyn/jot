@@ -5,6 +5,7 @@ import {
     AlertTriangle,
     AlignJustify,
     ArrowRight,
+    Bell,
     BookOpen,
     CalendarCheck,
     CalendarPlus,
@@ -47,6 +48,7 @@ import {
     Trash2,
     TrendingUp,
     UploadCloud,
+    X,
     XCircle,
 } from 'lucide';
 
@@ -98,6 +100,8 @@ const mapping = {
     MapPin,
     Heart,
     StickyNote,
+    Bell,
+    X,
 };
 export type JotIconName = keyof typeof mapping;
 @customElement('jot-icon')

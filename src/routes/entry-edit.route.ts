@@ -146,6 +146,10 @@ export class EntryEditRoute extends MobxLitElement {
             };
         }
 
+        const presetActivityId = new URLSearchParams(location.search).get(
+            'activity'
+        );
+
         const draft = localStorage.getItem(
             `entry-edit-draft-${this.originalEntry.date}`
         );
@@ -161,11 +165,18 @@ export class EntryEditRoute extends MobxLitElement {
                             `entry-edit-draft-${this.originalEntry?.date}`
                         );
                         this.store.setEntry(this.originalEntry as Entry);
+                        if (presetActivityId)
+                            this.store.addToNumericActivityDetail(
+                                presetActivityId,
+                                1
+                            );
                     }
                 },
             });
         } else {
             this.store.setEntry(this.originalEntry as Entry);
+            if (presetActivityId)
+                this.store.addToNumericActivityDetail(presetActivityId, 1);
         }
     }
 

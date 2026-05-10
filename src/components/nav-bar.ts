@@ -1,15 +1,22 @@
-import { css, html, LitElement, nothing } from 'lit';
+import { css, html, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { consume } from '@lit/context';
+import { MobxLitElement } from '@adobe/lit-mobx';
 import { Router } from '@vaadin/router';
 import TinyGesture from 'tinygesture';
 import { base } from '../baseStyles';
 import { JotRoute, routerContext } from '../routes/route-config';
+import { reminders } from '../stores/reminders.store';
 import { settings } from '../stores/settings.store';
 
+// Each entry must read an observable so MobxLitElement reacts to changes.
+const NAV_BADGES: Record<string, () => number> = {
+    activities: () => reminders.dueCount,
+};
+
 @customElement('nav-bar')
-export class NavBar extends LitElement {
+export class NavBar extends MobxLitElement {
     @consume({ context: routerContext })
     @property({ attribute: false })
     public router?: Router;
@@ -40,6 +47,9 @@ export class NavBar extends LitElement {
                     ${(this.router?.getRoutes() || [])
                         .filter((route: JotRoute) => route.options?.menuItem)
                         .map((route: JotRoute) => {
+                            const badge = route.name
+                                ? (NAV_BADGES[route.name]?.() ?? 0)
+                                : 0;
                             return html`<a
                                 class="item-wrapper"
                                 href="${route.path}"
@@ -50,12 +60,19 @@ export class NavBar extends LitElement {
                                         ? 'menu-bar-item-active'
                                         : 'menu-bar-item-inactive')}
                                 >
-                                    <jot-icon
-                                        name=${route.options?.iconName ||
-                                        'Smile'}
-                                        size="large"
-                                    >
-                                    </jot-icon>
+                                    <span class="icon-with-badge">
+                                        <jot-icon
+                                            name=${route.options?.iconName ||
+                                            'Smile'}
+                                            size="large"
+                                        >
+                                        </jot-icon>
+                                        ${badge > 0
+                                            ? html`<span class="nav-badge"
+                                                  >${badge}</span
+                                              >`
+                                            : nothing}
+                                    </span>
                                     <span class="menu-bar-item-text">
                                         ${this.isRouteSelected(route.path)
                                             ? route.name
@@ -131,6 +148,25 @@ export class NavBar extends LitElement {
             a:focus,
             a:active {
                 background-color: transparent;
+            }
+            .icon-with-badge {
+                position: relative;
+                display: inline-flex;
+            }
+            .nav-badge {
+                position: absolute;
+                top: 0;
+                right: -0.4rem;
+                min-width: 0.875rem;
+                height: 0.875rem;
+                padding: 0 0.25rem;
+                background-color: var(--pico-primary);
+                color: var(--pico-primary-inverse);
+                border-radius: 9999px;
+                font-size: 0.5625rem;
+                line-height: 0.875rem;
+                text-align: center;
+                font-weight: bold;
             }
         `,
     ];

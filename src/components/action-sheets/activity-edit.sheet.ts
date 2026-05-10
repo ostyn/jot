@@ -3,8 +3,12 @@ import { customElement, property, state } from 'lit/decorators.js';
 import { createRef, ref, Ref } from 'lit/directives/ref.js';
 import { MobxLitElement } from '@adobe/lit-mobx';
 import { base } from '../../baseStyles';
-import { Activity } from '../../interfaces/activity.interface';
+import {
+    Activity,
+    ActivityReminderConfig,
+} from '../../interfaces/activity.interface';
 import { activities } from '../../stores/activities.store';
+import { getActivityFrequencyMetrics } from '../../utils/activity-frequency';
 import { dispatchEvent, Events } from '../../utils/Helpers';
 
 @customElement('activity-edit-sheet')
@@ -35,6 +39,55 @@ export class ActivityEditSheet extends MobxLitElement {
         activities.updateActivity(this.localActivity);
         dispatchEvent(this, Events.activitySubmitted);
     }
+    private updateReminder(patch: Partial<ActivityReminderConfig>) {
+        const current: ActivityReminderConfig = this.localActivity.reminder ?? {
+            enabled: false,
+            intervalDaysOverride: null,
+        };
+        this.localActivity = {
+            ...this.localActivity,
+            reminder: { ...current, ...patch },
+        };
+    }
+    private toggleReminderEnabled(enabled: boolean) {
+        // When enabling on an activity without enough history for an avg,
+        // default to Custom mode so the user has something to anchor on.
+        if (enabled) {
+            const metrics = getActivityFrequencyMetrics(
+                activities.stats.get(this.localActivity.id)
+            );
+            const fallbackOverride = metrics.canAutoCadence
+                ? this.localActivity.reminder?.intervalDaysOverride ?? null
+                : this.localActivity.reminder?.intervalDaysOverride ??
+                  (metrics.avgDaysBetween ?? 7);
+            this.updateReminder({
+                enabled: true,
+                intervalDaysOverride: fallbackOverride,
+            });
+        } else {
+            this.updateReminder({ enabled: false });
+        }
+    }
+    private setReminderMode(mode: 'auto' | 'custom') {
+        if (mode === 'auto') {
+            this.updateReminder({ intervalDaysOverride: null });
+        } else {
+            const metrics = getActivityFrequencyMetrics(
+                activities.stats.get(this.localActivity.id)
+            );
+            const seed =
+                this.localActivity.reminder?.intervalDaysOverride ??
+                metrics.avgDaysBetween ??
+                7;
+            this.updateReminder({ intervalDaysOverride: seed });
+        }
+    }
+    private setReminderInterval(value: string) {
+        const n = Number.parseInt(value, 10);
+        if (Number.isFinite(n) && n > 0) {
+            this.updateReminder({ intervalDaysOverride: n });
+        }
+    }
     selectCategory(value: string) {
         this.changeCategory(value);
         this.isCustom = false;
@@ -58,6 +111,76 @@ export class ActivityEditSheet extends MobxLitElement {
             @activitySubmitted=${submit}
             .activity=${data}
         ></activity-edit-sheet>`;
+    }
+    private renderReminderSection() {
+        if (!this.localActivity?.id) return nothing;
+        const reminder = this.localActivity.reminder;
+        const enabled = !!reminder?.enabled;
+        const metrics = getActivityFrequencyMetrics(
+            activities.stats.get(this.localActivity.id)
+        );
+        const usingAuto = enabled && reminder?.intervalDaysOverride == null;
+        const autoLabel = metrics.avgDaysBetween
+            ? `Auto (every ~${metrics.avgDaysBetween} day${
+                  metrics.avgDaysBetween === 1 ? '' : 's'
+              })`
+            : 'Auto';
+        return html`<section class="reminderSection">
+            <label class="inline reminderSwitch"
+                ><input
+                    type="checkbox"
+                    role="switch"
+                    .checked=${enabled}
+                    @change=${(e: any) =>
+                        this.toggleReminderEnabled(e.target.checked)}
+                />Reminder</label
+            >
+            ${enabled
+                ? html`<div class="reminderBody">
+                      <small class="reminderInfo">
+                          ${metrics.canAutoCadence
+                              ? `Average cadence: every ~${metrics.avgDaysBetween} day${metrics.avgDaysBetween === 1 ? '' : 's'} (${metrics.totalLogs} logs)`
+                              : metrics.avgDaysBetween
+                                ? `Only ${metrics.totalLogs} logs so far — average not stable yet.`
+                                : 'Not enough history yet for an average.'}
+                      </small>
+                      <label class="reminderRadio">
+                          <input
+                              type="radio"
+                              name="reminder-mode"
+                              .checked=${usingAuto}
+                              ?disabled=${!metrics.canAutoCadence}
+                              @change=${() => this.setReminderMode('auto')}
+                          />
+                          ${autoLabel}
+                      </label>
+                      <label class="reminderRadio">
+                          <input
+                              type="radio"
+                              name="reminder-mode"
+                              .checked=${!usingAuto}
+                              @change=${() => this.setReminderMode('custom')}
+                          />
+                          Custom: every
+                          <input
+                              class="reminderIntervalInput"
+                              type="number"
+                              min="1"
+                              step="1"
+                              .value=${String(
+                                  reminder?.intervalDaysOverride ??
+                                      metrics.avgDaysBetween ??
+                                      ''
+                              )}
+                              ?disabled=${usingAuto}
+                              @change=${(e: any) =>
+                                  this.setReminderInterval(e.target.value)}
+                          />
+                          days
+                      </label>
+                  </div>`
+                : nothing}
+        </section>`;
     }
     render() {
         return html`<form>
@@ -157,6 +280,7 @@ export class ActivityEditSheet extends MobxLitElement {
                     />Archived</label
                 >
             </section>
+            ${this.renderReminderSection()}
             <section>
                 <button
                     class="inline"
@@ -213,6 +337,37 @@ export class ActivityEditSheet extends MobxLitElement {
             }
             .archiveSwitch {
                 padding: 12px;
+            }
+            .reminderSection {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                padding-top: 0.5rem;
+            }
+            .reminderSwitch {
+                padding: 12px;
+            }
+            .reminderBody {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                padding-left: 12px;
+            }
+            .reminderInfo {
+                color: var(--pico-muted-color);
+            }
+            .reminderRadio {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+            }
+            .reminderRadio input[type='radio'] {
+                margin: 0;
+            }
+            .reminderIntervalInput {
+                width: 4.5rem;
+                margin: 0 0.25rem;
             }
         `,
     ];

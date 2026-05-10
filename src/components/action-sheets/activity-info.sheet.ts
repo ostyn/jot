@@ -6,6 +6,7 @@ import { ActivityDetail, Entry } from '../../interfaces/entry.interface';
 import { StatsDetailEntry } from '../../interfaces/stats.interface';
 import { go } from '../../routes/route-config';
 import { activities } from '../../stores/activities.store';
+import { getActivityFrequencyMetrics } from '../../utils/activity-frequency';
 import { DateHelpers } from '../../utils/DateHelpers';
 import '../activity-detail-stats.component';
 import '../activity-detail.component';
@@ -111,8 +112,41 @@ export class ActivityInfoSheet extends LitElement {
             queryParams: DateHelpers.getDateStringParts(date),
         });
     }
+    private renderReminderLine() {
+        const activity = activities.getActivity(this.activityId);
+        if (!activity?.reminder?.enabled) return nothing;
+        const metrics = getActivityFrequencyMetrics(this.activityStats);
+        const interval =
+            activity.reminder.intervalDaysOverride ?? metrics.avgDaysBetween;
+        if (interval == null) {
+            return html`<div class="reminderStatus">
+                Reminder on — set a custom cadence to start
+            </div>`;
+        }
+        if (metrics.daysSinceLast == null) {
+            return html`<div class="reminderStatus reminderOverdue">
+                Reminder due (never logged)
+            </div>`;
+        }
+        const overdue = metrics.daysSinceLast - interval;
+        if (overdue < 0) {
+            const inDays = -overdue;
+            return html`<div class="reminderStatus">
+                Next reminder in ${inDays} day${inDays === 1 ? '' : 's'}
+            </div>`;
+        }
+        if (overdue === 0) {
+            return html`<div class="reminderStatus reminderOverdue">
+                Reminder due today
+            </div>`;
+        }
+        return html`<div class="reminderStatus reminderOverdue">
+            Overdue by ${overdue} day${overdue === 1 ? '' : 's'}
+        </div>`;
+    }
     render() {
         return html`
+            ${this.renderReminderLine()}
             <div class="activity-info-container">
                 <header class="activity-info-header">
                     <activity-component
@@ -232,6 +266,17 @@ export class ActivityInfoSheet extends LitElement {
                 margin-bottom: 0.5rem;
                 cursor: pointer;
                 list-style: none;
+            }
+            .reminderStatus {
+                font-size: 0.875rem;
+                padding: 0.25rem 0.5rem;
+                margin-bottom: 0.5rem;
+                border-radius: 0.25rem;
+                color: var(--pico-muted-color);
+            }
+            .reminderOverdue {
+                color: var(--pico-color);
+                background-color: var(--pico-mark-background-color);
             }
             .activity-info-recent-date {
                 display: inline-flex;

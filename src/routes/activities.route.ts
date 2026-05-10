@@ -6,6 +6,7 @@ import { ActivityEditSheet } from '../components/action-sheets/activity-edit.she
 import { ActivityInfoSheet } from '../components/action-sheets/activity-info.sheet';
 import '../components/activity-grid.component';
 import '../components/activity.component';
+import '../components/reminders-section.component';
 import { activities } from '../stores/activities.store';
 
 @customElement('activities-route')
@@ -14,6 +15,7 @@ export class ActivitiesRoute extends LitElement {
         return html`<article class="activityHeader">
                 <header>Activities</header>
             </article>
+            <reminders-section></reminders-section>
             <activity-grid
                 @activityClick=${async (e: any) =>
                     Sheet.open({

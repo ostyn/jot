@@ -20,14 +20,12 @@ class SettingsStore {
         activities.refreshActivities();
     }
     @action.bound
-    public setShowArchivedFromStorage() {
-        this.setShowArchived(localStorage.getItem('showArchived') == 'true');
+    public loadFromStorage() {
+        this.isDark = localStorage.getItem('isDark') === 'true';
+        this.setShowArchived(localStorage.getItem('showArchived') === 'true');
     }
     constructor() {
         makeObservable(this);
-        this.isDark = window.localStorage.getItem('isDark') === 'true';
-        this.showArchived =
-            window.localStorage.getItem('showArchived') === 'true';
     }
 }
 export const settings = new SettingsStore();

@@ -46,7 +46,7 @@ export class JotApp extends LitElement {
             },
             onOfflineReady() {},
         });
-        settings.setShowArchivedFromStorage();
+        settings.loadFromStorage();
         this.router.setOutlet(this.renderRoot?.querySelector('#outlet'));
         this.router.setRoutes(routes);
         this.syncLayoutForRoute(window.location.pathname);

@@ -1,3 +1,9 @@
+export interface ActivityReminderConfig {
+    enabled: boolean;
+    intervalDaysOverride: number | null;
+    lastDismissed?: string;
+}
+
 export interface Activity {
     category: string | undefined;
     name: any;
@@ -6,4 +12,5 @@ export interface Activity {
     created: Date;
     isArchived: boolean;
     id: string;
+    reminder?: ActivityReminderConfig;
 }

@@ -278,7 +278,6 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
                 .map((ranked) => ({ kind: 'ranked', ranked }));
         }
 
-        if (!this.pool.length) return [];
         const decisive = this.decisiveIds;
         const excluded = this.excludedIds;
         const unseen = this.unseenIds;
@@ -317,7 +316,34 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
                     a.id - b.id
             );
         }
-        return sorted.map((entry) => ({ kind: 'pool', entry }));
+        const poolRows: BrowseRow[] = sorted.map((entry) => ({
+            kind: 'pool',
+            entry,
+        }));
+
+        // 'new' is unresponded-only by definition, so voted-on movies don't
+        // belong there. Everywhere else, the user's pool is the union of the
+        // downloaded TMDB JSON and the movies they've responded to — so a
+        // movie they voted on (or marked) stays visible even if it dropped
+        // out of (or was never in) today's curated pool.
+        if (this.poolMode === 'new') return poolRows;
+        const poolIds = this.poolEntryMap;
+        const ratings = movieFaceoff.replayState.ratings;
+        const extras = [];
+        for (const ranked of ratings.values()) {
+            if (poolIds.has(ranked.id)) continue;
+            const include =
+                this.poolMode === 'all' ||
+                (this.poolMode === 'unseen' && unseen.has(ranked.id)) ||
+                (this.poolMode === 'hidden' && excluded.has(ranked.id));
+            if (!include) continue;
+            extras.push(ranked);
+        }
+        extras.sort((a, b) => a.title.localeCompare(b.title));
+        return [
+            ...poolRows,
+            ...extras.map((ranked) => ({ kind: 'ranked' as const, ranked })),
+        ];
     }
 
     willUpdate(changed: PropertyValues) {

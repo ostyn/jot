@@ -164,10 +164,21 @@ export function prepJsonForImport({
             }
         }
         movieFaceoff.events = nextMovieFaceoffEvents;
-        movieFaceoff.movies = movieFaceoff.movies.map((movie) => ({
-            ...movie,
-            unseenAt: movie.unseenAt || legacyUnseenAtById.get(movie.id),
-        }));
+        // Mirror the v10 Dexie upgrade: a movie with at least one vote is
+        // implicitly "seen", so clear any leftover unseenAt from buggy
+        // pre-v10 backups (voting on a pinned unseen movie used to leave
+        // unseenAt set, which filtered the movie out of every ranking).
+        const votedMovieIds = new Set<number>();
+        for (const event of nextMovieFaceoffEvents) {
+            votedMovieIds.add(event.winnerId);
+            votedMovieIds.add(event.loserId);
+        }
+        movieFaceoff.movies = movieFaceoff.movies.map((movie) => {
+            const nextUnseenAt = votedMovieIds.has(movie.id)
+                ? undefined
+                : movie.unseenAt || legacyUnseenAtById.get(movie.id);
+            return { ...movie, unseenAt: nextUnseenAt };
+        });
     }
 
     readingItems?.forEach((item) => {

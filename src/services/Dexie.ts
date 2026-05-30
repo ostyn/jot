@@ -1,7 +1,10 @@
 import { parseISO } from 'date-fns';
 import Dexie from 'dexie';
 import { EditTools, Entry, Entry_v3 } from '../interfaces/entry.interface';
-import { MovieFaceoffEvent } from '../interfaces/movie-faceoff.interface';
+import {
+    MovieFaceoffEvent,
+    MovieFaceoffMovie,
+} from '../interfaces/movie-faceoff.interface';
 import { inferTargetIds } from '../utils/movie-faceoff-backfill';
 
 export const db = new Dexie('jot');
@@ -74,6 +77,39 @@ db.version(9)
             .modify((event: MovieFaceoffEvent) => {
                 if (event.id !== undefined && targetIdByEventId.has(event.id)) {
                     event.targetId = targetIdByEventId.get(event.id);
+                }
+            });
+    });
+db.version(10)
+    .stores({
+        moods: 'id',
+        activities: 'id',
+        entries: 'id, date',
+        notes: 'id, date, path',
+        readingItems: 'id, normalizedUrl, queueStatus, updatedAt, completedAt',
+        movieFaceoffEvents: '++id, createdAt, type, winnerId, loserId',
+        movieFaceoffMovies: 'id, excludedAt, unseenAt, updatedAt',
+    })
+    .upgrade(async (trans) => {
+        // Pre-v10, voting on a pinned unseen movie left `unseenAt` set, so
+        // the movie collected votes but was filtered out of every ranking.
+        // Clear unseenAt for any movie that has at least one vote event.
+        const events = (await trans
+            .table('movieFaceoffEvents')
+            .toArray()) as MovieFaceoffEvent[];
+        const votedIds = new Set<number>();
+        for (const event of events) {
+            if (event.type !== 'vote') continue;
+            votedIds.add(event.winnerId);
+            votedIds.add(event.loserId);
+        }
+        if (!votedIds.size) return;
+        await trans
+            .table('movieFaceoffMovies')
+            .toCollection()
+            .modify((movie: MovieFaceoffMovie) => {
+                if (movie.unseenAt && votedIds.has(movie.id)) {
+                    movie.unseenAt = undefined;
                 }
             });
     });
@@ -177,6 +213,17 @@ export const versions: { [key: number]: EntryVersion } = {
     9: {
         version: 9,
         description: 'Backfill targetId on movieFaceoffEvents from targeted ranking sessions',
+        needUpgrade: () => false,
+        upgrade: (entry: Entry) => entry,
+        importTransform: (entry: Entry) => {
+            for (const log of entry.editLog) {
+                log.date = parseISO(log.date as unknown as string);
+            }
+        },
+    },
+    10: {
+        version: 10,
+        description: 'Clear unseenAt on movieFaceoffMovies that already have votes',
         needUpgrade: () => false,
         upgrade: (entry: Entry) => entry,
         importTransform: (entry: Entry) => {

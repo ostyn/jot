@@ -203,9 +203,12 @@ class MovieFaceoffStore {
         const uniqueMovies = new Map<number, FaceoffMovie>();
         [winnerMovie, loserMovie].forEach((m) => uniqueMovies.set(m.id, m));
         const movieMap = this.movieMap;
-        const nextMovies = Array.from(uniqueMovies.values()).map((movie) =>
-            toStoredMovie(movie, movieMap.get(movie.id))
-        );
+        // A vote is an opinion, which presupposes having seen the movie —
+        // clear any prior unseen flag so the result lands in the rankings.
+        const nextMovies = Array.from(uniqueMovies.values()).map((movie) => ({
+            ...toStoredMovie(movie, movieMap.get(movie.id)),
+            unseenAt: undefined,
+        }));
         const event: Omit<MovieFaceoffEvent, 'id'> = {
             createdAt: new Date().toISOString(),
             type: 'vote',

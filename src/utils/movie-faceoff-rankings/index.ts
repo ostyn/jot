@@ -19,6 +19,11 @@ import { MovieFaceoffRankingAlgorithm, MovieFaceoffReplayState } from './types';
 
 export * from './types';
 export { buildMovieFaceoffReplayState } from './replay-state';
+export {
+    computeAgreementLeaveOneOut,
+    type AgreementContribution,
+    type AgreementLeaveOneOut,
+} from './agreement-leave-one-out';
 
 export const MOVIE_FACEOFF_RANKING_ALGORITHMS: readonly MovieFaceoffRankingAlgorithm[] =
     [

@@ -17,6 +17,7 @@ import {
 } from '../services/movie-faceoff.service';
 import { movieFaceoff } from '../stores/movie-faceoff.store';
 import {
+    computeAgreementLeaveOneOut,
     getMovieFaceoffRankingAlgorithm,
     MOVIE_FACEOFF_RANKING_ALGORITHMS,
 } from '../utils/movie-faceoff-rankings';
@@ -209,6 +210,13 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
                 MOVIE_FACEOFF_RANKING_ALGORITHMS
             )
         );
+    }
+
+    private get agreementBreakdown() {
+        return computeAgreementLeaveOneOut(
+            movieFaceoff.replayState,
+            MOVIE_FACEOFF_RANKING_ALGORITHMS
+        ).contributions;
     }
 
     private weightedRating(entry: MovieFaceoffPoolEntry): number {
@@ -701,14 +709,38 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
                                     : `${list.length.toLocaleString()} movies`}
                             </p>
                             ${showAgreement
-                                ? html`<p class="settlement-chip">
-                                      Algorithm agreement
-                                      <strong
-                                          >${(
-                                              agreement.agreement * 100
-                                          ).toFixed(0)}%</strong
-                                      >
-                                  </p>`
+                                ? html`<details class="agreement-details">
+                                      <summary class="settlement-chip">
+                                          Algorithm agreement
+                                          <strong
+                                              >${(
+                                                  agreement.agreement * 100
+                                              ).toFixed(0)}%</strong
+                                          >
+                                      </summary>
+                                      <p class="agreement-legend">
+                                          Leave-one-out: removing an algorithm,
+                                          <span class="up">+ pulls the consensus apart</span>
+                                          (a dissenter),
+                                          <span class="down">− reinforces it</span>
+                                          (an echo).
+                                      </p>
+                                      <ul class="agreement-breakdown">
+                                          ${this.agreementBreakdown.map((c) => {
+                                              const pts = c.delta * 100;
+                                              const up = pts >= 0;
+                                              return html`<li>
+                                                  <span>${c.label}</span>
+                                                  <strong
+                                                      class=${up ? 'up' : 'down'}
+                                                      >${up ? '+' : '−'}${Math.abs(
+                                                          pts
+                                                      ).toFixed(1)}</strong
+                                                  >
+                                              </li>`;
+                                          })}
+                                      </ul>
+                                  </details>`
                                 : nothing}
                         </hgroup>
                     </header>
@@ -812,6 +844,50 @@ export class MovieFaceoffBrowseRoute extends MobxLitElement {
             .settlement-chip strong {
                 color: var(--pico-color);
                 font-variant-numeric: tabular-nums;
+            }
+            .agreement-details {
+                margin: 0.25rem 0 0;
+            }
+            .agreement-details summary {
+                cursor: pointer;
+                list-style: none;
+            }
+            .agreement-details summary::-webkit-details-marker {
+                display: none;
+            }
+            .agreement-legend {
+                margin: 0.5rem 0 0.35rem;
+                max-width: 22rem;
+                color: var(--pico-muted-color);
+                font-size: 0.72rem;
+            }
+            .agreement-legend .up {
+                color: var(--pico-color);
+            }
+            .agreement-breakdown {
+                list-style: none;
+                margin: 0;
+                padding: 0.5rem 0.7rem;
+                border-radius: 0.5rem;
+                background: var(--pico-card-sectioning-background-color);
+                font-size: 0.78rem;
+                width: fit-content;
+                min-width: 12rem;
+            }
+            .agreement-breakdown li {
+                display: flex;
+                justify-content: space-between;
+                gap: 1.5rem;
+                padding: 0.1rem 0;
+            }
+            .agreement-breakdown strong {
+                font-variant-numeric: tabular-nums;
+            }
+            .agreement-breakdown .up {
+                color: var(--pico-color);
+            }
+            .agreement-breakdown .down {
+                color: var(--pico-muted-color);
             }
             .filter-row {
                 display: flex;

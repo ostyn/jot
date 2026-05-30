@@ -3,6 +3,7 @@ import { MovieFaceoffRankingAlgorithm } from '../types';
 export const copelandRankingAlgorithm: MovieFaceoffRankingAlgorithm = {
     id: 'copeland',
     label: 'Copeland Score',
+    isInformational: true,
     description:
         'Compares each movie pairwise and scores wins minus losses.\n\nMetric: net pairwise wins.\n\nPros: easy summary of head-to-head dominance. Cons: treats all wins equally.',
     rank: (replay) => {

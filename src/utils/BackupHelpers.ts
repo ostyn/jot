@@ -47,7 +47,19 @@ export function prepJsonForImport({
     notes,
     version,
 }: JsonExport) {
-    const importVersion = version ?? 3;
+    const knownVersions = Object.keys(versions).map(Number);
+    const minVersion = Math.min(...knownVersions);
+    const maxVersion = Math.max(...knownVersions);
+    // A backup newer than this build can't be migrated correctly — the upgrade
+    // transforms for its version don't exist here — so refuse rather than
+    // silently importing data this build doesn't understand.
+    if ((version ?? minVersion) > maxVersion) {
+        throw new Error(
+            'This backup was created by a newer version of Jot. Please update the app before importing.'
+        );
+    }
+    // Older/unknown-low versions clamp up to the oldest known transform.
+    const importVersion = Math.max(version ?? minVersion, minVersion);
     entries.forEach((entry: Entry) => {
         versions[importVersion].importTransform(entry);
     });
